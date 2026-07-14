@@ -274,11 +274,11 @@ function MissionWelcome({ visible, full, onFull, onEnter, settings }) {
   );
 }
 
-function MoneyCards({ totals, light = false }) {
+function MoneyCards({ totals, light = false, language = "en" }) {
   const cards = [
-    ["Total Donations", totals.income, "↗"],
-    ["Total Expenses", totals.expenses, "↘"],
-    ["Current Balance", totals.balance, "●"],
+    [language === "ur" ? "کل عطیات" : "Total Donations", totals.income, "↗"],
+    [language === "ur" ? "کل اخراجات" : "Total Expenses", totals.expenses, "↘"],
+    [language === "ur" ? "موجودہ بیلنس" : "Current Balance", totals.balance, "●"],
   ];
   return (
     <div className={`money-grid ${light ? "money-grid--light" : ""}`}>
@@ -286,32 +286,32 @@ function MoneyCards({ totals, light = false }) {
         <article className="money-card reveal" key={label}>
           <div className="money-card__top"><span>{label}</span><b>{icon}</b></div>
           <strong>Rs. {amount.toLocaleString()}</strong>
-          <small>Verified community record</small>
+          <small>{language === "ur" ? "تصدیق شدہ عوامی ریکارڈ" : "Verified community record"}</small>
         </article>
       ))}
     </div>
   );
 }
 
-function RecordsTable({ records, systems, limit }) {
+function RecordsTable({ records, systems, limit, language = "en" }) {
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
   const projectName = (id) => systems.find((system) => system.id === id)?.name || "Community Project";
 
   if (!rows.length) {
-    return <div className="public-empty">No public records found.</div>;
+    return <div className="public-empty">{language === "ur" ? "کوئی عوامی ریکارڈ موجود نہیں۔" : "No public records found."}</div>;
   }
 
   return (
     <div className="public-table-wrap">
       <table className="public-table">
         <thead>
-          <tr><th>Date</th><th>Type</th><th>Name / Purpose</th><th>Project</th><th>Amount</th><th>Method</th></tr>
+          <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th></tr>
         </thead>
         <tbody>
           {rows.map((record) => (
             <tr key={record.id}>
               <td>{record.date}</td>
-              <td><span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? "Donation" : "Expense"}</span></td>
+              <td><span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? (language === "ur" ? "عطیہ" : "Donation") : (language === "ur" ? "خرچ" : "Expense")}</span></td>
               <td><strong>{record.person}</strong><small>{record.details || "Community record"}</small></td>
               <td>{projectName(record.systemId)}</td>
               <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
@@ -342,6 +342,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [selectedSystemId, setSelectedSystemId] = useState(null);
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
+  const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
+  const ur = language === "ur";
+  const changeLanguage = () => setLanguage((current) => {
+    const next = current === "en" ? "ur" : "en";
+    localStorage.setItem("cgs-language", next);
+    return next;
+  });
 
   useEffect(() => {
     let active = true;
@@ -424,7 +431,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button className="brand-button" onClick={() => setSelectedSystemId(null)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
-          <div className="nav-actions"><button className="nav-link" onClick={() => setSelectedSystemId(null)}>← Public Home</button><button className="admin-button" onClick={onAdminLogin}>Admin Login</button></div>
+          <div className="nav-actions"><button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button><button className="nav-link" onClick={() => setSelectedSystemId(null)}>{ur ? "عوامی صفحہ" : "← Public Home"}</button><button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button></div>
         </header>
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
@@ -437,7 +444,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            <MoneyCards totals={selectedTotals} />
+            <MoneyCards totals={selectedTotals} language={language} />
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">PROJECT PHOTO FOLDER</span><h2>{selectedSystem.name} Gallery</h2></div>
@@ -462,7 +469,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 </div>
                 <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search public records" /></label>
               </div>
-              <RecordsTable records={filteredRecords} systems={systems} />
+              <RecordsTable records={filteredRecords} systems={systems} language={language} />
             </div>
           </section>
         </main>
@@ -482,12 +489,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </button>
         <button className="mobile-menu" onClick={() => setMenuOpen((open) => !open)} aria-label="Open menu"><i /><i /><i /></button>
         <nav className={menuOpen ? "nav-links nav-links--open" : "nav-links"}>
-          <button onClick={() => scrollTo("home")}>Home</button>
-          <button onClick={() => scrollTo("mission")}>Mission</button>
-          <button onClick={() => scrollTo("projects")}>Projects</button>
-          <button onClick={() => scrollTo("transparency")}>Transparency</button>
-          <button onClick={() => scrollTo("about")}>About</button>
-          <button className="admin-button" onClick={onAdminLogin}>Admin Login</button>
+          <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
+          <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
+          <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
+          <button onClick={() => scrollTo("transparency")}>{ur ? "شفافیت" : "Transparency"}</button>
+          <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
+          <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
+          <button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
         </nav>
       </header>
 
@@ -500,7 +508,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <span className="hero-eyebrow">{heroSlides[slideIndex].eyebrow}</span>
           <h1>{heroSlides[slideIndex].title}</h1>
           <p>{heroSlides[slideIndex].copy}</p>
-          <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>Explore our projects <span>→</span></button><button className="button-ghost" onClick={() => scrollTo("transparency")}>View public records</button></div>
+          <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>{ur ? "ہمارے منصوبے دیکھیں" : "Explore our projects"} <span>→</span></button><button className="button-ghost" onClick={() => scrollTo("transparency")}>{ur ? "عوامی ریکارڈ دیکھیں" : "View public records"}</button></div>
         </div>
         <div className="hero-progress">
           {heroSlides.map((slide, index) => <button aria-label={`Show ${slide.eyebrow}`} className={index === slideIndex ? "active" : ""} key={slide.id} onClick={() => setSlideIndex(index)}><span /></button>)}
@@ -538,13 +546,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <section className="impact-section" id="transparency">
           <div className="content-section">
             <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
-            <MoneyCards totals={totals} light />
-            <div className="impact-numbers reveal"><div><strong>{systems.length}</strong><span>Active Projects</span></div><div><strong>{donorCount}</strong><span>Community Donors</span></div><div><strong>{transactions.length}</strong><span>Verified Records</span></div><div><strong>24/7</strong><span>Public Access</span></div></div>
+            <MoneyCards totals={totals} light language={language} />
+            <div className="impact-numbers reveal"><div><strong>{systems.length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
           </div>
         </section>
 
         <section className="projects-section content-section" id="projects">
-          <div className="section-heading reveal"><div><span className="section-kicker">WHAT WE CARE FOR</span><h2>Projects that shape<br />our shared future.</h2></div><p>Select any project to explore its public financial record.</p></div>
+          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
           <div className="project-grid">
             {systems.map((system, index) => {
               const projectTotals = totalsFor(transactions.filter((record) => record.systemId === system.id));
@@ -553,7 +561,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <img src={imageFor(system)} alt={system.name} />
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content"><span>{system.icon} COMMUNITY PROJECT</span><h3>{system.name}</h3><p>{system.description || system.englishName || "Transparent community initiative."}</p><div><b>Balance</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>View project record →</button></div>
+                  <div className="project-card__content"><span>{system.icon} {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{system.name}</h3><p>{system.description || system.englishName || "Transparent community initiative."}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
                 </article>
               );
             })}
@@ -567,7 +575,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="records-section content-section">
           <div className="section-heading reveal"><div><span className="section-kicker">LATEST ACTIVITY</span><h2>Transparency,<br />as it happens.</h2></div><p>The latest public donations and expenses across all projects.</p></div>
-          <div className="ledger-card reveal"><RecordsTable records={recentRecords} systems={systems} limit={8} /></div>
+          <div className="ledger-card reveal"><RecordsTable records={recentRecords} systems={systems} limit={8} language={language} /></div>
         </section>
 
         <section className="about-section" id="about">
