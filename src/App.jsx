@@ -618,7 +618,7 @@ function App() {
     }, 50);
   }
 
-  function saveRecord(event) {
+  async function saveRecord(event) {
     event.preventDefault();
 
     const amount = Number(entryForm.amount);
@@ -643,33 +643,46 @@ function App() {
       slipData: entryForm.slipData,
     };
 
+    let nextTransactions;
+
     if (editingRecordId) {
-      setTransactions((currentRecords) =>
-        currentRecords.map((record) =>
+      nextTransactions = transactions.map((record) =>
           record.id === editingRecordId
             ? {
                 ...record,
                 ...recordData,
               }
             : record
-        )
       );
-
-      alert("Record updated successfully");
     } else {
-      setTransactions((currentRecords) => [
+      nextTransactions = [
         {
           ...recordData,
           id: Date.now().toString(),
         },
-        ...currentRecords,
-      ]);
+        ...transactions,
+      ];
+    }
+
+    setTransactions(nextTransactions);
+    setDatabaseMessage("Saving record to Supabase...");
+
+    try {
+      await syncDatabaseData(systems, nextTransactions);
+      setDatabaseReady(true);
+      setDatabaseMessage("All changes saved to Supabase");
 
       alert(
-        activeSection === "income"
-          ? "Donation saved successfully"
-          : "Expense saved successfully"
+        editingRecordId
+          ? "Record updated and saved to database"
+          : activeSection === "income"
+            ? "Donation saved to database successfully"
+            : "Expense saved to database successfully"
       );
+    } catch (error) {
+      console.error(error);
+      setDatabaseMessage(`Database save failed: ${error.message}`);
+      alert(`Database save failed: ${error.message}`);
     }
 
     resetForm();
