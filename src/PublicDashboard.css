@@ -5,6 +5,8 @@
   --forest-2: #0c4728;
   --leaf: #4cc46f;
   --lime: #b6e650;
+  --gold: #d6ad55;
+  --gold-soft: #f0dfb5;
   --cream: #f4f2e9;
   --ink: #122019;
   --muted: #66746c;
@@ -21,7 +23,10 @@ button { cursor: pointer; }
   min-height: 100vh;
   color: var(--ink);
   font-family: "DM Sans", sans-serif;
-  background: var(--cream);
+  background:
+    radial-gradient(circle at 8% 14%, rgba(214,173,85,.10), transparent 24rem),
+    radial-gradient(circle at 92% 38%, rgba(76,196,111,.09), transparent 28rem),
+    var(--cream);
   overflow: hidden;
 }
 
@@ -57,7 +62,7 @@ button { cursor: pointer; }
 .splash-line span { display: block; width: 100%; height: 100%; background: var(--lime); transform-origin: left; animation: lineLoad 2s ease both; }
 
 .brand-mark { display: block; color: var(--leaf); }
-.brand-mark img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 20px rgba(0,0,0,.2); }
+.brand-mark svg { display: block; width: 100%; height: 100%; }
 .brand-mark--compact { width: 44px; height: 44px; }
 
 .site-nav {
@@ -76,7 +81,7 @@ button { cursor: pointer; }
   background: linear-gradient(180deg, rgba(2,21,12,.56), transparent);
 }
 
-.site-nav--solid { position: relative; background: var(--forest); border: 0; }
+.site-nav--solid { position: relative; background: linear-gradient(110deg, #052b18, #0b4729); border-bottom: 1px solid rgba(214,173,85,.35); }
 .brand-button { display: flex; align-items: center; gap: 11px; padding: 0; color: white; text-align: left; background: none; border: 0; }
 .brand-button span span { display: block; }
 .brand-button b { display: block; font-size: 16px; letter-spacing: -.3px; }

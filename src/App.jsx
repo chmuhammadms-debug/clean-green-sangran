@@ -3,7 +3,6 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
-import brandLogo from "./assets/clean-green-sangran-logo.jpeg";
 
 const defaultSystems = [
   {
@@ -1076,7 +1075,6 @@ function App() {
           className="login-card"
           onSubmit={handleLogin}
         >
-          <img className="admin-brand-logo admin-brand-logo--login" src={brandLogo} alt="Clean & Green Sangran" />
           <h1>Clean & Green</h1>
           <h2>Sangran</h2>
           <p>Central Admin Login</p>
@@ -1125,12 +1123,9 @@ function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="admin-brand-heading">
-          <img className="admin-brand-logo" src={brandLogo} alt="Clean & Green Sangran" />
-          <div>
+        <div>
           <h2>Clean & Green Sangran</h2>
           <p>Central Management System • {databaseMessage}</p>
-          </div>
         </div>
 
         <button
