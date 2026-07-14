@@ -429,7 +429,12 @@ button { cursor: pointer; }
 @keyframes lineLoad { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes heroText { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes slideProgress { from { width: 0; } to { width: 100%; } }
-@keyframes ticker { to { transform: translateX(-50%); } }
+/* Move the announcement strip from left to right while each Urdu message
+   keeps its own RTL reading direction. */
+@keyframes ticker {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
 @keyframes visualReel { to { transform: translateX(calc(-50% - 8px)); } }
 
 @media (max-width: 900px) {
