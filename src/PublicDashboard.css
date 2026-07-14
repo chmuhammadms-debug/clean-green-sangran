@@ -124,7 +124,7 @@ button { cursor: pointer; }
 .hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; width: min(1200px, calc(100% - 48px)); height: 100%; margin: auto; padding-top: 60px; }
 .hero-eyebrow, .section-kicker { display: inline-flex; align-items: center; gap: 10px; color: var(--leaf); font-size: 11px; font-weight: 800; letter-spacing: 2.8px; text-transform: uppercase; }
 .hero-eyebrow::before, .section-kicker::before { width: 34px; height: 1px; content: ""; background: currentColor; }
-.hero-content h1 { max-width: 780px; margin: 22px 0 18px; font-size: clamp(52px, 7.4vw, 102px); line-height: .98; letter-spacing: -5px; animation: heroText .8s ease both; }
+.hero-content h1 { max-width: 720px; margin: 18px 0 15px; font-size: clamp(40px, 5.5vw, 74px); line-height: 1.03; letter-spacing: -3px; animation: heroText .8s ease both; }
 .hero-content p { max-width: 620px; margin: 0; color: rgba(255,255,255,.76); font-size: clamp(16px, 1.5vw, 20px); line-height: 1.7; }
 .hero-actions { display: flex; gap: 12px; margin-top: 34px; }
 .button-primary, .button-ghost { padding: 15px 22px; font-weight: 700; border-radius: 100px; transition: transform .2s ease, background .2s ease; }
@@ -148,7 +148,7 @@ button { cursor: pointer; }
 .impact-ticker .ticker-english { letter-spacing: 1px; text-transform: none; }
 
 .mission-section { display: grid; grid-template-columns: .92fr 1.08fr; gap: 90px; align-items: center; padding-top: 130px; padding-bottom: 130px; }
-.mission-copy h2, .section-heading h2, .about-copy h2 { margin: 17px 0 24px; font-size: clamp(40px, 5vw, 68px); line-height: 1.03; letter-spacing: -3.4px; }
+.mission-copy h2, .section-heading h2, .about-copy h2 { margin: 14px 0 20px; font-size: clamp(31px, 4vw, 50px); line-height: 1.08; letter-spacing: -2px; }
 .mission-copy > p, .section-heading > p, .about-copy > p { color: var(--muted); font-size: 17px; line-height: 1.8; }
 .mission-points { display: grid; gap: 14px; margin-top: 34px; }
 .mission-points span { display: flex; align-items: center; gap: 16px; padding: 15px 0; font-weight: 700; border-bottom: 1px solid #d8ddd8; }
@@ -162,7 +162,7 @@ button { cursor: pointer; }
 .mission-visual { position: relative; height: 590px; }
 .mission-visual img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px 90px 4px 4px; }
 .mission-badge { position: absolute; left: -50px; bottom: 44px; display: flex; align-items: center; gap: 13px; padding: 24px; color: white; background: var(--forest); box-shadow: 0 25px 60px rgba(7,47,27,.25); }
-.mission-badge strong { color: var(--lime); font-size: 34px; }
+.mission-badge strong { color: var(--lime); font-size: 27px; }
 .mission-badge span { font-size: 11px; line-height: 1.35; text-transform: uppercase; letter-spacing: 1px; }
 
 .impact-section { padding: 115px 0; color: white; background: var(--forest); }
@@ -190,17 +190,17 @@ button { cursor: pointer; }
 .impact-numbers strong { display: block; color: var(--lime); font-size: 46px; }
 .impact-numbers span { color: #9ab5a3; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 
-.projects-section { padding-top: 130px; padding-bottom: 130px; }
+.projects-section { padding-top: 88px; padding-bottom: 88px; }
 .project-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
-.project-card { position: relative; min-height: 590px; color: white; background: var(--forest); overflow: hidden; cursor: pointer; }
+.project-card { position: relative; min-height: 440px; color: white; background: var(--forest); overflow: hidden; cursor: pointer; }
 .project-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
 .project-card:hover img { transform: scale(1.05); }
 .project-card__shade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(2,25,13,.94), rgba(2,25,13,.03) 70%); }
 .project-card__number { position: absolute; top: 24px; right: 26px; font-size: 11px; letter-spacing: 2px; }
-.project-card__content { position: absolute; left: 0; right: 0; bottom: 0; padding: 34px; transform: translateY(44px); transition: transform .45s ease; }
+.project-card__content { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px; transform: translateY(38px); transition: transform .45s ease; }
 .project-card:hover .project-card__content { transform: translateY(0); }
 .project-card__content > span { color: var(--lime); font-size: 10px; font-weight: 800; letter-spacing: 2px; }
-.project-card__content h3 { margin: 12px 0 8px; font-size: clamp(29px, 4vw, 43px); letter-spacing: -2px; }
+.project-card__content h3 { margin: 9px 0 7px; font-size: clamp(23px, 3vw, 32px); letter-spacing: -1px; }
 .project-card__content p { max-width: 500px; margin: 0 0 18px; color: rgba(255,255,255,.72); line-height: 1.6; }
 .project-card__content > div { display: flex; justify-content: space-between; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.22); }
 .project-card__content > div b { color: rgba(255,255,255,.65); font-size: 11px; text-transform: uppercase; }
@@ -486,4 +486,178 @@ button { cursor: pointer; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Premium village palette: forest, sage, warm sand and muted gold */
+:root {
+  --forest: #073b2a;
+  --forest-2: #0d5a3e;
+  --leaf: #21875e;
+  --lime: #b9d98b;
+  --cream: #f1eadb;
+  --ink: #183329;
+  --muted: #65756d;
+  --gold: #c79a48;
+}
+
+.public-site {
+  background:
+    radial-gradient(circle at 8% 18%, rgba(185,217,139,.22), transparent 25rem),
+    radial-gradient(circle at 92% 48%, rgba(199,154,72,.12), transparent 28rem),
+    #f1eadb;
+}
+
+.mission-section,
+.projects-section,
+.records-section {
+  position: relative;
+}
+
+.mission-section::before,
+.projects-section::before,
+.records-section::before {
+  position: absolute;
+  z-index: -1;
+  inset: 22px -28px;
+  content: "";
+  border: 1px solid rgba(7,59,42,.08);
+  border-radius: 32px;
+  background: rgba(255,252,244,.72);
+  box-shadow: 0 20px 65px rgba(7,59,42,.07);
+}
+
+.site-nav:not(.site-nav--solid) {
+  color: #f8f1e4;
+  border-color: rgba(226,195,128,.28);
+  background: rgba(5,48,33,.92);
+  box-shadow: 0 14px 42px rgba(3,37,25,.24);
+}
+.site-nav:not(.site-nav--solid) .brand-button,
+.site-nav:not(.site-nav--solid) .nav-links > button,
+.site-nav:not(.site-nav--solid) .nav-link { color: #f8f1e4; }
+.site-nav:not(.site-nav--solid) .brand-button small { color: #b9d98b; }
+.site-nav:not(.site-nav--solid) .mobile-menu i { background: #f8f1e4; }
+
+.impact-ticker {
+  color: #eef5df;
+  border-top: 1px solid rgba(226,195,128,.28);
+  border-bottom: 1px solid rgba(226,195,128,.28);
+  background: linear-gradient(100deg, #052f21, #0d5a3e 52%, #073b2a);
+}
+
+.mission-urdu,
+.mission-english,
+.money-card,
+.ledger-card {
+  border-color: rgba(7,59,42,.12);
+  background: linear-gradient(145deg, #fffdf7, #e9f0e6);
+}
+
+.money-card,
+.ledger-card {
+  box-shadow: 0 18px 48px rgba(7,59,42,.11);
+}
+
+.visual-reel-section {
+  border-top: 1px solid rgba(7,59,42,.10);
+  border-bottom: 1px solid rgba(7,59,42,.10);
+  background: linear-gradient(135deg, #d9e5d4, #eee3cd);
+}
+
+.project-card {
+  border-color: rgba(199,154,72,.42);
+  box-shadow: 0 20px 55px rgba(5,48,33,.20);
+}
+
+.section-kicker,
+.hero-eyebrow,
+.project-card__content > span { color: #c79a48; }
+
+.mission-badge,
+.impact-section,
+.about-section {
+  background: linear-gradient(135deg, #052f21, #0d5a3e);
+}
+
+.button-primary,
+.admin-button {
+  color: #173226 !important;
+  background: linear-gradient(135deg, #e7c879, #c79a48) !important;
+  border-color: #d7ad58 !important;
+}
+
+.site-footer {
+  border-top-color: rgba(199,154,72,.35);
+  background: linear-gradient(105deg, #031f16, #073b2a);
+}
+
+@media (max-width: 700px) {
+  .mission-section::before,
+  .projects-section::before,
+  .records-section::before { inset: 12px -7px; border-radius: 22px; }
+}
+
+/* Final green + parrot theme */
+:root {
+  --forest: #063d25;
+  --forest-2: #096b3b;
+  --leaf: #159447;
+  --lime: #9eea35;
+  --cream: #eff9e9;
+  --ink: #12321f;
+  --muted: #5d7465;
+  --gold: #86d72f;
+}
+
+.public-site {
+  background:
+    radial-gradient(circle at 8% 20%, rgba(158,234,53,.22), transparent 25rem),
+    radial-gradient(circle at 92% 52%, rgba(21,148,71,.15), transparent 30rem),
+    #eff9e9;
+}
+
+.site-nav:not(.site-nav--solid),
+.impact-ticker,
+.mission-badge,
+.impact-section,
+.about-section,
+.site-footer {
+  border-color: rgba(158,234,53,.28);
+  background: linear-gradient(120deg, #04351f, #08703d 58%, #064c2b);
+}
+
+.site-nav:not(.site-nav--solid) .brand-button small,
+.impact-ticker b,
+.mission-badge strong,
+.project-card__content > span,
+.section-kicker,
+.hero-eyebrow { color: #9eea35; }
+
+.button-primary,
+.admin-button {
+  color: #07331e !important;
+  background: linear-gradient(135deg, #b8f35d, #83d92d) !important;
+  border-color: #9eea35 !important;
+  box-shadow: 0 10px 28px rgba(126,214,42,.25);
+}
+
+.mission-section::before,
+.projects-section::before,
+.records-section::before,
+.mission-urdu,
+.mission-english,
+.money-card,
+.ledger-card {
+  border-color: rgba(9,107,59,.13);
+  background: linear-gradient(145deg, #fafff6, #e2f3dc);
+}
+
+.visual-reel-section {
+  border-color: rgba(9,107,59,.13);
+  background: linear-gradient(135deg, #d4edca, #ecf8e5);
+}
+
+.project-card {
+  border-color: rgba(158,234,53,.45);
+  box-shadow: 0 20px 55px rgba(4,61,37,.22);
 }
