@@ -46,6 +46,13 @@ const fallbackTransactions = [
   { id: "cemetery-first-record", systemId: "cemetery", type: "income", person: "Ghulam Mustafa", amount: 15000, date: "2026-07-08", method: "Bank", details: "Cemetery Fund" },
 ];
 
+const projectUrdu = {
+  cemetery: { name: "قبرستان مینجمنٹ", description: "قبرستان کی دیکھ بھال، اخراجات اور شفاف مالی ریکارڈ۔" },
+  plantation: { name: "شجرکاری مینجمنٹ", description: "سرسبز سڑکیں، صاف فضا اور سنگراں کا بہتر مستقبل۔" },
+  mosque: { name: "مسجد مینجمنٹ", description: "مسجد کی دیکھ بھال، بہتری اور شفاف عوامی حساب۔" },
+  welfare: { name: "فلاحی منصوبے", description: "گاؤں کی اجتماعی فلاح اور ضرورت مند خاندانوں کی مدد۔" },
+};
+
 const projectImages = {
   cemetery: cemeteryImage,
   plantation: plantationImage,
@@ -295,7 +302,9 @@ function MoneyCards({ totals, light = false, language = "en" }) {
 
 function RecordsTable({ records, systems, limit, language = "en" }) {
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
-  const projectName = (id) => systems.find((system) => system.id === id)?.name || "Community Project";
+  const projectName = (id) => language === "ur"
+    ? (projectUrdu[id]?.name || systems.find((system) => system.id === id)?.name || "عوامی منصوبہ")
+    : (systems.find((system) => system.id === id)?.name || "Community Project");
 
   if (!rows.length) {
     return <div className="public-empty">{language === "ur" ? "کوئی عوامی ریکارڈ موجود نہیں۔" : "No public records found."}</div>;
@@ -419,6 +428,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const imageFor = (system) => projectImages[system.id] || welfareImage;
   const photosFor = (system) => projectGalleries[system.id] || [{ image: imageFor(system), title: system.name }];
+  const systemName = (system) => ur ? (projectUrdu[system.id]?.name || system.name) : system.name;
+  const systemDescription = (system) => ur
+    ? (projectUrdu[system.id]?.description || system.description)
+    : (system.description || system.englishName || "Transparent community project records.");
   const scrollTo = (id) => {
     setMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -437,8 +450,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
             <span className="section-kicker">PUBLIC PROJECT LEDGER</span>
-            <h1>{selectedSystem.name}</h1>
-            <p>{selectedSystem.description || selectedSystem.englishName || "Transparent community project records."}</p>
+            <h1>{systemName(selectedSystem)}</h1>
+            <p>{systemDescription(selectedSystem)}</p>
           </div>
         </section>
 
@@ -447,7 +460,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <MoneyCards totals={selectedTotals} language={language} />
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
-                <div><span className="section-kicker">PROJECT PHOTO FOLDER</span><h2>{selectedSystem.name} Gallery</h2></div>
+                <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
                 <p>{photosFor(selectedSystem).length} community photos</p>
               </div>
               <div className="project-gallery__grid">
@@ -561,7 +574,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <img src={imageFor(system)} alt={system.name} />
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content"><span>{system.icon} {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{system.name}</h3><p>{system.description || system.englishName || "Transparent community initiative."}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
+                  <div className="project-card__content"><span>{system.icon} {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{systemName(system)}</h3><p>{systemDescription(system)}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
                 </article>
               );
             })}
