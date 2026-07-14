@@ -417,9 +417,15 @@ function PublicDashboard({ onAdminLogin }) {
       <main>
         <section className="mission-section content-section" id="mission">
           <div className="mission-copy reveal">
-            <span className="section-kicker">OUR SHARED MISSION</span>
-            <h2>A cleaner village.<br />A stronger community.</h2>
-            <p>Clean &amp; Green Sangran brings residents together to care for the places that matter most — with transparent records, responsible spending and visible community impact.</p>
+            <span className="section-kicker">OUR SHARED MISSION • ہمارا مشترکہ عزم</span>
+            <div className="mission-urdu" dir="rtl" lang="ur">
+              <h2>اپنی مدد آپ، اجتماعی تعاون اور خدمتِ خلق</h2>
+              <p>اپنے گاؤں سنگراں کو صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنانا ہمارا مشترکہ عزم ہے۔</p>
+            </div>
+            <div className="mission-english">
+              <h3>Self-help, collective cooperation, and service to humanity.</h3>
+              <p>Our shared commitment is to make Sangran the region’s most distinctive, green, organised, and exemplary village through cleanliness, tree plantation, beautification, discipline, and mutual cooperation.</p>
+            </div>
             <div className="mission-points"><span><b>01</b>Community-led decisions</span><span><b>02</b>Transparent financial records</span><span><b>03</b>Long-term local impact</span></div>
           </div>
           <div className="mission-visual reveal"><img src={plantationImage} alt="Community plantation work" /><div className="mission-badge"><strong>100%</strong><span>Community<br />Transparency</span></div></div>
