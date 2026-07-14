@@ -220,6 +220,73 @@ button { cursor: pointer; }
 .project-hero__content p { max-width: 650px; color: #d6e5dc; font-size: 18px; line-height: 1.7; }
 .project-finance { padding-top: 55px; padding-bottom: 100px; }
 .project-finance .ledger-card { margin-top: 24px; }
+
+/* 2026 visual refresh */
+.site-nav:not(.site-nav--solid) {
+  top: 18px;
+  left: 50%;
+  right: auto;
+  width: min(1180px, calc(100% - 36px));
+  height: 74px;
+  padding: 0 24px;
+  border: 1px solid rgba(255,255,255,.22);
+  border-radius: 22px;
+  background: rgba(4,39,22,.82);
+  box-shadow: 0 18px 50px rgba(0,0,0,.18);
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
+}
+
+.hero-shade {
+  background: linear-gradient(90deg, rgba(2,22,12,.88), rgba(2,22,12,.44) 52%, rgba(2,22,12,.18)), linear-gradient(0deg, rgba(2,22,12,.72), transparent 55%);
+}
+
+.hero-content {
+  align-items: flex-start;
+}
+
+.hero-content::before {
+  position: absolute;
+  z-index: -1;
+  width: min(760px, 72vw);
+  height: 470px;
+  content: "";
+  border: 1px solid rgba(214,173,85,.38);
+  border-radius: 38px;
+  background: linear-gradient(135deg, rgba(3,39,21,.78), rgba(3,39,21,.28));
+  box-shadow: 0 35px 90px rgba(0,0,0,.22);
+  backdrop-filter: blur(4px);
+}
+
+.hero-content > * { margin-left: 42px; }
+.hero-content h1 { max-width: 670px; font-size: clamp(48px, 6.4vw, 86px); letter-spacing: -4px; }
+.hero-eyebrow, .section-kicker { color: var(--gold); }
+.button-primary, .admin-button { background: linear-gradient(135deg, #f0d58f, var(--gold)) !important; border-color: var(--gold) !important; }
+
+.mission-section { gap: 70px; }
+.mission-visual img { border: 8px solid white; border-radius: 34px; box-shadow: 0 28px 75px rgba(7,47,27,.16); }
+.mission-badge { border: 1px solid rgba(214,173,85,.45); border-radius: 20px; }
+
+.impact-section { background: radial-gradient(circle at 90% 10%, rgba(214,173,85,.16), transparent 28rem), linear-gradient(135deg, #042817, #0b4b2b); }
+.money-card { border-radius: 22px; }
+.money-grid--light .money-card { border-color: rgba(214,173,85,.30); background: rgba(255,255,255,.075); }
+.money-card__top b { color: var(--gold); }
+
+.project-card { border: 1px solid rgba(214,173,85,.28); border-radius: 30px; box-shadow: 0 24px 65px rgba(7,47,27,.16); }
+.project-card__content { padding: 38px; }
+.project-card__content > span { color: #f0d58f; }
+
+.ledger-card { border: 1px solid rgba(7,47,27,.08); border-radius: 26px; box-shadow: 0 24px 70px rgba(7,47,27,.10); }
+.about-section { margin: 0 24px 24px; border-radius: 34px; overflow: hidden; background: linear-gradient(135deg, #052d1a, #0d4b2c); }
+.site-footer { border-top: 1px solid rgba(214,173,85,.25); background: linear-gradient(110deg, #02170d, #06291a); }
+
+@media (max-width: 700px) {
+  .site-nav:not(.site-nav--solid) { top: 10px; width: calc(100% - 20px); padding: 0 15px; border-radius: 17px; }
+  .hero-content::before { width: calc(100% - 20px); height: 470px; border-radius: 28px; }
+  .hero-content > * { margin-left: 22px; margin-right: 22px; }
+  .hero-content h1 { font-size: 44px; }
+  .about-section { margin: 0 10px 10px; border-radius: 25px; }
+}
 .project-gallery { margin-top: 28px; padding: 30px; background: white; border: 1px solid #dfe6de; border-radius: 4px; box-shadow: 0 18px 50px rgba(3, 27, 15, .07); }
 .project-gallery__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 .project-gallery__grid figure { position: relative; min-height: 310px; margin: 0; overflow: hidden; background: #dce6dc; }
