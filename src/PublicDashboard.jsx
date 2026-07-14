@@ -33,6 +33,7 @@ import volunteerCleaningImage from "./assets/projects/cemetery/volunteer-cleanin
 import communityCleanupImage from "./assets/projects/cemetery/community-cleanup.webp";
 import fieldCleaningImage from "./assets/projects/cemetery/field-cleaning.webp";
 import gravesiteCareImage from "./assets/projects/cemetery/gravesite-care.webp";
+import brandLogo from "./assets/clean-green-sangran-logo.jpeg";
 
 const fallbackSystems = [
   { id: "cemetery", name: "Cemetery Management", description: "Respectful care, restoration and transparent cemetery funding.", icon: "🌿" },
@@ -227,14 +228,8 @@ function totalsFor(records) {
 
 function LogoMark({ compact = false }) {
   return (
-    <span className={`brand-mark ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 72 72" role="img">
-        <circle cx="36" cy="36" r="33" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
-        <path d="M36 56V30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        <path d="M36 35C21 35 15 25 17 14c13 0 23 6 24 17-1 2-3 3-5 4Z" fill="currentColor" />
-        <path d="M39 43c13 0 20-8 19-19-12 0-21 5-23 15 0 2 2 3 4 4Z" fill="currentColor" opacity="0.78" />
-        <path d="M25 58h23" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      </svg>
+    <span className={`brand-mark brand-mark--image ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
+      <img src={brandLogo} alt="" />
     </span>
   );
 }
