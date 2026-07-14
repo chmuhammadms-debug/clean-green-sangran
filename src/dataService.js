@@ -1,4 +1,19 @@
 import { supabase } from "./supabase";
+import { mergeSiteSettings } from "./siteSettings";
+
+export async function fetchSiteSettings() {
+  const { data, error } = await supabase.from("site_settings").select("settings").eq("id", "public").maybeSingle();
+  if (error) throw error;
+  return mergeSiteSettings(data?.settings || {});
+}
+
+export async function saveSiteSettings(settings) {
+  const { data: authData } = await supabase.auth.getUser();
+  const row = { id: "public", settings: mergeSiteSettings(settings), updated_at: new Date().toISOString(), updated_by: authData.user?.id || null };
+  const { error } = await supabase.from("site_settings").upsert(row, { onConflict: "id" });
+  if (error) throw error;
+  return row.settings;
+}
 
 export async function fetchDatabaseData() {
   const [{ data: projects, error: projectError }, { data: records, error: recordError }] = await Promise.all([

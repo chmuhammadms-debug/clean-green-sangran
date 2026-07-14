@@ -1,12 +1,27 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import App from "./App";
 import PublicDashboard from "./PublicDashboard";
+import { fetchSiteSettings, saveSiteSettings } from "./dataService";
+import { DEFAULT_SITE_SETTINGS } from "./siteSettings";
 
 function Root() {
   const [adminMode, setAdminMode] = useState(false);
+  const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  const loadSettings = async () => {
+    try { setSiteSettings(await fetchSiteSettings()); } catch (error) { console.warn("Website settings not ready", error); }
+  };
+  useEffect(() => { loadSettings(); }, []);
+
+  const publishSettings = async (nextSettings) => {
+    setSavingSettings(true);
+    try { setSiteSettings(await saveSiteSettings(nextSettings)); }
+    finally { setSavingSettings(false); }
+  };
 
   if (!adminMode) {
-    return <PublicDashboard onAdminLogin={() => setAdminMode(true)} />;
+    return <PublicDashboard onAdminLogin={() => setAdminMode(true)} siteSettings={siteSettings} onSettingsChanged={loadSettings} />;
   }
 
   return (
@@ -31,7 +46,7 @@ function Root() {
       >
         View Public Website
       </button>
-      <App />
+      <App siteSettings={siteSettings} onSaveSiteSettings={publishSettings} savingSiteSettings={savingSettings} />
     </>
   );
 }

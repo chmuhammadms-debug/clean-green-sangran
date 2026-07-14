@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
+import { mergeSiteSettings } from "./siteSettings";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -85,8 +86,11 @@ const heroSlides = [
 const tickerMessages = [
   { language: "ur", text: "اپنی مدد آپ، اجتماعی تعاون اور خدمتِ خلق" },
   { language: "ur", text: "اپنے گاؤں سنگراں کو صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنانا ہمارا مشترکہ عزم ہے۔" },
-  { language: "en", text: "Self-help, collective cooperation, and service to humanity." },
-  { language: "en", text: "Our shared commitment is to make Sangran a clean, green, organised, beautiful and exemplary village." },
+  { language: "ur", text: "صرف گاؤں کی فلاح و بہبود، صفائی، شجرکاری اور تعمیری امور سے متعلق پیغامات شیئر کیے جائیں۔" },
+  { language: "ur", text: "باہمی احترام، اخوت اور خوش اخلاقی کو ہر حال میں مقدم رکھا جائے۔" },
+  { language: "ur", text: "غیر متعلقہ، سیاسی، مذہبی اختلافی یا اشتہاری مواد سے اجتناب کیا جائے۔" },
+  { language: "ur", text: "ہر رکن اپنی استطاعت کے مطابق عملی کردار ادا کرے، کیونکہ گاؤں کی ترقی ہم سب کی مشترکہ ذمہ داری ہے۔" },
+  { language: "ur", text: "صاف گاؤں، سرسبز گاؤں، مثالی گاؤں — ہماری مشترکہ پہچان۔ 🌱" },
 ];
 
 const missionDocument = `کلین اینڈ گرین سنگراں
@@ -251,19 +255,19 @@ function SplashIntro({ visible }) {
   );
 }
 
-function MissionWelcome({ visible, full, onFull, onEnter }) {
+function MissionWelcome({ visible, full, onFull, onEnter, settings }) {
   if (!visible) return null;
   return (
     <div className="mission-welcome" dir="rtl" lang="ur">
       <div className={`mission-welcome__card ${full ? "mission-welcome__card--full" : ""}`}>
         <span className="mission-welcome__eyebrow">اپنی مدد آپ • اجتماعی تعاون • خدمتِ خلق</span>
-        <h1>کلین اینڈ گرین سنگراں</h1>
+        <h1>{settings.introTitle}</h1>
         {full ? (
           <pre className="mission-document">{missionDocument}</pre>
         ) : (
           <>
-            <h2>ایک مشن، ایک عہد، ایک مثالی گاؤں</h2>
-            <p>ہم سب اہلیانِ سنگراں کا مشترکہ عزم ہے کہ صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے اپنے گاؤں کو علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنائیں۔</p>
+            <h2>{settings.introSubtitle}</h2>
+            <p>{settings.introSummary}</p>
           </>
         )}
         <div className="mission-welcome__actions">
@@ -325,7 +329,14 @@ function RecordsTable({ records, systems, limit }) {
   );
 }
 
-function PublicDashboard({ onAdminLogin }) {
+function PublicDashboard({ onAdminLogin, siteSettings }) {
+  const settings = mergeSiteSettings(siteSettings);
+  const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
+  const themeStyle = {
+    "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
+    "--leaf": settings.colors.leaf, "--lime": settings.colors.lime,
+    "--cream": settings.colors.cream, "--ink": settings.colors.ink,
+  };
   const [systems, setSystems] = useState(() => loadArray("sangrahnSystems", fallbackSystems));
   const [transactions, setTransactions] = useState(() => loadArray("sangrahnTransactions", fallbackTransactions));
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
@@ -413,7 +424,7 @@ function PublicDashboard({ onAdminLogin }) {
 
   if (selectedSystem) {
     return (
-      <div className="public-site project-page">
+      <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
           <button className="brand-button" onClick={() => setSelectedSystemId(null)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
@@ -466,9 +477,9 @@ function PublicDashboard({ onAdminLogin }) {
   }
 
   return (
-    <div className="public-site">
+    <div className="public-site" style={themeStyle}>
       <SplashIntro visible={showIntro} />
-      <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} />
+      <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
 
       <header className="site-nav">
         <button className="brand-button" onClick={() => scrollTo("home")}>
@@ -504,7 +515,7 @@ function PublicDashboard({ onAdminLogin }) {
 
       <div className="impact-ticker" aria-hidden="true">
         <div className="impact-ticker__track">
-          {[...tickerMessages, ...tickerMessages].map((message, index) => (
+          {[...(dynamicTicker.length ? dynamicTicker : tickerMessages), ...(dynamicTicker.length ? dynamicTicker : tickerMessages)].map((message, index) => (
             <span className={message.language === "ur" ? "ticker-urdu" : "ticker-english"} dir={message.language === "ur" ? "rtl" : "ltr"} lang={message.language} key={`${message.language}-${index}`}>
               {message.text}<b>✦</b>
             </span>

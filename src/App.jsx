@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import CentralTools from "./CentralTools";
+import WebsiteSettings from "./WebsiteSettings";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
 
@@ -332,7 +333,7 @@ function RecordsTable({
   );
 }
 
-function App() {
+function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -1612,6 +1613,8 @@ function App() {
                 "Combined Current Balance",
               ]}
             />
+
+            <WebsiteSettings settings={siteSettings} onSave={onSaveSiteSettings} saving={savingSiteSettings} />
 
             <CentralTools
               systems={systems}

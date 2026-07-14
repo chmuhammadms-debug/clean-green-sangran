@@ -1,0 +1,23 @@
+.website-settings { margin: 30px 0; border-top: 5px solid #84cc16; }
+.settings-heading { display:flex; justify-content:space-between; gap:20px; align-items:end; margin-bottom:22px; }
+.settings-heading span { color:#65a30d; font-size:11px; font-weight:800; letter-spacing:2px; }
+.settings-heading h2 { margin:4px 0 0; color:#14532d; }
+.settings-heading p { margin:0; color:#64748b; }
+.settings-colours { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.settings-colours label,.settings-field { display:grid; gap:7px; color:#334155; font-size:13px; font-weight:700; }
+.settings-colours label>div { display:flex; gap:7px; }
+.settings-colours input[type=color] { width:50px; min-width:50px; height:42px; padding:3px; }
+.settings-colours input:not([type=color]) { min-width:0; width:100%; }
+.website-settings input,.website-settings textarea { padding:11px 12px; border:1px solid #cbd5e1; border-radius:9px; background:#fff; }
+.website-settings textarea { resize:vertical; font:inherit; line-height:1.8; }
+.settings-field { margin-top:16px; }
+.settings-text-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.settings-preview { display:flex; align-items:center; gap:14px; margin-top:20px; padding:18px; border:2px solid; border-radius:14px; }
+.settings-preview i { width:13px; height:52px; border-radius:10px; }
+.settings-preview b { font-size:20px; }.settings-preview p{margin:4px 0 0}
+.settings-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
+.settings-actions button { padding:11px 18px; border-radius:9px; font-weight:800; }
+.settings-reset { color:#475569; background:#f1f5f9; border:1px solid #cbd5e1; }
+.settings-save { color:white; background:#166534; border:1px solid #166534; }
+.settings-save:disabled { opacity:.6; }.settings-message{color:#166534;font-weight:700;text-align:right}
+@media(max-width:760px){.settings-colours{grid-template-columns:1fr 1fr}.settings-heading{display:block}.settings-heading p{margin-top:8px}.settings-text-grid{grid-template-columns:1fr}}
