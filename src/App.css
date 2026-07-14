@@ -374,6 +374,29 @@ tbody tr:last-child td {
   box-shadow: 0 25px 65px rgba(0, 0, 0, 0.3);
 }
 
+.admin-brand-logo {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.18);
+}
+
+.admin-brand-logo--login {
+  width: 112px;
+  height: 112px;
+  margin: 0 auto 16px;
+  border-color: #dcfce7;
+}
+
+.admin-brand-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 .login-card h1 {
   margin: 0;
   color: var(--green-900);

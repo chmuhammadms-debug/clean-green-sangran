@@ -57,7 +57,7 @@ button { cursor: pointer; }
 .splash-line span { display: block; width: 100%; height: 100%; background: var(--lime); transform-origin: left; animation: lineLoad 2s ease both; }
 
 .brand-mark { display: block; color: var(--leaf); }
-.brand-mark svg { display: block; width: 100%; height: 100%; }
+.brand-mark img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; box-shadow: 0 5px 20px rgba(0,0,0,.2); }
 .brand-mark--compact { width: 44px; height: 44px; }
 
 .site-nav {

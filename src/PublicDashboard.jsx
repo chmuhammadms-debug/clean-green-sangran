@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
+import brandLogo from "./assets/clean-green-sangran-logo.jpeg";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -163,13 +164,7 @@ function totalsFor(records) {
 function LogoMark({ compact = false }) {
   return (
     <span className={`brand-mark ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
-      <svg viewBox="0 0 72 72" role="img">
-        <circle cx="36" cy="36" r="33" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.45" />
-        <path d="M36 56V30" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-        <path d="M36 35C21 35 15 25 17 14c13 0 23 6 24 17-1 2-3 3-5 4Z" fill="currentColor" />
-        <path d="M39 43c13 0 20-8 19-19-12 0-21 5-23 15 0 2 2 3 4 4Z" fill="currentColor" opacity="0.78" />
-        <path d="M25 58h23" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-      </svg>
+      <img src={brandLogo} alt="" />
     </span>
   );
 }
