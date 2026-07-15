@@ -301,6 +301,7 @@ function MoneyCards({ totals, light = false, language = "en" }) {
 }
 
 function RecordsTable({ records, systems, limit, language = "en" }) {
+  const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
   const projectName = (id) => language === "ur"
     ? (projectUrdu[id]?.name || systems.find((system) => system.id === id)?.name || "عوامی منصوبہ")
@@ -310,7 +311,13 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
     return <div className="public-empty">{language === "ur" ? "کوئی عوامی ریکارڈ موجود نہیں۔" : "No public records found."}</div>;
   }
 
+  const isPdfSlip = openSlip && (
+    String(openSlip.slipData || "").startsWith("data:application/pdf")
+    || String(openSlip.slipName || "").toLowerCase().endsWith(".pdf")
+  );
+
   return (
+    <>
     <div className="public-table-wrap">
       <table className="public-table">
         <thead>
@@ -327,9 +334,9 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
               <td>{record.method}</td>
               <td>
                 {record.slipData ? (
-                  <a className="public-slip-button" href={record.slipData} target="_blank" rel="noreferrer">
+                  <button type="button" className="public-slip-button" onClick={() => setOpenSlip(record)}>
                     {language === "ur" ? "رسید دیکھیں" : "View Slip"}
-                  </a>
+                  </button>
                 ) : (
                   <span className="public-slip-empty">—</span>
                 )}
@@ -339,6 +346,28 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
         </tbody>
       </table>
     </div>
+    {openSlip && (
+      <div className="slip-viewer" role="dialog" aria-modal="true" aria-label="Donation slip">
+        <button type="button" className="slip-viewer__backdrop" onClick={() => setOpenSlip(null)} aria-label="Close slip" />
+        <div className="slip-viewer__panel">
+          <div className="slip-viewer__header">
+            <div><strong>{language === "ur" ? "عطیہ کی رسید" : "Donation Slip"}</strong><small>{openSlip.slipName || openSlip.person}</small></div>
+            <button type="button" onClick={() => setOpenSlip(null)} aria-label="Close">×</button>
+          </div>
+          <div className="slip-viewer__content">
+            {isPdfSlip ? (
+              <iframe src={openSlip.slipData} title="Donation slip PDF" />
+            ) : (
+              <img src={openSlip.slipData} alt={openSlip.slipName || "Donation slip"} />
+            )}
+          </div>
+          <a className="slip-viewer__open" href={openSlip.slipData} download={openSlip.slipName || "donation-slip"}>
+            {language === "ur" ? "رسید ڈاؤن لوڈ کریں" : "Download Slip"}
+          </a>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
