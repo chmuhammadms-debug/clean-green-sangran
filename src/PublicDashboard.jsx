@@ -600,11 +600,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <aside className="project-status-ticker" aria-label="Project status">
           <div className="project-status-ticker__item project-status-ticker__item--live">
             <span><i />{ur ? "جاری منصوبہ" : "ONGOING PROJECT"}</span>
-            <strong>{ur ? "قبرستان کی بہتری اور شجرکاری" : "Cemetery Care & Plantation"}</strong>
+            <div className="project-status-ticker__reel"><div className="project-status-ticker__moving" dir={ur ? "rtl" : "ltr"}><strong>{ur ? settings.ongoingProjectUr : settings.ongoingProjectEn}</strong><small>• {ur ? settings.ongoingProjectDateUr : settings.ongoingProjectDateEn}</small></div></div>
           </div>
           <div className="project-status-ticker__item project-status-ticker__item--soon">
             <span>{ur ? "جلد آ رہا ہے" : "COMING SOON"}</span>
-            <strong>{ur ? "صاف پانی اور گرین زون منصوبہ" : "Clean Water & Green Zone"}</strong>
+            <div className="project-status-ticker__reel"><div className="project-status-ticker__moving" dir={ur ? "rtl" : "ltr"}><strong>{ur ? settings.comingProjectUr : settings.comingProjectEn}</strong><small>• {ur ? settings.comingProjectDateUr : settings.comingProjectDateEn}</small></div></div>
           </div>
         </aside>
         <div className="hero-progress">

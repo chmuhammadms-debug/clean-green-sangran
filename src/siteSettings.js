@@ -11,6 +11,14 @@ export const DEFAULT_SITE_SETTINGS = {
   introTitle: "کلین اینڈ گرین سنگراں",
   introSubtitle: "ایک مشن، ایک عہد، ایک مثالی گاؤں",
   introSummary: "ہم سب اہلیانِ سنگراں کا مشترکہ عزم ہے کہ صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے اپنے گاؤں کو علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنائیں۔",
+  ongoingProjectEn: "Cemetery Care & Plantation",
+  ongoingProjectUr: "قبرستان کی بہتری اور شجرکاری",
+  ongoingProjectDateEn: "Work currently in progress",
+  ongoingProjectDateUr: "کام جاری ہے",
+  comingProjectEn: "Clean Water & Green Zone",
+  comingProjectUr: "صاف پانی اور گرین زون منصوبہ",
+  comingProjectDateEn: "Expected soon",
+  comingProjectDateUr: "جلد شروع ہوگا",
 };
 
 export function mergeSiteSettings(value = {}) {

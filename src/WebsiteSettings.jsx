@@ -48,6 +48,17 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           <label className="settings-field"><span>Intro subtitle</span><input dir="rtl" value={draft.introSubtitle} onChange={(e) => update("introSubtitle", e.target.value)} /></label>
         </div>
         <label className="settings-field"><span>Intro short message</span><textarea dir="rtl" rows="4" value={draft.introSummary} onChange={(e) => update("introSummary", e.target.value)} /></label>
+        <div className="settings-heading"><div><span>PROJECT TICKERS</span><h2>Ongoing & Coming Soon</h2></div><p>Public page ke dono project boxes ka naam aur date/detail yahan se edit karein.</p></div>
+        <div className="settings-text-grid">
+          <label className="settings-field"><span>Ongoing project — English</span><input value={draft.ongoingProjectEn} onChange={(e) => update("ongoingProjectEn", e.target.value)} /></label>
+          <label className="settings-field"><span>جاری منصوبہ — اردو</span><input dir="rtl" value={draft.ongoingProjectUr} onChange={(e) => update("ongoingProjectUr", e.target.value)} /></label>
+          <label className="settings-field"><span>Ongoing date/detail — English</span><input value={draft.ongoingProjectDateEn} onChange={(e) => update("ongoingProjectDateEn", e.target.value)} /></label>
+          <label className="settings-field"><span>جاری منصوبے کی تاریخ/تفصیل — اردو</span><input dir="rtl" value={draft.ongoingProjectDateUr} onChange={(e) => update("ongoingProjectDateUr", e.target.value)} /></label>
+          <label className="settings-field"><span>Coming soon project — English</span><input value={draft.comingProjectEn} onChange={(e) => update("comingProjectEn", e.target.value)} /></label>
+          <label className="settings-field"><span>آنے والا منصوبہ — اردو</span><input dir="rtl" value={draft.comingProjectUr} onChange={(e) => update("comingProjectUr", e.target.value)} /></label>
+          <label className="settings-field"><span>Expected date/detail — English</span><input value={draft.comingProjectDateEn} onChange={(e) => update("comingProjectDateEn", e.target.value)} /></label>
+          <label className="settings-field"><span>متوقع تاریخ/تفصیل — اردو</span><input dir="rtl" value={draft.comingProjectDateUr} onChange={(e) => update("comingProjectDateUr", e.target.value)} /></label>
+        </div>
         <div className="settings-preview" style={{ background: draft.colors.cream, color: draft.colors.ink, borderColor: draft.colors.leaf }}><i style={{ background: draft.colors.lime }} /><div><b style={{ color: draft.colors.forest }}>{draft.introTitle}</b><p>{draft.introSubtitle}</p></div></div>
         <div className="settings-actions"><button type="button" className="settings-reset" onClick={() => setDraft(DEFAULT_SITE_SETTINGS)}>Reset defaults</button><button type="submit" className="settings-save" disabled={saving}>{saving ? "Saving..." : "Save & Publish Changes"}</button></div>
         {message && <p className="settings-message">{message}</p>}

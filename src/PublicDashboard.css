@@ -150,15 +150,19 @@ button { cursor: pointer; }
 .hero-scroll { position: absolute; z-index: 3; left: 26px; bottom: 40px; display: flex; align-items: center; gap: 12px; transform: rotate(-90deg); transform-origin: left bottom; }
 .hero-scroll span { font-size: 9px; letter-spacing: 2px; }
 .hero-scroll i { width: 42px; height: 1px; background: rgba(255,255,255,.5); }
-.project-status-ticker { position: absolute; z-index: 4; top: 50%; right: max(28px, calc((100vw - 1200px) / 2)); width: min(290px, 25vw); display: grid; gap: 10px; transform: translateY(-50%); }
-.project-status-ticker__item { padding: 14px 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 15px; background: rgba(4,35,21,.78); box-shadow: 0 14px 40px rgba(0,0,0,.18); backdrop-filter: blur(12px); }
+.project-status-ticker { position: absolute; z-index: 4; top: 50%; right: max(28px, calc((100vw - 1200px) / 2)); width: min(360px, 30vw); display: grid; gap: 14px; transform: translateY(-50%); }
+.project-status-ticker__item { padding: 20px 22px; border: 1px solid rgba(255,255,255,.22); border-radius: 19px; background: rgba(4,35,21,.78); box-shadow: 0 14px 40px rgba(0,0,0,.18); backdrop-filter: blur(12px); overflow: hidden; }
 .project-status-ticker__item span, .project-status-ticker__item strong { display: block; }
-.project-status-ticker__item span { color: #c9dfcf; font-size: 9px; font-weight: 900; letter-spacing: 1.4px; }
-.project-status-ticker__item strong { margin-top: 6px; color: #fff; font-size: 13px; line-height: 1.4; }
+.project-status-ticker__item span { color: #c9dfcf; font-size: 11px; font-weight: 900; letter-spacing: 1.4px; }
+.project-status-ticker__reel { width: 100%; margin-top: 9px; overflow: hidden; white-space: nowrap; }
+.project-status-ticker__moving { display: inline-flex; align-items: center; gap: 14px; min-width: max-content; animation: projectReel 10s linear infinite; }
+.project-status-ticker__item strong { color: #fff; font-size: 17px; line-height: 1.5; }
+.project-status-ticker__item small { color: rgba(255,255,255,.68); font-size: 12px; }
 .project-status-ticker__item--live span { color: #b8f36b; }
 .project-status-ticker__item--live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #9eea3d; box-shadow: 0 0 0 5px rgba(158,234,61,.14); animation: statusPulse 1.8s ease infinite; }
 .project-status-ticker__item--soon { border-color: rgba(219,181,255,.34); background: rgba(55,24,70,.68); }
 .project-status-ticker__item--soon span { color: #ddb9ef; }
+@keyframes projectReel { from { transform: translateX(105%); } to { transform: translateX(-105%); } }
 
 .records-modal { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 20px; }
 .records-modal__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(2,20,12,.84); cursor: pointer; }
