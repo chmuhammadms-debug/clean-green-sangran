@@ -259,6 +259,10 @@ button { cursor: pointer; }
 .about-section { display: grid; grid-template-columns: 1.1fr .9fr; min-height: 680px; color: white; background: var(--forest); }
 .about-image img { width: 100%; height: 100%; object-fit: cover; }
 .about-copy { display: flex; flex-direction: column; justify-content: center; padding: 80px max(48px, calc((100vw - 1200px) / 2)); padding-left: 75px; }
+.about-copy--urdu { text-align: right; }
+.about-copy--urdu .section-kicker { letter-spacing: 0; }
+.about-copy--urdu > p { line-height: 2; }
+.about-copy--urdu .button-primary { align-self: flex-end; }
 .about-copy > p { color: #abc1b1; }
 .about-copy .button-primary { align-self: flex-start; margin-top: 20px; }
 

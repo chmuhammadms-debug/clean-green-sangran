@@ -630,8 +630,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </section>
 
         <section className="about-section" id="about">
-          <div className="about-image"><img src={cemeteryImage} alt="A clean green community space" /></div>
-          <div className="about-copy reveal"><span className="section-kicker">BUILT ON TRUST</span><h2>One village.<br />One shared responsibility.</h2><p>This platform is more than a record book. It is a public promise that community contributions will remain visible, organised and connected to meaningful work.</p><button className="button-primary" onClick={onAdminLogin}>Committee admin access <span>→</span></button></div>
+          <div className="about-image"><img src={cemeteryImage} alt={ur ? "صاف اور سرسبز سنگراں" : "A clean and green Sangran"} /></div>
+          <div className={`about-copy reveal ${ur ? "about-copy--urdu" : ""}`} dir={ur ? "rtl" : "ltr"} lang={ur ? "ur" : "en"}>
+            <span className="section-kicker">{ur ? "اعتماد سے تعمیر، خدمت سے پہچان" : "ROOTED IN TRUST"}</span>
+            <h2>{ur ? <>ایک گاؤں، ایک خواب،<br />ایک مشترکہ ذمہ داری۔</> : <>One village. One vision.<br />A legacy we build together.</>}</h2>
+            <p>{ur
+              ? "کلین اینڈ گرین سنگراں محض ایک ویب سائٹ یا حساب کی کتاب نہیں، بلکہ اپنے گاؤں سے محبت کا ایک زندہ عہد ہے۔ یہاں ہر عطیہ اعتماد بنتا ہے، ہر منصوبہ مشترکہ کوشش کی گواہی دیتا ہے، اور ہر چھوٹا قدم آنے والی نسلوں کے لیے ایک بہتر، سرسبز اور خود کفیل سنگراں کی بنیاد رکھتا ہے۔"
+              : "Clean & Green Sangran is more than a website or a ledger; it is a living promise to our village. Here, every donation becomes trust, every project reflects collective effort, and every small action helps build a greener, stronger and self-reliant Sangran for generations to come."}</p>
+            <button className="button-primary" onClick={onAdminLogin}>{ur ? "کمیٹی ایڈمن داخلہ" : "Committee admin access"} <span>{ur ? "←" : "→"}</span></button>
+          </div>
         </section>
       </main>
 
