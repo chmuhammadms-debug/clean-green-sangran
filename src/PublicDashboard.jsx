@@ -109,6 +109,11 @@ function shuffledSlides(slides) {
     const randomIndex = Math.floor(Math.random() * (index + 1));
     [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
   }
+  const lastFirstSlide = sessionStorage.getItem("cgs-last-first-slide");
+  if (shuffled.length > 1 && shuffled[0].id === lastFirstSlide) {
+    [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+  }
+  sessionStorage.setItem("cgs-last-first-slide", shuffled[0]?.id || "");
   return shuffled;
 }
 
@@ -597,7 +602,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <div className="hero-scroll"><span>SCROLL TO DISCOVER</span><i /></div>
       </section>
 
-      <div className="impact-ticker" aria-hidden="true">
+      <div className={`impact-ticker ${ur ? "impact-ticker--urdu" : "impact-ticker--english"}`} aria-hidden="true">
         <div className="impact-ticker__track">
           {[...(ur ? (dynamicTicker.length ? dynamicTicker : tickerMessages) : tickerMessagesEnglish), ...(ur ? (dynamicTicker.length ? dynamicTicker : tickerMessages) : tickerMessagesEnglish)].map((message, index) => (
             <span className={message.language === "ur" ? "ticker-urdu" : "ticker-english"} dir={message.language === "ur" ? "rtl" : "ltr"} lang={message.language} key={`${message.language}-${index}`}>

@@ -152,6 +152,7 @@ button { cursor: pointer; }
 
 .impact-ticker { padding: 17px 0; color: #d7f8df; background: var(--forest); overflow: hidden; }
 .impact-ticker__track { display: flex; width: max-content; animation: ticker 48s linear infinite; }
+.impact-ticker--english .impact-ticker__track { animation-name: tickerEnglish; }
 .impact-ticker span { display: flex; align-items: center; gap: 34px; padding-right: 34px; font-family: "Manrope", sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
 .impact-ticker b { color: var(--lime); }
 .impact-ticker .ticker-urdu { font-family: "Noto Nastaliq Urdu", serif; font-size: 15px; font-weight: 600; line-height: 1.8; letter-spacing: 0; text-transform: none; }
@@ -465,6 +466,10 @@ button { cursor: pointer; }
 @keyframes ticker {
   from { transform: translateX(-50%); }
   to { transform: translateX(0); }
+}
+@keyframes tickerEnglish {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 @keyframes visualReel { to { transform: translateX(calc(-50% - 8px)); } }
 
