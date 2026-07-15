@@ -314,7 +314,7 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
     <div className="public-table-wrap">
       <table className="public-table">
         <thead>
-          <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th></tr>
+          <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
         </thead>
         <tbody>
           {rows.map((record) => (
@@ -325,6 +325,15 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
               <td>{projectName(record.systemId)}</td>
               <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
               <td>{record.method}</td>
+              <td>
+                {record.slipData ? (
+                  <a className="public-slip-button" href={record.slipData} target="_blank" rel="noreferrer">
+                    {language === "ur" ? "رسید دیکھیں" : "View Slip"}
+                  </a>
+                ) : (
+                  <span className="public-slip-empty">—</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -598,6 +607,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       </main>
 
       <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => scrollTo("transparency")}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav><small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
+      <nav className="mobile-app-nav" aria-label="Mobile app navigation">
+        <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
+        <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
+        <button onClick={() => scrollTo("transparency")}><b>Rs</b><span>{ur ? "حساب" : "Records"}</span></button>
+        <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
+        <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
+      </nav>
     </div>
   );
 }

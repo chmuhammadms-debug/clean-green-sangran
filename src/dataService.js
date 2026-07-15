@@ -54,7 +54,7 @@ export async function fetchPublicDatabaseData() {
   const [{ data: projects, error: projectError }, { data: records, error: recordError }] = await Promise.all([
     supabase.from("projects").select("id, slug, name, description, icon").eq("is_active", true).order("created_at"),
     supabase.from("transactions")
-      .select("id, project_id, transaction_type, donor_name, amount, payment_method, payment_status, purpose, transaction_date")
+      .select("id, project_id, transaction_type, donor_name, amount, payment_method, payment_status, purpose, transaction_date, receipt_name, receipt_url")
       .eq("is_public", true)
       .eq("payment_status", "verified")
       .order("transaction_date", { ascending: false }),
@@ -75,6 +75,8 @@ export async function fetchPublicDatabaseData() {
       date: record.transaction_date,
       method: record.payment_method,
       details: record.purpose || "",
+      slipName: record.receipt_name || "",
+      slipData: record.receipt_url || "",
     })).filter((record) => record.systemId),
   };
 }
