@@ -67,6 +67,9 @@ const heroSlides = [
     eyebrow: "Dignity & Care",
     title: "Honouring every resting place.",
     copy: "A shared commitment to a clean, peaceful and respectfully maintained cemetery for our community.",
+    eyebrowUr: "عزت و احترام",
+    titleUr: "ہر آخری آرام گاہ کا احترام۔",
+    copyUr: "اپنے قبرستان کو صاف، پُرسکون اور باوقار رکھنے کا ہمارا مشترکہ عزم۔",
   },
   {
     id: "plantation",
@@ -74,6 +77,9 @@ const heroSlides = [
     eyebrow: "A Greener Tomorrow",
     title: "Planting hope, one tree at a time.",
     copy: "Village-led plantation that brings shade, cleaner air and a greener future to Sangran.",
+    eyebrowUr: "سرسبز مستقبل",
+    titleUr: "ایک پودا، امید کی ایک نئی کرن۔",
+    copyUr: "گاؤں کی اجتماعی شجرکاری جو سنگراں کو سایہ، صاف ہوا اور سرسبز مستقبل دے رہی ہے۔",
   },
   {
     id: "mosque",
@@ -81,6 +87,9 @@ const heroSlides = [
     eyebrow: "Faith & Community",
     title: "Serving our mosque, together.",
     copy: "Transparent community support for maintenance, improvement and a welcoming place of worship.",
+    eyebrowUr: "ایمان اور اجتماعیت",
+    titleUr: "اپنی مسجد کی خدمت، سب کے ساتھ۔",
+    copyUr: "مسجد کی دیکھ بھال، بہتری اور پُرسکون ماحول کے لیے شفاف اجتماعی تعاون۔",
   },
   {
     id: "welfare",
@@ -88,8 +97,20 @@ const heroSlides = [
     eyebrow: "Compassion in Action",
     title: "Care that reaches every home.",
     copy: "Organised welfare initiatives that protect dignity and turn collective generosity into real impact.",
+    eyebrowUr: "عملی خدمت",
+    titleUr: "ایسی خدمت جو ہر گھر تک پہنچے۔",
+    copyUr: "منظم فلاحی کوششیں جو عزتِ نفس کی حفاظت اور اجتماعی سخاوت کو حقیقی تبدیلی میں بدلتی ہیں۔",
   },
 ];
+
+function shuffledSlides(slides) {
+  const shuffled = [...slides];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled;
+}
 
 const tickerMessages = [
   { language: "ur", text: "اپنی مدد آپ، اجتماعی تعاون اور خدمتِ خلق" },
@@ -99,6 +120,14 @@ const tickerMessages = [
   { language: "ur", text: "غیر متعلقہ، سیاسی، مذہبی اختلافی یا اشتہاری مواد سے اجتناب کیا جائے۔" },
   { language: "ur", text: "ہر رکن اپنی استطاعت کے مطابق عملی کردار ادا کرے، کیونکہ گاؤں کی ترقی ہم سب کی مشترکہ ذمہ داری ہے۔" },
   { language: "ur", text: "صاف گاؤں، سرسبز گاؤں، مثالی گاؤں — ہماری مشترکہ پہچان۔ 🌱" },
+];
+
+const tickerMessagesEnglish = [
+  { language: "en", text: "Self-help, collective cooperation and service to humanity." },
+  { language: "en", text: "Together, we are building a cleaner, greener and more exemplary Sangran." },
+  { language: "en", text: "Every contribution is a promise; every project is shared progress." },
+  { language: "en", text: "Respect, unity and transparency are the foundations of our mission." },
+  { language: "en", text: "A clean village, a green village, an exemplary village — our shared identity. 🌱" },
 ];
 
 const missionDocument = `کلین اینڈ گرین سنگراں
@@ -384,6 +413,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
+  const [slides] = useState(() => shuffledSlides(heroSlides));
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSystemId, setSelectedSystemId] = useState(null);
@@ -437,10 +467,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setSlideIndex((current) => (current + 1) % heroSlides.length);
+      setSlideIndex((current) => (current + 1) % slides.length);
     }, 5200);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [slides.length]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -551,25 +581,25 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       </header>
 
       <section className="hero" id="home">
-        {heroSlides.map((slide, index) => (
+        {slides.map((slide, index) => (
           <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }} />
         ))}
         <div className="hero-shade" />
-        <div className="hero-content">
-          <span className="hero-eyebrow">{heroSlides[slideIndex].eyebrow}</span>
-          <h1>{heroSlides[slideIndex].title}</h1>
-          <p>{heroSlides[slideIndex].copy}</p>
+        <div className={`hero-content ${ur ? "hero-content--urdu" : ""}`}>
+          <span className="hero-eyebrow">{ur ? slides[slideIndex].eyebrowUr : slides[slideIndex].eyebrow}</span>
+          <h1 dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].titleUr : slides[slideIndex].title}</h1>
+          <p dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].copyUr : slides[slideIndex].copy}</p>
           <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>{ur ? "ہمارے منصوبے دیکھیں" : "Explore our projects"} <span>→</span></button><button className="button-ghost" onClick={() => scrollTo("transparency")}>{ur ? "عوامی ریکارڈ دیکھیں" : "View public records"}</button></div>
         </div>
         <div className="hero-progress">
-          {heroSlides.map((slide, index) => <button aria-label={`Show ${slide.eyebrow}`} className={index === slideIndex ? "active" : ""} key={slide.id} onClick={() => setSlideIndex(index)}><span /></button>)}
+          {slides.map((slide, index) => <button aria-label={`Show ${slide.eyebrow}`} className={index === slideIndex ? "active" : ""} key={slide.id} onClick={() => setSlideIndex(index)}><span /></button>)}
         </div>
         <div className="hero-scroll"><span>SCROLL TO DISCOVER</span><i /></div>
       </section>
 
       <div className="impact-ticker" aria-hidden="true">
         <div className="impact-ticker__track">
-          {[...(dynamicTicker.length ? dynamicTicker : tickerMessages), ...(dynamicTicker.length ? dynamicTicker : tickerMessages)].map((message, index) => (
+          {[...(ur ? (dynamicTicker.length ? dynamicTicker : tickerMessages) : tickerMessagesEnglish), ...(ur ? (dynamicTicker.length ? dynamicTicker : tickerMessages) : tickerMessagesEnglish)].map((message, index) => (
             <span className={message.language === "ur" ? "ticker-urdu" : "ticker-english"} dir={message.language === "ur" ? "rtl" : "ltr"} lang={message.language} key={`${message.language}-${index}`}>
               {message.text}<b>✦</b>
             </span>

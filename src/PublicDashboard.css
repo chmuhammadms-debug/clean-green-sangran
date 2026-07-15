@@ -303,6 +303,9 @@ button { cursor: pointer; }
 .hero-content {
   align-items: flex-start;
 }
+.hero-content--urdu { text-align: right; }
+.hero-content--urdu .hero-eyebrow { letter-spacing: 0; }
+.hero-content--urdu p { line-height: 1.9; }
 
 .hero-content::before {
   position: absolute;
