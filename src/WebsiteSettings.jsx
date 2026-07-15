@@ -18,6 +18,18 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
   const updateColor = (key, value) => setDraft((current) => ({
     ...current, colors: { ...current.colors, [key]: value },
   }));
+  const addSocialLink = () => setDraft((current) => ({
+    ...current,
+    socialLinks: [...(current.socialLinks || []), { id: `${Date.now()}-${Math.random()}`, name: "Facebook", url: "", enabled: true }],
+  }));
+  const updateSocialLink = (id, key, value) => setDraft((current) => ({
+    ...current,
+    socialLinks: (current.socialLinks || []).map((link) => link.id === id ? { ...link, [key]: value } : link),
+  }));
+  const removeSocialLink = (id) => setDraft((current) => ({
+    ...current,
+    socialLinks: (current.socialLinks || []).filter((link) => link.id !== id),
+  }));
 
   const submit = async (event) => {
     event.preventDefault();
@@ -47,6 +59,21 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           <label className="settings-field"><span>Intro title</span><input dir="rtl" value={draft.introTitle} onChange={(e) => update("introTitle", e.target.value)} /></label>
           <label className="settings-field"><span>Intro subtitle</span><input dir="rtl" value={draft.introSubtitle} onChange={(e) => update("introSubtitle", e.target.value)} /></label>
         </div>
+        <div className="settings-heading"><div><span>SOCIAL MEDIA</span><h2>Social Media Accounts</h2></div><p>Jab chahein account add, hide ya remove karein. Mukammal link https:// ke sath paste karein.</p></div>
+        <div className="social-settings-list">
+          {(draft.socialLinks || []).map((link) => (
+            <div className="social-settings-row" key={link.id}>
+              <select value={link.name} onChange={(e) => updateSocialLink(link.id, "name", e.target.value)}>
+                <option>Facebook</option><option>Instagram</option><option>YouTube</option><option>WhatsApp</option><option>TikTok</option><option>X / Twitter</option><option>LinkedIn</option><option>Other</option>
+              </select>
+              <input type="url" placeholder="https://..." value={link.url} onChange={(e) => updateSocialLink(link.id, "url", e.target.value)} />
+              <label className="social-settings-toggle"><input type="checkbox" checked={link.enabled !== false} onChange={(e) => updateSocialLink(link.id, "enabled", e.target.checked)} /><span>{link.enabled !== false ? "Visible" : "Hidden"}</span></label>
+              <button type="button" className="social-settings-remove" onClick={() => removeSocialLink(link.id)}>Remove</button>
+            </div>
+          ))}
+          {!(draft.socialLinks || []).length && <p className="social-settings-empty">Abhi koi social media account attach nahi hai.</p>}
+        </div>
+        <button type="button" className="social-settings-add" onClick={addSocialLink}>+ Add Social Media Account</button>
         <label className="settings-field"><span>Intro short message</span><textarea dir="rtl" rows="4" value={draft.introSummary} onChange={(e) => update("introSummary", e.target.value)} /></label>
         <div className="settings-heading"><div><span>PROJECT TICKERS</span><h2>Ongoing & Coming Soon</h2></div><p>Public page ke dono project boxes ka naam aur date/detail yahan se edit karein.</p></div>
         <div className="settings-text-grid">

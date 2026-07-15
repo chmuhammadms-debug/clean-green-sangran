@@ -21,3 +21,11 @@
 .settings-save { color:white; background:#166534; border:1px solid #166534; }
 .settings-save:disabled { opacity:.6; }.settings-message{color:#166534;font-weight:700;text-align:right}
 @media(max-width:760px){.settings-colours{grid-template-columns:1fr 1fr}.settings-heading{display:block}.settings-heading p{margin-top:8px}.settings-text-grid{grid-template-columns:1fr}}
+.social-settings-list { display: grid; gap: 10px; margin-top: 12px; }
+.social-settings-row { display: grid; grid-template-columns: 150px minmax(220px, 1fr) 100px auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid #dce6df; border-radius: 14px; background: #f8fbf9; }
+.social-settings-row select, .social-settings-row input[type="url"] { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #ccd9d0; border-radius: 9px; background: white; }
+.social-settings-toggle { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.social-settings-remove { padding: 10px 13px; border: 0; border-radius: 9px; color: #8b1e2d; background: #fde8eb; font-weight: 800; }
+.social-settings-add { margin-top: 12px; padding: 12px 17px; border: 0; border-radius: 10px; color: white; background: #176439; font-weight: 800; }
+.social-settings-empty { margin: 0; padding: 18px; border: 1px dashed #cbd8cf; border-radius: 12px; color: #607468; text-align: center; }
+@media (max-width: 760px) { .social-settings-row { grid-template-columns: 1fr; } }

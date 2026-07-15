@@ -19,6 +19,7 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectUr: "صاف پانی اور گرین زون منصوبہ",
   comingProjectDateEn: "Expected soon",
   comingProjectDateUr: "جلد شروع ہوگا",
+  socialLinks: [],
 };
 
 export function mergeSiteSettings(value = {}) {
@@ -29,5 +30,6 @@ export function mergeSiteSettings(value = {}) {
       ...DEFAULT_SITE_SETTINGS.colors,
       ...(value.colors || {}),
     },
+    socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
   };
 }

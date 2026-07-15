@@ -696,7 +696,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </div>
       )}
 
-      <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => scrollTo("transparency")}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav><small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
+      <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => setShowPublicRecords(true)}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav>{settings.socialLinks?.some((link) => link.enabled !== false && link.url) && <div className="footer-social-links">{settings.socialLinks.filter((link) => link.enabled !== false && link.url).map((link) => <a href={link.url} key={link.id || `${link.name}-${link.url}`} target="_blank" rel="noreferrer" title={link.name} aria-label={link.name}><span>{link.name === "X / Twitter" ? "X" : link.name.slice(0, 1).toUpperCase()}</span>{link.name}</a>)}</div>}<small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
       <nav className="mobile-app-nav" aria-label="Mobile app navigation">
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
