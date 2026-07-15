@@ -676,3 +676,81 @@ button { cursor: pointer; }
   border-color: rgba(158,234,53,.45);
   box-shadow: 0 20px 55px rgba(4,61,37,.22);
 }
+
+/* Purpose-built mobile layout: compact, scannable and never one giant card. */
+@media (max-width: 600px) {
+  .public-site { overflow-x: hidden; }
+  .site-nav { top: 6px !important; width: calc(100% - 12px) !important; height: 62px; padding: 0 11px !important; border-radius: 14px !important; }
+  .brand-mark--compact { width: 36px; height: 36px; }
+  .brand-button span b { font-size: 13px; }
+  .brand-button span small { font-size: 8px; letter-spacing: 2px; }
+  .mobile-menu { width: 38px; height: 38px; padding: 9px; }
+  .nav-links { top: 66px; left: 6px; right: 6px; max-height: calc(100vh - 82px); padding: 12px; border-radius: 14px; overflow-y: auto; }
+  .nav-links > button { min-height: 40px; padding: 8px 12px; border-radius: 9px; }
+
+  .hero { min-height: 520px; }
+  .hero-content { width: calc(100% - 22px); padding-top: 64px; }
+  .hero-content::before { width: 100%; height: 350px; border-radius: 20px; }
+  .hero-content > * { margin-left: 18px; margin-right: 18px; }
+  .hero-content h1 { margin-top: 10px; font-size: 35px; line-height: 1.05; letter-spacing: -1.7px; }
+  .hero-content p { display: -webkit-box; max-width: 95%; font-size: 13px; line-height: 1.55; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .hero-eyebrow { font-size: 9px; letter-spacing: 1.5px; }
+  .hero-actions { flex-direction: row; gap: 7px; }
+  .hero-actions button { flex: 1; min-height: 42px; padding: 9px 10px; font-size: 11px; }
+  .hero-progress { bottom: 14px; }
+
+  .impact-ticker { padding: 10px 0; }
+  .impact-ticker .ticker-urdu { font-size: 13px; }
+  .mission-section, .projects-section, .records-section { padding-top: 52px; padding-bottom: 52px; }
+  .mission-section { gap: 24px; }
+  .mission-copy h2, .section-heading h2, .about-copy h2 { font-size: 29px; line-height: 1.2; letter-spacing: -1px; }
+  .mission-urdu, .mission-english { padding: 17px; }
+  .mission-points { grid-template-columns: 1fr; gap: 8px; }
+  .mission-visual { height: 280px; border-radius: 18px; }
+  .mission-badge { right: 10px; bottom: 10px; left: auto; padding: 12px; }
+
+  .impact-section { padding: 52px 0; }
+  .money-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .money-card { min-width: 0; padding: 14px 12px; border-radius: 13px; }
+  .money-card:last-child { grid-column: 1 / -1; }
+  .money-card__top { font-size: 9px; letter-spacing: .25px; }
+  .money-card > strong { margin: 11px 0 4px; font-size: 23px; letter-spacing: -1px; }
+  .money-card small { font-size: 9px; }
+  .impact-numbers { gap: 0; margin-top: 22px; }
+  .impact-numbers div { padding: 15px 6px; }
+  .impact-numbers strong { font-size: 26px; }
+  .impact-numbers span { font-size: 9px; }
+
+  .project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .project-card { min-height: 245px; border-radius: 15px; }
+  .project-card__number { top: 12px; right: 12px; }
+  .project-card__shade { background: linear-gradient(0deg, rgba(2,25,13,.96), rgba(2,25,13,.08) 75%); }
+  .project-card__content { padding: 13px; transform: none; }
+  .project-card__content > span { font-size: 7px; letter-spacing: .5px; }
+  .project-card__content h3 { margin: 5px 0; font-size: 17px; line-height: 1.15; letter-spacing: -.4px; }
+  .project-card__content p { display: none; }
+  .project-card__content > div { padding-top: 8px; }
+  .project-card__content > div b { font-size: 8px; }
+  .project-card__content > div strong { font-size: 12px; }
+  .project-card__content button { margin-top: 9px; font-size: 9px; opacity: 1; }
+
+  .visual-reel-section { padding: 52px 0; }
+  .visual-reel figure { width: 72vw; height: 235px; }
+  .visual-reel figcaption { left: 14px; right: 14px; bottom: 13px; }
+  .visual-reel figcaption b { font-size: 15px; }
+  .about-image { height: 260px; }
+  .about-copy { padding: 42px 20px; }
+
+  .public-table { min-width: 0; table-layout: fixed; }
+  .public-table th, .public-table td { padding: 11px 5px; font-size: 10px; overflow-wrap: anywhere; }
+  .public-table th:nth-child(4), .public-table td:nth-child(4),
+  .public-table th:nth-child(6), .public-table td:nth-child(6) { display: none; }
+  .public-table th:nth-child(1) { width: 23%; }
+  .public-table th:nth-child(2) { width: 20%; }
+  .public-table th:nth-child(3) { width: 34%; }
+  .public-table th:nth-child(5) { width: 23%; }
+  .record-pill { padding: 4px 5px; font-size: 7px; }
+  .site-footer { grid-template-columns: auto 1fr; gap: 10px; padding: 25px 15px; }
+  .site-footer nav { gap: 8px; }
+  .site-footer button { font-size: 10px; }
+}
