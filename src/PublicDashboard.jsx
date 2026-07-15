@@ -424,6 +424,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [selectedSystemId, setSelectedSystemId] = useState(null);
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
+  const [showPublicRecords, setShowPublicRecords] = useState(false);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
   const changeLanguage = () => setLanguage((current) => {
@@ -578,7 +579,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
-          <button onClick={() => scrollTo("transparency")}>{ur ? "شفافیت" : "Transparency"}</button>
+          <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
           <button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
@@ -594,8 +595,18 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <span className="hero-eyebrow">{ur ? slides[slideIndex].eyebrowUr : slides[slideIndex].eyebrow}</span>
           <h1 dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].titleUr : slides[slideIndex].title}</h1>
           <p dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].copyUr : slides[slideIndex].copy}</p>
-          <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>{ur ? "ہمارے منصوبے دیکھیں" : "Explore our projects"} <span>→</span></button><button className="button-ghost" onClick={() => scrollTo("transparency")}>{ur ? "عوامی ریکارڈ دیکھیں" : "View public records"}</button></div>
+          <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>{ur ? "ہمارے منصوبے دیکھیں" : "Explore our projects"} <span>→</span></button><button className="button-ghost" onClick={() => setShowPublicRecords(true)}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button></div>
         </div>
+        <aside className="project-status-ticker" aria-label="Project status">
+          <div className="project-status-ticker__item project-status-ticker__item--live">
+            <span><i />{ur ? "جاری منصوبہ" : "ONGOING PROJECT"}</span>
+            <strong>{ur ? "قبرستان کی بہتری اور شجرکاری" : "Cemetery Care & Plantation"}</strong>
+          </div>
+          <div className="project-status-ticker__item project-status-ticker__item--soon">
+            <span>{ur ? "جلد آ رہا ہے" : "COMING SOON"}</span>
+            <strong>{ur ? "صاف پانی اور گرین زون منصوبہ" : "Clean Water & Green Zone"}</strong>
+          </div>
+        </aside>
         <div className="hero-progress">
           {slides.map((slide, index) => <button aria-label={`Show ${slide.eyebrow}`} className={index === slideIndex ? "active" : ""} key={slide.id} onClick={() => setSlideIndex(index)}><span /></button>)}
         </div>
@@ -659,11 +670,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="visual-reel"><div className="visual-reel__track">{[...gallerySlides, ...gallerySlides].map((slide, index) => <figure key={`${slide.id}-reel-${index}`}><img src={slide.image} alt={slide.title} /><figcaption><span>{slide.eyebrow}</span><b>{slide.title}</b></figcaption></figure>)}</div></div>
         </section>
 
-        <section className="records-section content-section">
-          <div className="section-heading reveal"><div><span className="section-kicker">LATEST ACTIVITY</span><h2>Transparency,<br />as it happens.</h2></div><p>The latest public donations and expenses across all projects.</p></div>
-          <div className="ledger-card reveal"><RecordsTable records={recentRecords} systems={systems} limit={8} language={language} /></div>
-        </section>
-
         <section className="about-section" id="about">
           <div className="about-image"><img src={cemeteryImage} alt={ur ? "صاف اور سرسبز سنگراں" : "A clean and green Sangran"} /></div>
           <div className={`about-copy reveal ${ur ? "about-copy--urdu" : ""}`} dir={ur ? "rtl" : "ltr"} lang={ur ? "ur" : "en"}>
@@ -677,11 +683,24 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </section>
       </main>
 
+      {showPublicRecords && (
+        <div className="records-modal" role="dialog" aria-modal="true" aria-label="Public donation records">
+          <button className="records-modal__backdrop" onClick={() => setShowPublicRecords(false)} aria-label="Close records" />
+          <div className="records-modal__panel">
+            <div className="records-modal__header" dir={ur ? "rtl" : "ltr"}>
+              <div><span className="section-kicker">{ur ? "شفاف عوامی حساب" : "PUBLIC TRANSPARENCY"}</span><h2>{ur ? "عطیات اور اخراجات کا ریکارڈ" : "Donation & Expense Records"}</h2><p>{ur ? "تمام تصدیق شدہ عوامی ریکارڈ ایک جگہ۔" : "All verified public records in one place."}</p></div>
+              <button onClick={() => setShowPublicRecords(false)} aria-label="Close">×</button>
+            </div>
+            <div className="records-modal__body"><RecordsTable records={recentRecords} systems={systems} language={language} /></div>
+          </div>
+        </div>
+      )}
+
       <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => scrollTo("transparency")}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav><small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
       <nav className="mobile-app-nav" aria-label="Mobile app navigation">
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
-        <button onClick={() => scrollTo("transparency")}><b>Rs</b><span>{ur ? "حساب" : "Records"}</span></button>
+        <button onClick={() => setShowPublicRecords(true)}><b>Rs</b><span>{ur ? "حساب" : "Records"}</span></button>
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>

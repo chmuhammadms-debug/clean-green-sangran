@@ -124,6 +124,7 @@ button { cursor: pointer; }
 .nav-links > button:hover, .nav-link:hover { color: white; }
 .admin-button { padding: 12px 19px !important; color: var(--forest) !important; font-weight: 700 !important; background: var(--lime) !important; border: 0 !important; border-radius: 100px !important; transition: transform .2s ease, box-shadow .2s ease; }
 .admin-button:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(182,230,80,.25); }
+.nav-records-button { padding: 10px 16px !important; color: #fff !important; border-radius: 999px !important; background: var(--leaf) !important; }
 .mobile-menu { display: none; width: 40px; padding: 8px; background: none; border: 0; }
 .mobile-menu i { display: block; height: 2px; margin: 5px 0; background: white; }
 
@@ -149,6 +150,24 @@ button { cursor: pointer; }
 .hero-scroll { position: absolute; z-index: 3; left: 26px; bottom: 40px; display: flex; align-items: center; gap: 12px; transform: rotate(-90deg); transform-origin: left bottom; }
 .hero-scroll span { font-size: 9px; letter-spacing: 2px; }
 .hero-scroll i { width: 42px; height: 1px; background: rgba(255,255,255,.5); }
+.project-status-ticker { position: absolute; z-index: 4; top: 50%; right: max(28px, calc((100vw - 1200px) / 2)); width: min(290px, 25vw); display: grid; gap: 10px; transform: translateY(-50%); }
+.project-status-ticker__item { padding: 14px 16px; border: 1px solid rgba(255,255,255,.22); border-radius: 15px; background: rgba(4,35,21,.78); box-shadow: 0 14px 40px rgba(0,0,0,.18); backdrop-filter: blur(12px); }
+.project-status-ticker__item span, .project-status-ticker__item strong { display: block; }
+.project-status-ticker__item span { color: #c9dfcf; font-size: 9px; font-weight: 900; letter-spacing: 1.4px; }
+.project-status-ticker__item strong { margin-top: 6px; color: #fff; font-size: 13px; line-height: 1.4; }
+.project-status-ticker__item--live span { color: #b8f36b; }
+.project-status-ticker__item--live i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; background: #9eea3d; box-shadow: 0 0 0 5px rgba(158,234,61,.14); animation: statusPulse 1.8s ease infinite; }
+.project-status-ticker__item--soon { border-color: rgba(219,181,255,.34); background: rgba(55,24,70,.68); }
+.project-status-ticker__item--soon span { color: #ddb9ef; }
+
+.records-modal { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 20px; }
+.records-modal__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(2,20,12,.84); cursor: pointer; }
+.records-modal__panel { position: relative; width: min(1120px, 96vw); max-height: 90vh; overflow: hidden; border-radius: 24px; background: #f7faf7; box-shadow: 0 30px 90px rgba(0,0,0,.4); }
+.records-modal__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding: 22px 25px 18px; border-bottom: 1px solid #e0e8e2; }
+.records-modal__header h2 { margin: 6px 0 3px; color: var(--ink); font-size: 27px; }
+.records-modal__header p { margin: 0; color: var(--muted); }
+.records-modal__header > button { flex: 0 0 auto; width: 40px; height: 40px; border: 0; border-radius: 50%; color: #173d2c; background: #deebe2; font-size: 26px; cursor: pointer; }
+.records-modal__body { max-height: calc(90vh - 116px); overflow: auto; padding: 12px 22px 24px; }
 
 .impact-ticker { padding: 17px 0; color: #d7f8df; background: var(--forest); overflow: hidden; }
 .impact-ticker__track { display: flex; width: max-content; animation: ticker 48s linear infinite; }
@@ -472,6 +491,7 @@ button { cursor: pointer; }
   to { transform: translateX(-50%); }
 }
 @keyframes visualReel { to { transform: translateX(calc(-50% - 8px)); } }
+@keyframes statusPulse { 50% { opacity: .55; transform: scale(.8); } }
 
 @media (max-width: 900px) {
   .site-nav { height: 76px; }
@@ -715,7 +735,7 @@ button { cursor: pointer; }
   .nav-links { top: 66px; left: 6px; right: 6px; max-height: calc(100vh - 82px); padding: 12px; border-radius: 14px; overflow-y: auto; }
   .nav-links > button { min-height: 40px; padding: 8px 12px; border-radius: 9px; }
 
-  .hero { min-height: 520px; }
+  .hero { min-height: 650px; }
   .hero-content { width: calc(100% - 22px); padding-top: 64px; }
   .hero-content::before { width: 100%; height: 350px; border-radius: 20px; }
   .hero-content > * { margin-left: 18px; margin-right: 18px; }
@@ -725,6 +745,16 @@ button { cursor: pointer; }
   .hero-actions { flex-direction: row; gap: 7px; }
   .hero-actions button { flex: 1; min-height: 42px; padding: 9px 10px; font-size: 11px; }
   .hero-progress { bottom: 14px; }
+  .project-status-ticker { top: auto; left: 14px; right: 14px; bottom: 38px; width: auto; grid-template-columns: 1fr 1fr; gap: 7px; transform: none; }
+  .project-status-ticker__item { min-width: 0; padding: 10px; border-radius: 11px; }
+  .project-status-ticker__item span { font-size: 7px; letter-spacing: .7px; }
+  .project-status-ticker__item strong { margin-top: 4px; font-size: 10px; }
+  .records-modal { padding: 8px; }
+  .records-modal__panel { width: 100%; max-height: 94vh; border-radius: 17px; }
+  .records-modal__header { padding: 15px; }
+  .records-modal__header h2 { font-size: 20px; }
+  .records-modal__header p { font-size: 11px; }
+  .records-modal__body { max-height: calc(94vh - 100px); padding: 8px; }
 
   .impact-ticker { padding: 10px 0; }
   .impact-ticker .ticker-urdu { font-size: 13px; }
