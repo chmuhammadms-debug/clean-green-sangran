@@ -906,25 +906,31 @@ body.gallery-open { overflow: hidden; }
   .hero,
   .hero-content { overflow-x: hidden; }
 
+  .hero-content {
+    box-sizing: border-box;
+    padding-right: 44px;
+    padding-left: 44px;
+  }
+
   .hero-content::before {
     top: 50%;
     right: auto;
-    left: 0;
-    width: 100%;
+    left: 10px;
+    width: calc(100% - 20px);
     box-sizing: border-box;
     transform: translateY(-50%);
   }
 
   .hero-content > * {
-    width: calc(100% - 72px);
-    max-width: calc(100% - 72px);
-    margin-right: 36px;
-    margin-left: 36px;
+    width: 100%;
+    max-width: 100%;
+    margin-right: 0;
+    margin-left: 0;
   }
 
   .hero-content:not(.hero-content--urdu) h1 {
-    width: calc(100% - 72px);
-    max-width: calc(100% - 72px);
+    width: 100%;
+    max-width: 100%;
     font-size: clamp(24px, 7.2vw, 31px);
     line-height: 1.12;
     letter-spacing: -.8px;
@@ -934,6 +940,6 @@ body.gallery-open { overflow: hidden; }
   }
 
   .hero-content p {
-    max-width: calc(100% - 72px);
+    max-width: 100%;
   }
 }
