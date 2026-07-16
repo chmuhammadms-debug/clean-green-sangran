@@ -900,3 +900,40 @@ body.gallery-open { overflow: hidden; }
   .mobile-app-nav button b { display:grid; place-items:center; min-height:23px; color:var(--lime); font-family:"Manrope",sans-serif; font-size:17px; }
   .mobile-app-nav button span { font-family:"Noto Nastaliq Urdu","Manrope",sans-serif; font-size:8px; white-space:nowrap; }
 }
+
+/* Final mobile hero alignment: keep the decorative frame behind the copy. */
+@media (max-width: 600px) {
+  .hero,
+  .hero-content { overflow-x: hidden; }
+
+  .hero-content::before {
+    top: 50%;
+    right: auto;
+    left: 0;
+    width: 100%;
+    box-sizing: border-box;
+    transform: translateY(-50%);
+  }
+
+  .hero-content > * {
+    width: calc(100% - 72px);
+    max-width: calc(100% - 72px);
+    margin-right: 36px;
+    margin-left: 36px;
+  }
+
+  .hero-content:not(.hero-content--urdu) h1 {
+    width: calc(100% - 72px);
+    max-width: calc(100% - 72px);
+    font-size: clamp(24px, 7.2vw, 31px);
+    line-height: 1.12;
+    letter-spacing: -.8px;
+    white-space: normal;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .hero-content p {
+    max-width: calc(100% - 72px);
+  }
+}
