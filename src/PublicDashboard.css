@@ -497,15 +497,15 @@ button { cursor: pointer; }
 .project-gallery__zoom { position: absolute; z-index: 2; top: 13px; right: 13px; display: grid; width: 38px; height: 38px; color: white; font-size: 23px; line-height: 1; place-items: center; background: rgba(3, 27, 15, .76); border: 1px solid rgba(255,255,255,.38); border-radius: 50%; backdrop-filter: blur(8px); }
 
 body.gallery-open { overflow: hidden; }
-.gallery-viewer { position: fixed; z-index: 2000; inset: 0; display: grid; padding: 24px; place-items: center; }
+.gallery-viewer { position: fixed; z-index: 2000; inset: 0; display: grid; width: 100vw; height: 100dvh; padding: 24px; place-items: center; overflow: hidden; direction: ltr; box-sizing: border-box; }
 .gallery-viewer__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; background: rgba(2, 12, 8, .94); border: 0; }
-.gallery-viewer__panel { position: relative; display: flex; width: min(1100px, 100%); max-height: calc(100dvh - 48px); flex-direction: column; color: white; }
+.gallery-viewer__panel { position: relative; display: flex; width: min(1100px, 100%); max-width: 100%; max-height: calc(100dvh - 48px); flex-direction: column; color: white; overflow: hidden; box-sizing: border-box; }
 .gallery-viewer__topbar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 18px; min-height: 54px; padding: 0 4px 12px; }
 .gallery-viewer__topbar span { color: var(--lime); font-weight: 800; letter-spacing: 1px; }
 .gallery-viewer__topbar strong { overflow: hidden; font-size: 17px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .gallery-viewer__topbar button { width: 42px; height: 42px; color: white; font-size: 30px; line-height: 1; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.24); border-radius: 50%; }
 .gallery-viewer__stage { position: relative; display: grid; min-height: 0; flex: 1; place-items: center; overflow: hidden; background: #020a07; border-radius: 16px; }
-.gallery-viewer__stage > img { display: block; width: 100%; height: min(68dvh, 720px); object-fit: contain; }
+.gallery-viewer__stage > img { display: block; width: 100%; max-width: 100%; height: min(68dvh, 720px); max-height: 100%; margin: auto; object-fit: contain; object-position: center center; transform: none !important; }
 .gallery-viewer__arrow { position: absolute; z-index: 2; top: 50%; display: grid; width: 50px; height: 50px; color: white; font-size: 42px; line-height: 1; place-items: center; transform: translateY(-50%); background: rgba(3, 27, 15, .72); border: 1px solid rgba(255,255,255,.35); border-radius: 50%; backdrop-filter: blur(8px); }
 .gallery-viewer__arrow--previous { left: 16px; }
 .gallery-viewer__arrow--next { right: 16px; }
@@ -595,12 +595,12 @@ body.gallery-open { overflow: hidden; }
   .project-gallery__grid img { min-height: 0; }
   .project-gallery__grid figure::after, .project-gallery__grid figcaption { display: none; }
   .project-gallery__zoom { top: 6px; right: 6px; width: 25px; height: 25px; font-size: 16px; }
-  .gallery-viewer { padding: 0; }
-  .gallery-viewer__panel { width: 100%; max-height: 100dvh; height: 100dvh; padding: max(8px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom)); }
+  .gallery-viewer { inset: 0; width: 100vw; max-width: 100vw; height: 100dvh; padding: 0; }
+  .gallery-viewer__panel { position: fixed; inset: 0; width: 100vw; min-width: 0; max-width: 100vw; max-height: 100dvh; height: 100dvh; margin: 0; padding: max(8px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom)); overflow: hidden; }
   .gallery-viewer__topbar { min-height: 54px; padding: 4px 12px 8px; }
   .gallery-viewer__topbar strong { font-size: 14px; }
-  .gallery-viewer__stage { border-radius: 0; }
-  .gallery-viewer__stage > img { height: 100%; max-height: none; }
+  .gallery-viewer__stage { width: 100vw; min-width: 0; max-width: 100vw; height: calc(100dvh - 148px); min-height: 0; flex: 0 1 auto; overflow: hidden; border-radius: 0; }
+  .gallery-viewer__stage > img { position: absolute; inset: 0; display: block; width: 100vw !important; min-width: 0 !important; max-width: 100vw !important; height: 100% !important; max-height: 100% !important; margin: 0 !important; object-fit: contain !important; object-position: 50% 50% !important; transform: none !important; }
   .gallery-viewer__arrow { width: 42px; height: 42px; font-size: 36px; }
   .gallery-viewer__arrow--previous { left: 8px; }
   .gallery-viewer__arrow--next { right: 8px; }
