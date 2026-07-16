@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
@@ -426,6 +426,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [search, setSearch] = useState("");
   const [showPublicRecords, setShowPublicRecords] = useState(false);
   const [showDonationDetails, setShowDonationDetails] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(null);
+  const galleryTouchStart = useRef(null);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
   const changeLanguage = () => setLanguage((current) => {
@@ -503,6 +505,30 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const imageFor = (system) => projectImages[system.id] || welfareImage;
   const photosFor = (system) => projectGalleries[system.id] || [{ image: imageFor(system), title: system.name }];
+  const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
+  const moveGallery = (direction) => setGalleryIndex((current) => {
+    if (current === null || !activeGallery.length) return current;
+    return (current + direction + activeGallery.length) % activeGallery.length;
+  });
+
+  useEffect(() => {
+    setGalleryIndex(null);
+  }, [selectedSystemId]);
+
+  useEffect(() => {
+    if (galleryIndex === null) return undefined;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setGalleryIndex(null);
+      if (event.key === "ArrowLeft") moveGallery(-1);
+      if (event.key === "ArrowRight") moveGallery(1);
+    };
+    document.body.classList.add("gallery-open");
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.classList.remove("gallery-open");
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [galleryIndex, activeGallery.length]);
   const systemName = (system) => ur ? (projectUrdu[system.id]?.name || system.name) : system.name;
   const systemDescription = (system) => ur
     ? (projectUrdu[system.id]?.description || system.description)
@@ -540,9 +566,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               </div>
               <div className="project-gallery__grid">
                 {photosFor(selectedSystem).map((photo, index) => (
-                  <figure key={`${selectedSystem.id}-photo-${index}`}>
+                  <figure
+                    key={`${selectedSystem.id}-photo-${index}`}
+                    role="button"
+                    tabIndex="0"
+                    aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${index + 1}`}
+                    onClick={() => setGalleryIndex(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
+                    }}
+                  >
                     <img src={photo.image} alt={photo.title} />
                     <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
+                    <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                   </figure>
                 ))}
               </div>
@@ -561,6 +597,51 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             </div>
           </section>
         </main>
+        {galleryIndex !== null && activeGallery[galleryIndex] && (
+          <div
+            className="gallery-viewer"
+            role="dialog"
+            aria-modal="true"
+            aria-label={ur ? "تصاویر کی گیلری" : "Project photo gallery"}
+          >
+            <button className="gallery-viewer__backdrop" onClick={() => setGalleryIndex(null)} aria-label={ur ? "بند کریں" : "Close gallery"} />
+            <div
+              className="gallery-viewer__panel"
+              onTouchStart={(event) => { galleryTouchStart.current = event.touches[0]?.clientX ?? null; }}
+              onTouchEnd={(event) => {
+                const endX = event.changedTouches[0]?.clientX;
+                if (galleryTouchStart.current === null || endX === undefined) return;
+                const distance = endX - galleryTouchStart.current;
+                if (Math.abs(distance) > 45) moveGallery(distance < 0 ? 1 : -1);
+                galleryTouchStart.current = null;
+              }}
+            >
+              <div className="gallery-viewer__topbar">
+                <span>{galleryIndex + 1} / {activeGallery.length}</span>
+                <strong>{activeGallery[galleryIndex].title}</strong>
+                <button onClick={() => setGalleryIndex(null)} aria-label={ur ? "بند کریں" : "Close"}>×</button>
+              </div>
+              <div className="gallery-viewer__stage">
+                <button className="gallery-viewer__arrow gallery-viewer__arrow--previous" onClick={() => moveGallery(-1)} aria-label={ur ? "پچھلی تصویر" : "Previous photo"}>‹</button>
+                <img src={activeGallery[galleryIndex].image} alt={activeGallery[galleryIndex].title} />
+                <button className="gallery-viewer__arrow gallery-viewer__arrow--next" onClick={() => moveGallery(1)} aria-label={ur ? "اگلی تصویر" : "Next photo"}>›</button>
+              </div>
+              <div className="gallery-viewer__filmstrip" aria-label={ur ? "تمام تصاویر" : "All photos"}>
+                {activeGallery.map((photo, index) => (
+                  <button
+                    className={index === galleryIndex ? "active" : ""}
+                    key={`${selectedSystem.id}-viewer-photo-${index}`}
+                    onClick={() => setGalleryIndex(index)}
+                    aria-label={`${ur ? "تصویر" : "Photo"} ${index + 1}`}
+                  >
+                    <img src={photo.image} alt="" />
+                  </button>
+                ))}
+              </div>
+              <small className="gallery-viewer__hint">{ur ? "اگلی تصویر کے لیے دائیں یا بائیں سوائپ کریں" : "Swipe left or right for the next photo"}</small>
+            </div>
+          </div>
+        )}
         <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><button onClick={() => setSelectedSystemId(null)}>Back to Public Home ↑</button></footer>
       </div>
     );
