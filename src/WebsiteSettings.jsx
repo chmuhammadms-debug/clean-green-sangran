@@ -8,9 +8,17 @@ const colorFields = [
   ["cream", "Page background"], ["ink", "Text colour"],
 ];
 
+const faithProjects = [
+  { id: "cemetery", label: "قبرستان", labelEn: "Cemetery" },
+  { id: "plantation", label: "شجرکاری", labelEn: "Plantation" },
+  { id: "mosque", label: "مسجد", labelEn: "Mosque" },
+  { id: "welfare", label: "فلاحی منصوبے", labelEn: "Welfare" },
+];
+
 export default function WebsiteSettings({ settings, onSave, saving }) {
   const [draft, setDraft] = useState(() => mergeSiteSettings(settings));
   const [message, setMessage] = useState("");
+  const [faithProject, setFaithProject] = useState("cemetery");
 
   useEffect(() => setDraft(mergeSiteSettings(settings)), [settings]);
 
@@ -44,26 +52,35 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
   }));
   const addProjectFaithSlide = () => setDraft((current) => ({
     ...current,
-    projectFaithSlides: [...(current.projectFaithSlides || []), {
-      id: `${Date.now()}-${Math.random()}`,
-      typeEn: "Quranic guidance",
-      typeUr: "قرآنی رہنمائی",
-      arabic: "",
-      translationUr: "",
-      translationEn: "",
-      reference: "",
-      enabled: true,
-    }],
+    projectFaithSlidesByProject: {
+      ...(current.projectFaithSlidesByProject || {}),
+      [faithProject]: [...(current.projectFaithSlidesByProject?.[faithProject] || []), {
+        id: `${faithProject}-${Date.now()}-${Math.random()}`,
+        typeEn: "Quranic guidance",
+        typeUr: "قرآنی رہنمائی",
+        arabic: "",
+        translationUr: "",
+        translationEn: "",
+        reference: "",
+        enabled: true,
+      }],
+    },
   }));
   const updateProjectFaithSlide = (id, key, value) => setDraft((current) => ({
     ...current,
-    projectFaithSlides: (current.projectFaithSlides || []).map((slide) => (
-      slide.id === id ? { ...slide, [key]: value } : slide
-    )),
+    projectFaithSlidesByProject: {
+      ...(current.projectFaithSlidesByProject || {}),
+      [faithProject]: (current.projectFaithSlidesByProject?.[faithProject] || []).map((slide) => (
+        slide.id === id ? { ...slide, [key]: value } : slide
+      )),
+    },
   }));
   const removeProjectFaithSlide = (id) => setDraft((current) => ({
     ...current,
-    projectFaithSlides: (current.projectFaithSlides || []).filter((slide) => slide.id !== id),
+    projectFaithSlidesByProject: {
+      ...(current.projectFaithSlidesByProject || {}),
+      [faithProject]: (current.projectFaithSlidesByProject?.[faithProject] || []).filter((slide) => slide.id !== id),
+    },
   }));
 
   const submit = async (event) => {
@@ -140,10 +157,27 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
         </div>
         <div className="settings-heading faith-settings-heading">
           <div><span>PROJECT FAITH SLIDER</span><h2>آیات، ترجمہ اور احادیث</h2></div>
-          <p>ہر پروجیکٹ کے اوپر چلنے والا دینی پیغام یہاں سے شامل، تبدیل، بند یا حذف کریں۔</p>
+          <p>پہلے منصوبہ منتخب کریں، پھر اسی منصوبے کی الگ آیات یا احادیث شامل، تبدیل، بند یا حذف کریں۔</p>
         </div>
+        <div className="faith-project-tabs" role="tablist" aria-label="منصوبہ منتخب کریں">
+          {faithProjects.map((project) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={faithProject === project.id}
+              className={faithProject === project.id ? "active" : ""}
+              key={project.id}
+              onClick={() => setFaithProject(project.id)}
+            >
+              <b>{project.label}</b><small>{project.labelEn}</small>
+            </button>
+          ))}
+        </div>
+        <p className="faith-project-note">
+          <strong>{faithProjects.find((project) => project.id === faithProject)?.label}</strong> کی سلائیڈیں
+        </p>
         <div className="faith-settings-list">
-          {(draft.projectFaithSlides || []).map((slide, index) => (
+          {(draft.projectFaithSlidesByProject?.[faithProject] || []).map((slide, index) => (
             <div className="faith-settings-card" key={slide.id}>
               <div className="faith-settings-card__top">
                 <strong>Slide {index + 1}</strong>
@@ -166,9 +200,9 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
               </div>
             </div>
           ))}
-          {!(draft.projectFaithSlides || []).length && <p className="social-settings-empty">ابھی کوئی آیت یا حدیث شامل نہیں ہے۔</p>}
+          {!(draft.projectFaithSlidesByProject?.[faithProject] || []).length && <p className="social-settings-empty">اس منصوبے میں ابھی کوئی آیت یا حدیث شامل نہیں ہے۔</p>}
         </div>
-        <button type="button" className="social-settings-add" onClick={addProjectFaithSlide}>+ نئی آیت یا حدیث شامل کریں</button>
+        <button type="button" className="social-settings-add" onClick={addProjectFaithSlide}>+ اس منصوبے میں نئی آیت یا حدیث شامل کریں</button>
         <div className="settings-preview" style={{ background: draft.colors.cream, color: draft.colors.ink, borderColor: draft.colors.leaf }}><i style={{ background: draft.colors.lime }} /><div><b style={{ color: draft.colors.forest }}>{draft.introTitle}</b><p>{draft.introSubtitle}</p></div></div>
         <div className="settings-actions"><button type="button" className="settings-reset" onClick={() => setDraft(DEFAULT_SITE_SETTINGS)}>Reset defaults</button><button type="submit" className="settings-save" disabled={saving}>{saving ? "Saving..." : "Save & Publish Changes"}</button></div>
         {message && <p className="settings-message">{message}</p>}

@@ -405,7 +405,7 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
   );
 }
 
-function ProjectFaithSlider({ slides = [], language = "en" }) {
+function ProjectFaithSlider({ slides = [], language = "en", projectId = "" }) {
   const activeSlides = slides.filter((slide) => (
     slide.enabled !== false
     && (slide.arabic || slide.translationUr || slide.translationEn)
@@ -424,6 +424,10 @@ function ProjectFaithSlider({ slides = [], language = "en" }) {
   useEffect(() => {
     if (index >= activeSlides.length) setIndex(0);
   }, [activeSlides.length, index]);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [projectId]);
 
   if (!activeSlides.length) return null;
 
@@ -604,7 +608,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </div>
         </header>
 
-        <ProjectFaithSlider slides={settings.projectFaithSlides} language={language} />
+        <ProjectFaithSlider
+          slides={settings.projectFaithSlidesByProject?.[selectedSystem.id] || []}
+          language={language}
+          projectId={selectedSystem.id}
+        />
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">

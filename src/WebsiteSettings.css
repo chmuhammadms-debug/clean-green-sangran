@@ -37,6 +37,13 @@
 .payment-settings-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2eae4; }
 @media (max-width: 760px) { .payment-settings-grid { grid-template-columns: 1fr; } .payment-number-field { grid-column: auto; } }
 .faith-settings-heading { margin-top: 32px; }
+.faith-project-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 14px 0 10px; }
+.faith-project-tabs button { display: grid; gap: 3px; padding: 12px 10px; border: 1px solid #cbd8cf; border-radius: 12px; color: #355a43; background: #f8fbf9; text-align: center; cursor: pointer; }
+.faith-project-tabs button:hover { border-color: #65a30d; }
+.faith-project-tabs button.active { color: #fff; border-color: #166534; background: #166534; box-shadow: 0 8px 20px rgba(22,101,52,.16); }
+.faith-project-tabs button b { font-size: 15px; }
+.faith-project-tabs button small { color: inherit; font-size: 10px; opacity: .8; }
+.faith-project-note { margin: 0 0 10px; padding: 9px 12px; border-right: 4px solid #84cc16; color: #365143; background: #f2f8f3; text-align: right; }
 .faith-settings-list { display: grid; gap: 14px; margin-top: 12px; }
 .faith-settings-card { padding: 16px; border: 1px solid #dce6df; border-radius: 15px; background: #f8fbf9; }
 .faith-settings-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #e2eae4; color: #14532d; }
@@ -46,6 +53,7 @@
 .faith-settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2eae4; }
 .faith-settings-actions small { color: #66776d; }
 @media (max-width: 760px) {
+  .faith-project-tabs { grid-template-columns: 1fr 1fr; }
   .faith-settings-grid { grid-template-columns: 1fr; }
   .faith-settings-wide { grid-column: auto; }
   .faith-settings-actions { align-items: stretch; flex-direction: column; }
