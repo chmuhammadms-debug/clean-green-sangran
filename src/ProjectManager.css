@@ -1,0 +1,34 @@
+.project-manager { margin: 24px 0; border-top: 5px solid #7ddf2a; scroll-margin-top: 24px; }
+.project-manager__heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.project-manager__heading span { color: #65a30d; font-size: 10px; font-weight: 900; letter-spacing: 2px; }
+.project-manager__heading h2 { margin: 4px 0 0; color: #14532d; }
+.project-manager__heading > button,.project-manager__actions button { padding: 11px 17px; color: white; border: 0; border-radius: 10px; background: #166534; font-weight: 850; cursor: pointer; }
+.project-manager__intro { color: #64748b; }
+.project-manager__list { display: grid; gap: 16px; margin-top: 18px; }
+.project-editor { padding: 17px; border: 1px solid #d8e5dc; border-radius: 16px; background: #f8fbf9; }
+.project-editor__top { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-bottom: 13px; border-bottom: 1px solid #e1eae4; }
+.project-editor__identity { display: flex; align-items: center; gap: 11px; }
+.project-editor__identity > span { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 12px; background: #e3f5e7; font-size: 26px; }
+.project-editor__identity div { display: grid; gap: 2px; }
+.project-editor__identity small { color: #65a30d; font-size: 9px; font-weight: 900; letter-spacing: 1.3px; }
+.project-editor__identity strong { color: #173f28; }
+.project-editor__visibility { display: flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 999px; color: #166534; background: #e4f6e8; font-size: 12px; }
+.project-editor__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.project-editor__grid label { display: grid; gap: 6px; color: #334155; font-size: 12px; font-weight: 750; }
+.project-editor__grid input,.project-editor__grid textarea { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #cbd8cf; border-radius: 9px; background: white; font: inherit; }
+.project-editor__grid input:disabled { color: #718078; background: #edf2ef; }
+.project-editor__grid textarea { resize: vertical; line-height: 1.7; }
+.project-editor__wide { grid-column: 1 / -1; }
+.project-editor__preview { width: 180px; height: 100px; margin-top: 12px; border-radius: 11px; object-fit: cover; }
+.project-editor__remove { margin-top: 12px; padding: 9px 12px; color: #8b1e2d; border: 0; border-radius: 9px; background: #fde8eb; font-weight: 800; }
+.project-manager__actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; margin-top: 18px; }
+.project-manager__actions p { margin: 0 auto 0 0; color: #166534; font-weight: 750; }
+.project-manager__actions button:disabled { opacity: .55; }
+@media (max-width: 720px) {
+  .project-manager__heading { align-items: stretch; flex-direction: column; }
+  .project-manager__grid { grid-template-columns: 1fr; }
+  .project-editor__wide { grid-column: auto; }
+  .project-editor__top { align-items: flex-start; }
+  .project-manager__actions { align-items: stretch; flex-direction: column; }
+  .project-manager__actions p { margin: 0; }
+}
