@@ -513,6 +513,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   useEffect(() => {
     setGalleryIndex(null);
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [selectedSystemId]);
 
   useEffect(() => {
@@ -545,7 +546,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button className="brand-button" onClick={() => setSelectedSystemId(null)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
-          <div className="nav-actions"><button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button><button className="nav-link" onClick={() => setSelectedSystemId(null)}>{ur ? "عوامی صفحہ" : "← Public Home"}</button><button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button></div>
+          <div className="nav-actions project-nav-actions">
+            <button className="project-top-back" onClick={() => setSelectedSystemId(null)}>{ur ? "← واپس" : "← Back"}</button>
+            <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
+            <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
+          </div>
         </header>
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
