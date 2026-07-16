@@ -21,6 +21,38 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectDateUr: "جلد شروع ہوگا",
   socialLinks: [],
   paymentMethods: [],
+  projectFaithSlides: [
+    {
+      id: "faith-1",
+      typeEn: "Quranic guidance",
+      typeUr: "قرآنی رہنمائی",
+      arabic: "وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ",
+      translationUr: "نیکی اور تقویٰ کے کاموں میں ایک دوسرے کی مدد کرو۔",
+      translationEn: "Cooperate with one another in goodness and righteousness.",
+      reference: "Surah Al-Ma'idah 5:2",
+      enabled: true,
+    },
+    {
+      id: "faith-2",
+      typeEn: "Quranic reminder",
+      typeUr: "قرآنی پیغام",
+      arabic: "إِنَّ اللَّهَ يُحِبُّ الْمُحْسِنِينَ",
+      translationUr: "بے شک اللہ نیکی کرنے والوں سے محبت کرتا ہے۔",
+      translationEn: "Indeed, Allah loves those who do good.",
+      reference: "Surah Al-Baqarah 2:195",
+      enabled: true,
+    },
+    {
+      id: "faith-3",
+      typeEn: "Hadith",
+      typeUr: "حدیثِ مبارک",
+      arabic: "مَنْ كَانَ فِي حَاجَةِ أَخِيهِ كَانَ اللَّهُ فِي حَاجَتِهِ",
+      translationUr: "جو شخص اپنے بھائی کی حاجت پوری کرنے میں لگا رہتا ہے، اللہ اس کی حاجت پوری فرماتا ہے۔",
+      translationEn: "Whoever fulfills the needs of his brother, Allah will fulfill his needs.",
+      reference: "Sahih al-Bukhari 2442",
+      enabled: true,
+    },
+  ],
 };
 
 export function mergeSiteSettings(value = {}) {
@@ -33,5 +65,6 @@ export function mergeSiteSettings(value = {}) {
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
     paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,
+    projectFaithSlides: Array.isArray(value.projectFaithSlides) ? value.projectFaithSlides : DEFAULT_SITE_SETTINGS.projectFaithSlides,
   };
 }

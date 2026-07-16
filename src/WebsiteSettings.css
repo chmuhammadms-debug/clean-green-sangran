@@ -36,3 +36,17 @@
 .payment-number-field { grid-column: 1 / -1; }
 .payment-settings-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2eae4; }
 @media (max-width: 760px) { .payment-settings-grid { grid-template-columns: 1fr; } .payment-number-field { grid-column: auto; } }
+.faith-settings-heading { margin-top: 32px; }
+.faith-settings-list { display: grid; gap: 14px; margin-top: 12px; }
+.faith-settings-card { padding: 16px; border: 1px solid #dce6df; border-radius: 15px; background: #f8fbf9; }
+.faith-settings-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #e2eae4; color: #14532d; }
+.faith-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.faith-settings-wide { grid-column: 1 / -1; }
+.faith-settings-arabic textarea { font-size: 22px; line-height: 2; text-align: right; }
+.faith-settings-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2eae4; }
+.faith-settings-actions small { color: #66776d; }
+@media (max-width: 760px) {
+  .faith-settings-grid { grid-template-columns: 1fr; }
+  .faith-settings-wide { grid-column: auto; }
+  .faith-settings-actions { align-items: stretch; flex-direction: column; }
+}

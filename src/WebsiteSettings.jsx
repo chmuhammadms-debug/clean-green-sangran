@@ -42,6 +42,29 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
     ...current,
     paymentMethods: (current.paymentMethods || []).filter((method) => method.id !== id),
   }));
+  const addProjectFaithSlide = () => setDraft((current) => ({
+    ...current,
+    projectFaithSlides: [...(current.projectFaithSlides || []), {
+      id: `${Date.now()}-${Math.random()}`,
+      typeEn: "Quranic guidance",
+      typeUr: "قرآنی رہنمائی",
+      arabic: "",
+      translationUr: "",
+      translationEn: "",
+      reference: "",
+      enabled: true,
+    }],
+  }));
+  const updateProjectFaithSlide = (id, key, value) => setDraft((current) => ({
+    ...current,
+    projectFaithSlides: (current.projectFaithSlides || []).map((slide) => (
+      slide.id === id ? { ...slide, [key]: value } : slide
+    )),
+  }));
+  const removeProjectFaithSlide = (id) => setDraft((current) => ({
+    ...current,
+    projectFaithSlides: (current.projectFaithSlides || []).filter((slide) => slide.id !== id),
+  }));
 
   const submit = async (event) => {
     event.preventDefault();
@@ -115,6 +138,37 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           <label className="settings-field"><span>Expected date/detail — English</span><input value={draft.comingProjectDateEn} onChange={(e) => update("comingProjectDateEn", e.target.value)} /></label>
           <label className="settings-field"><span>متوقع تاریخ/تفصیل — اردو</span><input dir="rtl" value={draft.comingProjectDateUr} onChange={(e) => update("comingProjectDateUr", e.target.value)} /></label>
         </div>
+        <div className="settings-heading faith-settings-heading">
+          <div><span>PROJECT FAITH SLIDER</span><h2>آیات، ترجمہ اور احادیث</h2></div>
+          <p>ہر پروجیکٹ کے اوپر چلنے والا دینی پیغام یہاں سے شامل، تبدیل، بند یا حذف کریں۔</p>
+        </div>
+        <div className="faith-settings-list">
+          {(draft.projectFaithSlides || []).map((slide, index) => (
+            <div className="faith-settings-card" key={slide.id}>
+              <div className="faith-settings-card__top">
+                <strong>Slide {index + 1}</strong>
+                <label className="social-settings-toggle">
+                  <input type="checkbox" checked={slide.enabled !== false} onChange={(e) => updateProjectFaithSlide(slide.id, "enabled", e.target.checked)} />
+                  <span>{slide.enabled !== false ? "Visible" : "Hidden"}</span>
+                </label>
+              </div>
+              <div className="faith-settings-grid">
+                <label className="settings-field"><span>Type — English</span><input value={slide.typeEn || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "typeEn", e.target.value)} placeholder="Quranic guidance / Hadith" /></label>
+                <label className="settings-field"><span>قسم — اردو</span><input dir="rtl" value={slide.typeUr || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "typeUr", e.target.value)} placeholder="قرآنی رہنمائی / حدیثِ مبارک" /></label>
+                <label className="settings-field faith-settings-wide faith-settings-arabic"><span>عربی متن</span><textarea dir="rtl" lang="ar" rows="3" value={slide.arabic || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "arabic", e.target.value)} placeholder="قرآنی آیت یا حدیث کا عربی متن" /></label>
+                <label className="settings-field"><span>اردو ترجمہ</span><textarea dir="rtl" rows="3" value={slide.translationUr || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "translationUr", e.target.value)} placeholder="اردو ترجمہ یا وضاحت" /></label>
+                <label className="settings-field"><span>English translation</span><textarea rows="3" value={slide.translationEn || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "translationEn", e.target.value)} placeholder="English translation or explanation" /></label>
+                <label className="settings-field faith-settings-wide"><span>Reference / حوالہ</span><input value={slide.reference || ""} onChange={(e) => updateProjectFaithSlide(slide.id, "reference", e.target.value)} placeholder="Surah Al-Ma'idah 5:2 / Sahih al-Bukhari 2442" /></label>
+              </div>
+              <div className="faith-settings-actions">
+                <small>پیغام تقریباً 8.5 سیکنڈ بعد خود تبدیل ہوگا۔</small>
+                <button type="button" className="social-settings-remove" onClick={() => removeProjectFaithSlide(slide.id)}>Remove Slide</button>
+              </div>
+            </div>
+          ))}
+          {!(draft.projectFaithSlides || []).length && <p className="social-settings-empty">ابھی کوئی آیت یا حدیث شامل نہیں ہے۔</p>}
+        </div>
+        <button type="button" className="social-settings-add" onClick={addProjectFaithSlide}>+ نئی آیت یا حدیث شامل کریں</button>
         <div className="settings-preview" style={{ background: draft.colors.cream, color: draft.colors.ink, borderColor: draft.colors.leaf }}><i style={{ background: draft.colors.lime }} /><div><b style={{ color: draft.colors.forest }}>{draft.introTitle}</b><p>{draft.introSubtitle}</p></div></div>
         <div className="settings-actions"><button type="button" className="settings-reset" onClick={() => setDraft(DEFAULT_SITE_SETTINGS)}>Reset defaults</button><button type="submit" className="settings-save" disabled={saving}>{saving ? "Saving..." : "Save & Publish Changes"}</button></div>
         {message && <p className="settings-message">{message}</p>}

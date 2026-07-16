@@ -405,6 +405,57 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
   );
 }
 
+function ProjectFaithSlider({ slides = [], language = "en" }) {
+  const activeSlides = slides.filter((slide) => (
+    slide.enabled !== false
+    && (slide.arabic || slide.translationUr || slide.translationEn)
+  ));
+  const [index, setIndex] = useState(0);
+  const ur = language === "ur";
+
+  useEffect(() => {
+    if (activeSlides.length < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % activeSlides.length);
+    }, 8500);
+    return () => window.clearInterval(timer);
+  }, [activeSlides.length]);
+
+  useEffect(() => {
+    if (index >= activeSlides.length) setIndex(0);
+  }, [activeSlides.length, index]);
+
+  if (!activeSlides.length) return null;
+
+  const current = activeSlides[index] || activeSlides[0];
+  const move = (direction) => {
+    setIndex((value) => (value + direction + activeSlides.length) % activeSlides.length);
+  };
+
+  return (
+    <section className="project-faith-slider" aria-label={ur ? "دینی پیغام" : "Faith and community message"}>
+      <div className="project-faith-slider__glow" aria-hidden="true" />
+      <div className="project-faith-slider__content" key={current.id || index}>
+        <span>{ur ? current.typeUr : current.typeEn}</span>
+        {current.arabic && <blockquote dir="rtl" lang="ar">{current.arabic}</blockquote>}
+        <p dir={ur ? "rtl" : "ltr"}>{ur ? current.translationUr : current.translationEn}</p>
+        {current.reference && <small>{current.reference}</small>}
+      </div>
+      {activeSlides.length > 1 && (
+        <>
+          <button type="button" className="project-faith-slider__arrow project-faith-slider__arrow--prev" onClick={() => move(-1)} aria-label={ur ? "پچھلا پیغام" : "Previous message"}>‹</button>
+          <button type="button" className="project-faith-slider__arrow project-faith-slider__arrow--next" onClick={() => move(1)} aria-label={ur ? "اگلا پیغام" : "Next message"}>›</button>
+          <div className="project-faith-slider__dots">
+            {activeSlides.map((slide, dot) => (
+              <button type="button" className={dot === index ? "active" : ""} key={slide.id || dot} onClick={() => setIndex(dot)} aria-label={`${ur ? "پیغام" : "Message"} ${dot + 1}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
@@ -552,6 +603,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
           </div>
         </header>
+
+        <ProjectFaithSlider slides={settings.projectFaithSlides} language={language} />
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">

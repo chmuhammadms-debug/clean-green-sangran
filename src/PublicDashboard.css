@@ -943,3 +943,173 @@ body.gallery-open { overflow: hidden; }
     max-width: 100%;
   }
 }
+
+/* Large, editable faith message slider shown above every project dashboard. */
+.project-faith-slider {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 350px;
+  place-items: center;
+  overflow: hidden;
+  padding: 110px 100px 76px;
+  color: #fff;
+  border-bottom: 1px solid rgba(182, 230, 80, .3);
+  background:
+    radial-gradient(circle at 18% 20%, rgba(182, 230, 80, .22), transparent 28%),
+    radial-gradient(circle at 86% 78%, rgba(76, 196, 111, .18), transparent 30%),
+    linear-gradient(115deg, #031d10, #07552e 58%, #102c1e);
+}
+
+.project-faith-slider::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 42px, rgba(255,255,255,.025) 42px 43px),
+    linear-gradient(90deg, transparent, rgba(255,255,255,.035), transparent);
+  content: "";
+}
+
+.project-faith-slider__glow {
+  position: absolute;
+  z-index: -1;
+  width: min(720px, 76vw);
+  height: 220px;
+  border-radius: 50%;
+  background: rgba(139, 221, 52, .13);
+  filter: blur(70px);
+}
+
+.project-faith-slider__content {
+  position: relative;
+  z-index: 2;
+  width: min(980px, 100%);
+  text-align: center;
+  animation: faith-slide-in .7s ease both;
+}
+
+.project-faith-slider__content > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--lime);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+}
+
+.project-faith-slider__content > span::before,
+.project-faith-slider__content > span::after {
+  width: 34px;
+  height: 2px;
+  background: currentColor;
+  content: "";
+}
+
+.project-faith-slider blockquote {
+  margin: 18px auto 12px;
+  color: #fff;
+  font-family: "Noto Nastaliq Urdu", "Times New Roman", serif;
+  font-size: clamp(30px, 4vw, 52px);
+  font-weight: 700;
+  line-height: 1.85;
+  text-wrap: balance;
+}
+
+.project-faith-slider p {
+  max-width: 850px;
+  margin: 0 auto;
+  color: rgba(255,255,255,.9);
+  font-family: "Noto Nastaliq Urdu", "Manrope", sans-serif;
+  font-size: clamp(17px, 2vw, 23px);
+  line-height: 1.85;
+  text-wrap: balance;
+}
+
+.project-faith-slider small {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 7px 13px;
+  color: #d9efcf;
+  border: 1px solid rgba(182,230,80,.28);
+  border-radius: 999px;
+  background: rgba(0,0,0,.16);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+
+.project-faith-slider__arrow {
+  position: absolute;
+  z-index: 3;
+  top: 57%;
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  padding: 0 0 5px;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 50%;
+  background: rgba(0,0,0,.2);
+  font-size: 32px;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.project-faith-slider__arrow:hover { color: #082816; background: var(--lime); }
+.project-faith-slider__arrow--prev { left: 28px; }
+.project-faith-slider__arrow--next { right: 28px; }
+
+.project-faith-slider__dots {
+  position: absolute;
+  z-index: 3;
+  right: 0;
+  bottom: 25px;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.project-faith-slider__dots button {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.55);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.project-faith-slider__dots button.active {
+  width: 28px;
+  border-color: var(--lime);
+  border-radius: 999px;
+  background: var(--lime);
+}
+
+@keyframes faith-slide-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .project-faith-slider {
+    min-height: 310px;
+    padding: 94px 45px 58px;
+  }
+
+  .project-faith-slider__content > span { font-size: 8px; letter-spacing: 1.3px; }
+  .project-faith-slider__content > span::before,
+  .project-faith-slider__content > span::after { width: 20px; }
+  .project-faith-slider blockquote { margin-top: 13px; font-size: clamp(25px, 7.5vw, 31px); line-height: 1.85; }
+  .project-faith-slider p { font-size: 14px; line-height: 1.8; }
+  .project-faith-slider small { margin-top: 10px; padding: 5px 9px; font-size: 8px; }
+  .project-faith-slider__arrow { top: 58%; width: 34px; height: 34px; font-size: 24px; }
+  .project-faith-slider__arrow--prev { left: 7px; }
+  .project-faith-slider__arrow--next { right: 7px; }
+  .project-faith-slider__dots { bottom: 18px; }
+}
