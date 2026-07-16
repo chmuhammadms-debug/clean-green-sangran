@@ -125,6 +125,25 @@ button { cursor: pointer; }
 .admin-button { padding: 12px 19px !important; color: var(--forest) !important; font-weight: 700 !important; background: var(--lime) !important; border: 0 !important; border-radius: 100px !important; transition: transform .2s ease, box-shadow .2s ease; }
 .admin-button:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(182,230,80,.25); }
 .nav-records-button { padding: 10px 16px !important; color: #fff !important; border-radius: 999px !important; background: var(--leaf) !important; }
+.nav-donate-button { padding: 10px 16px !important; color: var(--forest) !important; border-radius: 999px !important; background: var(--lime) !important; }
+.donation-modal { position: fixed; inset: 0; z-index: 9100; display: grid; place-items: center; padding: 20px; }
+.donation-modal__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: rgba(2,20,12,.88); }
+.donation-modal__panel { position: relative; width: min(880px, 96vw); max-height: 90vh; overflow: auto; padding: 26px; border: 1px solid rgba(182,230,80,.28); border-radius: 26px; color: #eef8f1; background: linear-gradient(145deg, #062b19, #0d4a2b); box-shadow: 0 30px 90px rgba(0,0,0,.45); }
+.donation-modal__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding-bottom: 20px; }
+.donation-modal__header h2 { margin: 8px 0 5px; color: white; font-size: clamp(27px,4vw,42px); }
+.donation-modal__header p { margin: 0; color: #aac4b3; }
+.donation-modal__header > button { flex: 0 0 auto; width: 42px; height: 42px; border: 0; border-radius: 50%; color: #183622; background: var(--lime); font-size: 27px; }
+.donation-methods-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; }
+.donation-method-card { display: grid; grid-template-columns: auto 1fr; gap: 13px; min-width: 0; padding: 18px; border: 1px solid rgba(255,255,255,.14); border-radius: 17px; background: rgba(255,255,255,.07); }
+.donation-method-card__icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 13px; color: #173321; background: var(--lime); font-size: 18px; font-weight: 900; }
+.donation-method-card span { color: var(--lime); font-size: 10px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; }
+.donation-method-card h3 { margin: 5px 0 9px; color: white; font-size: 16px; }
+.donation-method-card code { display: block; overflow-wrap: anywhere; color: #fff4bd; font-family: monospace; font-size: 14px; }
+.donation-method-card p { margin: 9px 0 0; color: #abc5b4; font-size: 11px; line-height: 1.6; }
+.donation-methods-empty { grid-column: 1 / -1; padding: 35px 20px; border: 1px dashed rgba(255,255,255,.25); border-radius: 17px; text-align: center; }
+.donation-methods-empty p { color: #aac4b3; }
+.donation-safety-note { margin: 18px 0 0; padding: 12px 14px; border-radius: 11px; color: #d9e8dd; background: rgba(0,0,0,.18); font-size: 11px; text-align: center; }
+@media (max-width: 650px) { .donation-modal { padding: 9px; } .donation-modal__panel { padding: 18px 14px; border-radius: 19px; } .donation-methods-grid { grid-template-columns: 1fr; } }
 .mobile-menu { display: none; width: 40px; padding: 8px; background: none; border: 0; }
 .mobile-menu i { display: block; height: 2px; margin: 5px 0; background: white; }
 

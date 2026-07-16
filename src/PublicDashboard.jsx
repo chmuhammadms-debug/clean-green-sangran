@@ -425,6 +425,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
   const [showPublicRecords, setShowPublicRecords] = useState(false);
+  const [showDonationDetails, setShowDonationDetails] = useState(false);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
   const changeLanguage = () => setLanguage((current) => {
@@ -580,6 +581,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
+          <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
           <button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
@@ -595,7 +597,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <span className="hero-eyebrow">{ur ? slides[slideIndex].eyebrowUr : slides[slideIndex].eyebrow}</span>
           <h1 dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].titleUr : slides[slideIndex].title}</h1>
           <p dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].copyUr : slides[slideIndex].copy}</p>
-          <div className="hero-actions"><button className="button-primary" onClick={() => scrollTo("projects")}>{ur ? "ہمارے منصوبے دیکھیں" : "Explore our projects"} <span>→</span></button><button className="button-ghost" onClick={() => setShowPublicRecords(true)}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button></div>
+          <div className="hero-actions"><button className="button-primary" onClick={() => setShowDonationDetails(true)}>{ur ? "عطیہ دیں" : "Donate Now"} <span>→</span></button><button className="button-ghost" onClick={() => setShowPublicRecords(true)}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button></div>
         </div>
         <aside className="project-status-ticker" aria-label="Project status">
           <div className="project-status-ticker__item project-status-ticker__item--live">
@@ -696,11 +698,30 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </div>
       )}
 
+      {showDonationDetails && (
+        <div className="donation-modal" role="dialog" aria-modal="true" aria-label="Donation details">
+          <button className="donation-modal__backdrop" onClick={() => setShowDonationDetails(false)} aria-label="Close donation details" />
+          <div className="donation-modal__panel" dir={ur ? "rtl" : "ltr"}>
+            <div className="donation-modal__header"><div><span className="section-kicker">{ur ? "عطیہ اور صدقۂ جاریہ" : "SUPPORT THE MISSION"}</span><h2>{ur ? "اپنا حصہ شامل کریں" : "Make a Donation"}</h2><p>{ur ? "اپنی پسند کے طریقے سے رقم بھیجیں اور رسید محفوظ رکھیں۔" : "Choose a payment method below and keep your payment receipt."}</p></div><button onClick={() => setShowDonationDetails(false)} aria-label="Close">×</button></div>
+            <div className="donation-methods-grid">
+              {settings.paymentMethods?.filter((method) => method.enabled !== false && method.accountNumber).map((method) => (
+                <article className="donation-method-card" key={method.id || `${method.provider}-${method.accountNumber}`}>
+                  <div className="donation-method-card__icon">{method.provider === "Bank Account" ? "🏦" : method.provider === "JazzCash" ? "J" : method.provider === "Easypaisa" ? "e" : "Rs"}</div>
+                  <div><span>{method.provider}</span><h3>{method.accountTitle || (ur ? "عطیہ اکاؤنٹ" : "Donation Account")}</h3><code>{method.accountNumber}</code><p>{ur ? method.instructionsUr : method.instructionsEn}</p></div>
+                </article>
+              ))}
+              {!settings.paymentMethods?.some((method) => method.enabled !== false && method.accountNumber) && <div className="donation-methods-empty"><b>{ur ? "ادائیگی کی تفصیلات جلد شامل کی جائیں گی۔" : "Payment details will be available soon."}</b><p>{ur ? "مزید معلومات کے لیے کمیٹی سے رابطہ کریں۔" : "Please contact the committee for more information."}</p></div>}
+            </div>
+            <p className="donation-safety-note">{ur ? "اہم: اپنا PIN، پاس ورڈ یا OTP کبھی کسی کے ساتھ شیئر نہ کریں۔" : "Important: Never share your PIN, password or OTP with anyone."}</p>
+          </div>
+        </div>
+      )}
+
       <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => setShowPublicRecords(true)}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav>{settings.socialLinks?.some((link) => link.enabled !== false && link.url) && <div className="footer-social-links">{settings.socialLinks.filter((link) => link.enabled !== false && link.url).map((link) => <a href={link.url} key={link.id || `${link.name}-${link.url}`} target="_blank" rel="noreferrer" title={link.name} aria-label={link.name}><span>{link.name === "X / Twitter" ? "X" : link.name.slice(0, 1).toUpperCase()}</span>{link.name}</a>)}</div>}<small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
       <nav className="mobile-app-nav" aria-label="Mobile app navigation">
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
-        <button onClick={() => setShowPublicRecords(true)}><b>Rs</b><span>{ur ? "حساب" : "Records"}</span></button>
+        <button onClick={() => setShowDonationDetails(true)}><b>Rs</b><span>{ur ? "عطیہ" : "Donate"}</span></button>
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>

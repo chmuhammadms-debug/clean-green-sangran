@@ -30,6 +30,18 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
     ...current,
     socialLinks: (current.socialLinks || []).filter((link) => link.id !== id),
   }));
+  const addPaymentMethod = () => setDraft((current) => ({
+    ...current,
+    paymentMethods: [...(current.paymentMethods || []), { id: `${Date.now()}-${Math.random()}`, provider: "Bank Account", accountTitle: "", accountNumber: "", instructionsEn: "", instructionsUr: "", enabled: true }],
+  }));
+  const updatePaymentMethod = (id, key, value) => setDraft((current) => ({
+    ...current,
+    paymentMethods: (current.paymentMethods || []).map((method) => method.id === id ? { ...method, [key]: value } : method),
+  }));
+  const removePaymentMethod = (id) => setDraft((current) => ({
+    ...current,
+    paymentMethods: (current.paymentMethods || []).filter((method) => method.id !== id),
+  }));
 
   const submit = async (event) => {
     event.preventDefault();
@@ -74,6 +86,23 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           {!(draft.socialLinks || []).length && <p className="social-settings-empty">Abhi koi social media account attach nahi hai.</p>}
         </div>
         <button type="button" className="social-settings-add" onClick={addSocialLink}>+ Add Social Media Account</button>
+        <div className="settings-heading"><div><span>DONATION DETAILS</span><h2>Bank, JazzCash & Easypaisa</h2></div><p>Public donation details add, edit, hide ya remove karein. PIN, password ya OTP kabhi yahan na likhein.</p></div>
+        <div className="payment-settings-list">
+          {(draft.paymentMethods || []).map((method) => (
+            <div className="payment-settings-card" key={method.id}>
+              <div className="payment-settings-grid">
+                <label className="settings-field"><span>Payment method</span><select value={method.provider} onChange={(e) => updatePaymentMethod(method.id, "provider", e.target.value)}><option>Bank Account</option><option>JazzCash</option><option>Easypaisa</option><option>Raast ID</option><option>Other</option></select></label>
+                <label className="settings-field"><span>Account title</span><input value={method.accountTitle} onChange={(e) => updatePaymentMethod(method.id, "accountTitle", e.target.value)} placeholder="Account holder name" /></label>
+                <label className="settings-field payment-number-field"><span>Account / IBAN / Mobile number</span><input value={method.accountNumber} onChange={(e) => updatePaymentMethod(method.id, "accountNumber", e.target.value)} placeholder="PK00... or 03XX..." /></label>
+                <label className="settings-field"><span>Instructions — English</span><input value={method.instructionsEn} onChange={(e) => updatePaymentMethod(method.id, "instructionsEn", e.target.value)} placeholder="Send payment and keep the receipt" /></label>
+                <label className="settings-field"><span>ہدایات — اردو</span><input dir="rtl" value={method.instructionsUr} onChange={(e) => updatePaymentMethod(method.id, "instructionsUr", e.target.value)} placeholder="رقم بھیج کر رسید محفوظ رکھیں" /></label>
+              </div>
+              <div className="payment-settings-actions"><label className="social-settings-toggle"><input type="checkbox" checked={method.enabled !== false} onChange={(e) => updatePaymentMethod(method.id, "enabled", e.target.checked)} /><span>{method.enabled !== false ? "Visible on public page" : "Hidden"}</span></label><button type="button" className="social-settings-remove" onClick={() => removePaymentMethod(method.id)}>Remove</button></div>
+            </div>
+          ))}
+          {!(draft.paymentMethods || []).length && <p className="social-settings-empty">Abhi koi bank, JazzCash ya Easypaisa detail add nahi ki gayi.</p>}
+        </div>
+        <button type="button" className="social-settings-add" onClick={addPaymentMethod}>+ Add Donation Method</button>
         <label className="settings-field"><span>Intro short message</span><textarea dir="rtl" rows="4" value={draft.introSummary} onChange={(e) => update("introSummary", e.target.value)} /></label>
         <div className="settings-heading"><div><span>PROJECT TICKERS</span><h2>Ongoing & Coming Soon</h2></div><p>Public page ke dono project boxes ka naam aur date/detail yahan se edit karein.</p></div>
         <div className="settings-text-grid">

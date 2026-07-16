@@ -20,6 +20,7 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectDateEn: "Expected soon",
   comingProjectDateUr: "جلد شروع ہوگا",
   socialLinks: [],
+  paymentMethods: [],
 };
 
 export function mergeSiteSettings(value = {}) {
@@ -31,5 +32,6 @@ export function mergeSiteSettings(value = {}) {
       ...(value.colors || {}),
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
+    paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,
   };
 }
