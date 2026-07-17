@@ -3,6 +3,8 @@ import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
+import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
+import BloodBankPublic from "./BloodBankPublic";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -462,6 +464,27 @@ function ProjectFaithSlider({ slides = [], language = "en", projectId = "" }) {
 
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
+  const slides = useMemo(() => {
+    const configured = (settings.homeHeroSlides || [])
+      .filter((slide) => slide?.enabled !== false && (slide.url || slide.image))
+      .map((slide, index) => {
+        const fallback = heroSlides[index % heroSlides.length];
+        return {
+          id: slide.id || `custom-hero-${index}`,
+          image: slide.url || slide.image,
+          eyebrow: slide.eyebrowEn || fallback.eyebrow,
+          eyebrowUr: slide.eyebrowUr || fallback.eyebrowUr,
+          title: slide.titleEn || fallback.title,
+          titleUr: slide.titleUr || fallback.titleUr,
+          copy: slide.copyEn || fallback.copy,
+          copyUr: slide.copyUr || fallback.copyUr,
+        };
+      });
+    return shuffledSlides(configured.length ? configured : heroSlides);
+  }, [siteSettings]);
+  const activeReelSlides = (settings.homeReelSlides || []).filter((slide) => (
+    slide?.enabled !== false && (slide.url || slide.image)
+  ));
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
   const themeStyle = {
     "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
@@ -473,7 +496,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
-  const [slides] = useState(() => shuffledSlides(heroSlides));
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSystemId, setSelectedSystemId] = useState(null);
@@ -530,6 +552,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   };
 
   useEffect(() => {
+    setSlideIndex(0);
+  }, [slides]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       setSlideIndex((current) => (current + 1) % slides.length);
     }, 5200);
@@ -579,6 +605,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     }
     return projectGalleries[system.id] || [{ image: imageFor(system), title: systemName(system) }];
   };
+  const faithSlidesFor = (system) => {
+    const slidesByProject = settings.projectFaithSlidesByProject || {};
+    if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
+      return slidesByProject[system.id] || [];
+    }
+    return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
+  };
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
@@ -624,14 +657,14 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </header>
 
         <ProjectFaithSlider
-          slides={settings.projectFaithSlidesByProject?.[selectedSystem.id] || []}
+          slides={faithSlidesFor(selectedSystem)}
           language={language}
           projectId={selectedSystem.id}
         />
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
-            <span className="section-kicker">PUBLIC PROJECT LEDGER</span>
+            <span className="section-kicker">{isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
             <h1>{systemName(selectedSystem)}</h1>
             <p>{systemDescription(selectedSystem)}</p>
           </div>
@@ -639,7 +672,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            <MoneyCards totals={selectedTotals} language={language} />
+            {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} /> : <MoneyCards totals={selectedTotals} language={language} />}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
@@ -664,7 +697,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 ))}
               </div>
             </div>
-            <div className="ledger-card reveal">
+            {!isBloodBankProject(selectedSystem) && <div className="ledger-card reveal">
               <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>Public financial records</h2></div><p>Attachments and administrative controls remain private.</p></div>
               <div className="ledger-toolbar">
                 <div className="filter-tabs">
@@ -675,7 +708,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search public records" /></label>
               </div>
               <RecordsTable records={filteredRecords} systems={systems} language={language} />
-            </div>
+            </div>}
           </section>
         </main>
         {galleryIndex !== null && activeGallery[galleryIndex] && (
@@ -822,7 +855,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <img src={imageFor(system)} alt={system.name} />
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content"><span>{system.icon} {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{systemName(system)}</h3><p>{systemDescription(system)}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
+                  <div className="project-card__content">
+                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
+                    <h3>{systemName(system)}</h3>
+                    <p>{systemDescription(system)}</p>
+                    {!isBloodBankProject(system) && (
+                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
+                    )}
+                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
+                  </div>
                 </article>
               );
             })}
@@ -831,7 +872,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="visual-reel-section">
           <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
-          <div className="visual-reel"><div className="visual-reel__track">{[...gallerySlides, ...gallerySlides].map((slide, index) => <figure key={`${slide.id}-reel-${index}`}><img src={slide.image} alt={slide.title} /><figcaption><span>{slide.eyebrow}</span><b>{slide.title}</b></figcaption></figure>)}</div></div>
+          <div className="visual-reel"><div className="visual-reel__track">{[...(activeReelSlides.length ? activeReelSlides : gallerySlides), ...(activeReelSlides.length ? activeReelSlides : gallerySlides)].map((slide, index) => {
+            const image = slide.url || slide.image;
+            const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
+            const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
+            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
+          })}</div></div>
         </section>
 
         <section className="about-section" id="about">

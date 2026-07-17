@@ -90,11 +90,35 @@ const welfareFaithSlides = [
   },
 ];
 
+const bloodBankFaithSlides = [
+  {
+    id: "blood-faith-1",
+    typeEn: "Quranic guidance",
+    typeUr: "قرآنی رہنمائی",
+    arabic: "وَمَنْ أَحْيَاهَا فَكَأَنَّمَا أَحْيَا النَّاسَ جَمِيعًا",
+    translationUr: "اور جس نے کسی ایک جان کو بچایا، گویا اس نے تمام انسانوں کو بچا لیا۔",
+    translationEn: "Whoever saves one life, it is as if they saved all of humanity.",
+    reference: "Surah Al-Ma'idah 5:32",
+    enabled: true,
+  },
+  {
+    id: "blood-faith-2",
+    typeEn: "Hadith",
+    typeUr: "حدیثِ مبارک",
+    arabic: "وَاللَّهُ فِي عَوْنِ الْعَبْدِ مَا كَانَ الْعَبْدُ فِي عَوْنِ أَخِيهِ",
+    translationUr: "اللہ بندے کی مدد میں رہتا ہے جب تک بندہ اپنے بھائی کی مدد میں رہتا ہے۔",
+    translationEn: "Allah helps His servant as long as the servant helps his brother.",
+    reference: "Sahih Muslim 2699",
+    enabled: true,
+  },
+];
+
 export const DEFAULT_PROJECT_FAITH_SLIDES = {
   cemetery: cemeteryFaithSlides,
   plantation: plantationFaithSlides,
   mosque: mosqueFaithSlides,
   welfare: welfareFaithSlides,
+  blood: bloodBankFaithSlides,
 };
 
 export const DEFAULT_SITE_SETTINGS = {
@@ -119,6 +143,8 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectDateEn: "Expected soon",
   comingProjectDateUr: "جلد شروع ہوگا",
   projectProfilesByProject: {},
+  homeHeroSlides: [],
+  homeReelSlides: [],
   socialLinks: [],
   paymentMethods: [],
   projectFaithSlidesByProject: DEFAULT_PROJECT_FAITH_SLIDES,
@@ -127,9 +153,12 @@ export const DEFAULT_SITE_SETTINGS = {
 function mergeProjectFaithSlides(value = {}) {
   const saved = value.projectFaithSlidesByProject;
   if (saved && typeof saved === "object" && !Array.isArray(saved)) {
-    return Object.fromEntries(Object.entries(DEFAULT_PROJECT_FAITH_SLIDES).map(([projectId, defaults]) => (
-      [projectId, Array.isArray(saved[projectId]) ? saved[projectId] : defaults]
-    )));
+    return Object.fromEntries([
+      ...Object.entries(saved).filter(([, slides]) => Array.isArray(slides)),
+      ...Object.entries(DEFAULT_PROJECT_FAITH_SLIDES).map(([projectId, defaults]) => (
+        [projectId, Array.isArray(saved[projectId]) ? saved[projectId] : defaults]
+      )),
+    ]);
   }
 
   // Preserve slides from the older single-list version inside Welfare.
@@ -150,6 +179,8 @@ export function mergeSiteSettings(value = {}) {
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
     paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,
+    homeHeroSlides: Array.isArray(value.homeHeroSlides) ? value.homeHeroSlides : DEFAULT_SITE_SETTINGS.homeHeroSlides,
+    homeReelSlides: Array.isArray(value.homeReelSlides) ? value.homeReelSlides : DEFAULT_SITE_SETTINGS.homeReelSlides,
     projectProfilesByProject: value.projectProfilesByProject && typeof value.projectProfilesByProject === "object"
       ? value.projectProfilesByProject
       : {},

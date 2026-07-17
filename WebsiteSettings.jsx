@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./WebsiteSettings.css";
 import { DEFAULT_SITE_SETTINGS, mergeSiteSettings } from "./siteSettings";
+import { uploadWebsiteImages } from "./mediaUpload";
 
 const colorFields = [
   ["forest", "Dark green"], ["forest2", "Secondary green"],
@@ -13,12 +14,14 @@ const faithProjects = [
   { id: "plantation", label: "شجرکاری", labelEn: "Plantation" },
   { id: "mosque", label: "مسجد", labelEn: "Mosque" },
   { id: "welfare", label: "فلاحی منصوبے", labelEn: "Welfare" },
+  { id: "blood", label: "بلڈ بینک", labelEn: "Blood Bank" },
 ];
 
 export default function WebsiteSettings({ settings, onSave, saving }) {
   const [draft, setDraft] = useState(() => mergeSiteSettings(settings));
   const [message, setMessage] = useState("");
   const [faithProject, setFaithProject] = useState("cemetery");
+  const [mediaUploading, setMediaUploading] = useState("");
 
   useEffect(() => setDraft(mergeSiteSettings(settings)), [settings]);
 
@@ -83,6 +86,50 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
     },
   }));
 
+  const uploadHomeMedia = async (key, files) => {
+    if (!files?.length) return;
+    setMessage("");
+    setMediaUploading(key);
+    try {
+      const uploaded = await uploadWebsiteImages(files, key === "homeHeroSlides" ? "home/hero" : "home/reel");
+      const entries = uploaded.map((image, index) => ({
+        id: `${key}-${Date.now()}-${index}-${Math.random()}`,
+        url: image.url,
+        enabled: true,
+        eyebrowEn: key === "homeHeroSlides" ? "Community in Action" : "Sangran in Motion",
+        eyebrowUr: key === "homeHeroSlides" ? "اجتماعی خدمت" : "متحرک سنگراں",
+        titleEn: key === "homeHeroSlides" ? "Together, we create lasting change." : "Community action creating visible change",
+        titleUr: key === "homeHeroSlides" ? "مل کر، ہم پائیدار تبدیلی لاتے ہیں۔" : "اجتماعی کوشش سے نمایاں تبدیلی",
+        copyEn: key === "homeHeroSlides" ? "A shared effort for a cleaner, greener and stronger Sangran." : "",
+        copyUr: key === "homeHeroSlides" ? "صاف، سرسبز اور مضبوط سنگراں کے لیے مشترکہ کوشش۔" : "",
+      }));
+      setDraft((current) => ({ ...current, [key]: [...(current[key] || []), ...entries] }));
+      setMessage(`${uploaded.length} تصویر${uploaded.length > 1 ? "یں" : ""} اپلوڈ ہوگئی۔ آخر میں Save & Publish Changes دبائیں۔`);
+    } catch (error) {
+      setMessage(`تصویر اپلوڈ نہیں ہوسکی: ${error.message}`);
+    } finally {
+      setMediaUploading("");
+    }
+  };
+
+  const updateHomeMedia = (key, id, field, value) => setDraft((current) => ({
+    ...current,
+    [key]: (current[key] || []).map((slide) => slide.id === id ? { ...slide, [field]: value } : slide),
+  }));
+
+  const removeHomeMedia = (key, id) => setDraft((current) => ({
+    ...current,
+    [key]: (current[key] || []).filter((slide) => slide.id !== id),
+  }));
+
+  const moveHomeMedia = (key, index, direction) => setDraft((current) => {
+    const entries = [...(current[key] || [])];
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= entries.length) return current;
+    [entries[index], entries[nextIndex]] = [entries[nextIndex], entries[index]];
+    return { ...current, [key]: entries };
+  });
+
   const submit = async (event) => {
     event.preventDefault();
     setMessage("");
@@ -107,6 +154,47 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           ))}
         </div>
         <label className="settings-field"><span>Moving ticker text</span><textarea rows="3" value={draft.tickerText} onChange={(e) => update("tickerText", e.target.value)} /></label>
+        <div className="settings-heading home-media-heading"><div><span>HOME PAGE MEDIA</span><h2>Main Slider & Picture Reel</h2></div><p>موبائل یا کمپیوٹر گیلری سے براہِ راست تصاویر شامل، تبدیل، چھپائیں یا ہٹائیں۔</p></div>
+
+        <section className="home-media-settings">
+          <div className="home-media-settings__title"><div><h3>Top main slider</h3><p>یہ تصاویر ویب سائٹ کھلتے ہی بڑی سلائیڈ میں چلیں گی۔</p></div><label className={`home-media-upload ${mediaUploading === "homeHeroSlides" ? "is-uploading" : ""}`}><input type="file" accept="image/*" multiple disabled={mediaUploading === "homeHeroSlides"} onChange={(event) => { uploadHomeMedia("homeHeroSlides", event.target.files); event.target.value = ""; }} /><span>{mediaUploading === "homeHeroSlides" ? "Uploading..." : "+ Upload slider pictures"}</span></label></div>
+          <div className="home-media-list">
+            {(draft.homeHeroSlides || []).map((slide, index) => (
+              <article className="home-media-card" key={slide.id}>
+                <img src={slide.url} alt={`Main slider ${index + 1}`} />
+                <div className="home-media-card__body">
+                  <div className="home-media-card__top"><strong>Slide {index + 1}</strong><label className="social-settings-toggle"><input type="checkbox" checked={slide.enabled !== false} onChange={(e) => updateHomeMedia("homeHeroSlides", slide.id, "enabled", e.target.checked)} /><span>{slide.enabled !== false ? "Visible" : "Hidden"}</span></label></div>
+                  <div className="home-media-text-grid">
+                    <label><span>English heading</span><input value={slide.titleEn || ""} onChange={(e) => updateHomeMedia("homeHeroSlides", slide.id, "titleEn", e.target.value)} /></label>
+                    <label><span>اردو سرخی</span><input dir="rtl" value={slide.titleUr || ""} onChange={(e) => updateHomeMedia("homeHeroSlides", slide.id, "titleUr", e.target.value)} /></label>
+                    <label><span>English short text</span><textarea rows="2" value={slide.copyEn || ""} onChange={(e) => updateHomeMedia("homeHeroSlides", slide.id, "copyEn", e.target.value)} /></label>
+                    <label><span>اردو مختصر پیغام</span><textarea dir="rtl" rows="2" value={slide.copyUr || ""} onChange={(e) => updateHomeMedia("homeHeroSlides", slide.id, "copyUr", e.target.value)} /></label>
+                  </div>
+                  <div className="home-media-card__actions"><button type="button" disabled={index === 0} onClick={() => moveHomeMedia("homeHeroSlides", index, -1)}>← پہلے</button><button type="button" disabled={index === draft.homeHeroSlides.length - 1} onClick={() => moveHomeMedia("homeHeroSlides", index, 1)}>بعد →</button><label className="replace"><input type="file" accept="image/*" onChange={async (event) => { const files = event.target.files; if (!files?.length) return; setMediaUploading(slide.id); try { const [image] = await uploadWebsiteImages(files, "home/hero"); updateHomeMedia("homeHeroSlides", slide.id, "url", image.url); setMessage("سلائیڈ کی تصویر تبدیل ہوگئی۔ Save & Publish Changes دبائیں۔"); } catch (error) { setMessage(`تصویر تبدیل نہیں ہوسکی: ${error.message}`); } finally { setMediaUploading(""); event.target.value = ""; } }} /><span>{mediaUploading === slide.id ? "Uploading..." : "Replace"}</span></label><button type="button" className="remove" onClick={() => removeHomeMedia("homeHeroSlides", slide.id)}>Remove</button></div>
+                </div>
+              </article>
+            ))}
+            {!(draft.homeHeroSlides || []).length && <p className="home-media-empty">ابھی code میں موجود اصل تصاویر چل رہی ہیں۔ اپنی تصاویر اپلوڈ کریں تو وہ ان کی جگہ آجائیں گی۔</p>}
+          </div>
+        </section>
+
+        <section className="home-media-settings">
+          <div className="home-media-settings__title"><div><h3>Moving picture reel</h3><p>یہ چھوٹی تصاویر Home Page کی چلتی ہوئی ریل میں نظر آئیں گی۔</p></div><label className={`home-media-upload ${mediaUploading === "homeReelSlides" ? "is-uploading" : ""}`}><input type="file" accept="image/*" multiple disabled={mediaUploading === "homeReelSlides"} onChange={(event) => { uploadHomeMedia("homeReelSlides", event.target.files); event.target.value = ""; }} /><span>{mediaUploading === "homeReelSlides" ? "Uploading..." : "+ Upload reel pictures"}</span></label></div>
+          <div className="home-media-list home-media-list--reel">
+            {(draft.homeReelSlides || []).map((slide, index) => (
+              <article className="home-media-card home-media-card--compact" key={slide.id}>
+                <img src={slide.url} alt={`Picture reel ${index + 1}`} />
+                <div className="home-media-card__body">
+                  <div className="home-media-card__top"><strong>Picture {index + 1}</strong><label className="social-settings-toggle"><input type="checkbox" checked={slide.enabled !== false} onChange={(e) => updateHomeMedia("homeReelSlides", slide.id, "enabled", e.target.checked)} /><span>{slide.enabled !== false ? "Visible" : "Hidden"}</span></label></div>
+                  <label className="home-media-single-field"><span>English caption</span><input value={slide.titleEn || ""} onChange={(e) => updateHomeMedia("homeReelSlides", slide.id, "titleEn", e.target.value)} /></label>
+                  <label className="home-media-single-field"><span>اردو کیپشن</span><input dir="rtl" value={slide.titleUr || ""} onChange={(e) => updateHomeMedia("homeReelSlides", slide.id, "titleUr", e.target.value)} /></label>
+                  <div className="home-media-card__actions"><button type="button" disabled={index === 0} onClick={() => moveHomeMedia("homeReelSlides", index, -1)}>←</button><button type="button" disabled={index === draft.homeReelSlides.length - 1} onClick={() => moveHomeMedia("homeReelSlides", index, 1)}>→</button><button type="button" className="remove" onClick={() => removeHomeMedia("homeReelSlides", slide.id)}>Remove</button></div>
+                </div>
+              </article>
+            ))}
+            {!(draft.homeReelSlides || []).length && <p className="home-media-empty">ابھی اصل built-in تصویری ریل چل رہی ہے۔ نئی تصاویر اپلوڈ کرکے اپنی ریل بنائیں۔</p>}
+          </div>
+        </section>
         <div className="settings-text-grid">
           <label className="settings-field"><span>Intro title</span><input dir="rtl" value={draft.introTitle} onChange={(e) => update("introTitle", e.target.value)} /></label>
           <label className="settings-field"><span>Intro subtitle</span><input dir="rtl" value={draft.introSubtitle} onChange={(e) => update("introSubtitle", e.target.value)} /></label>
