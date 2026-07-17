@@ -13,6 +13,7 @@ const faithProjects = [
   { id: "plantation", label: "شجرکاری", labelEn: "Plantation" },
   { id: "mosque", label: "مسجد", labelEn: "Mosque" },
   { id: "welfare", label: "فلاحی منصوبے", labelEn: "Welfare" },
+  { id: "blood", label: "بلڈ بینک", labelEn: "Blood Bank" },
 ];
 
 export default function WebsiteSettings({ settings, onSave, saving }) {

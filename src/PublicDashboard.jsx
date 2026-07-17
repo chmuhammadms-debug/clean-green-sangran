@@ -581,6 +581,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     }
     return projectGalleries[system.id] || [{ image: imageFor(system), title: systemName(system) }];
   };
+  const faithSlidesFor = (system) => {
+    const slidesByProject = settings.projectFaithSlidesByProject || {};
+    if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
+      return slidesByProject[system.id] || [];
+    }
+    return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
+  };
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
@@ -626,7 +633,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </header>
 
         <ProjectFaithSlider
-          slides={settings.projectFaithSlidesByProject?.[selectedSystem.id] || []}
+          slides={faithSlidesFor(selectedSystem)}
           language={language}
           projectId={selectedSystem.id}
         />
@@ -824,7 +831,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <img src={imageFor(system)} alt={system.name} />
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content"><span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{systemName(system)}</h3><p>{systemDescription(system)}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
+                  <div className="project-card__content">
+                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
+                    <h3>{systemName(system)}</h3>
+                    <p>{systemDescription(system)}</p>
+                    {!isBloodBankProject(system) && (
+                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
+                    )}
+                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
+                  </div>
                 </article>
               );
             })}

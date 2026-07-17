@@ -1689,10 +1689,12 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                         system.englishName}
                     </p>
 
-                    <strong>
-                      Balance: Rs.{" "}
-                      {systemTotals.balance.toLocaleString()}
-                    </strong>
+                    {!isBloodBankProject(system) && (
+                      <strong>
+                        Balance: Rs.{" "}
+                        {systemTotals.balance.toLocaleString()}
+                      </strong>
+                    )}
                   </button>
                 );
               })}
