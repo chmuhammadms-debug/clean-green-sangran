@@ -27,7 +27,10 @@ export async function registerBloodDonor(form) {
   const { data, error } = await supabase.auth.signUp({
     email: form.email.trim(),
     password: form.password,
-    options: { data: metadata },
+    options: {
+      data: metadata,
+      emailRedirectTo: window.location.origin,
+    },
   });
   if (error) throw error;
 
@@ -59,6 +62,52 @@ export async function getMyBloodDonorProfile() {
     .select("id,user_id,email,full_name,phone,address,blood_group,is_available,created_at,updated_at")
     .eq("user_id", authData.user.id)
     .maybeSingle();
+  if (error) throw error;
+  if (data) return data;
+
+  // Accounts created before the database trigger was installed can have a
+  // valid Auth login but no donor row. Repair that account from its signup
+  // metadata so login always opens the donor dashboard.
+  const metadata = authData.user.user_metadata || {};
+  const bloodGroup = BLOOD_GROUPS.includes(metadata.blood_group)
+    ? metadata.blood_group
+    : "A+";
+  const row = {
+    user_id: authData.user.id,
+    email: authData.user.email || "",
+    full_name: String(metadata.full_name || "").trim(),
+    phone: String(metadata.phone || "").trim(),
+    address: String(metadata.address || "").trim(),
+    blood_group: bloodGroup,
+    is_available: true,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (!row.full_name || !row.phone || !row.address) return null;
+
+  const { data: repairedProfile, error: repairError } = await supabase
+    .from("blood_donors")
+    .upsert(row, { onConflict: "user_id" })
+    .select("id,user_id,email,full_name,phone,address,blood_group,is_available,created_at,updated_at")
+    .single();
+  if (repairError) throw repairError;
+  return repairedProfile;
+}
+
+export async function resendDonorConfirmation(email) {
+  const { data, error } = await supabase.auth.resend({
+    type: "signup",
+    email: email.trim(),
+    options: { emailRedirectTo: window.location.origin },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function sendDonorPasswordReset(email) {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+    redirectTo: window.location.origin,
+  });
   if (error) throw error;
   return data;
 }

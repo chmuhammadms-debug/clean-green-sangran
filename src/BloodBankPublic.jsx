@@ -7,7 +7,9 @@ import {
   loginBloodDonor,
   printBloodDonorSlip,
   registerBloodDonor,
+  resendDonorConfirmation,
   saveMyBloodDonorProfile,
+  sendDonorPasswordReset,
 } from "./bloodBankService";
 import { supabase } from "./supabase";
 import "./BloodBank.css";
@@ -26,15 +28,22 @@ export default function BloodBankPublic({ language = "en" }) {
   const [registration, setRegistration] = useState(emptyRegistration);
   const [login, setLogin] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [confirmationEmail, setConfirmationEmail] = useState("");
   const [message, setMessage] = useState("");
 
   const loadProfile = async () => {
+    setProfileLoading(true);
     try {
       const nextProfile = await getMyBloodDonorProfile();
       setProfile(nextProfile);
       setDonations(nextProfile ? await fetchBloodDonations(nextProfile.id) : []);
+      return nextProfile;
     } catch (error) {
       setMessage(error.message);
+      return null;
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -43,11 +52,12 @@ export default function BloodBankPublic({ language = "en" }) {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session || null);
       if (data.session) loadProfile();
+      else setProfileLoading(false);
     });
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       if (nextSession) window.setTimeout(loadProfile, 0);
-      else { setProfile(null); setDonations([]); }
+      else { setProfile(null); setDonations([]); setProfileLoading(false); }
     });
     return () => listener.subscription.unsubscribe();
   }, []);
@@ -62,6 +72,7 @@ export default function BloodBankPublic({ language = "en" }) {
         setMessage(ur ? "رجسٹریشن مکمل ہوگئی۔" : "Registration completed successfully.");
       } else {
         setMessage(ur ? "رجسٹریشن ہوگئی۔ اپنے ای میل کا تصدیقی لنک کھولیں، پھر لاگ اِن کریں۔" : "Registration received. Confirm the link in your email, then login.");
+        setConfirmationEmail(registration.email.trim());
         setMode("login");
         setLogin({ email: registration.email, password: "" });
       }
@@ -74,8 +85,41 @@ export default function BloodBankPublic({ language = "en" }) {
     setBusy(true); setMessage("");
     try {
       await loginBloodDonor(login.email, login.password);
-      await loadProfile();
-      setMessage(ur ? "آپ لاگ اِن ہوگئے ہیں۔" : "You are now logged in.");
+      const nextProfile = await loadProfile();
+      if (nextProfile) {
+        setMessage(ur ? "آپ لاگ اِن ہوگئے ہیں۔" : "You are now logged in.");
+      } else {
+        setMessage(ur ? "لاگ اِن ہوگیا، مگر donor profile نامکمل ہے۔ اسی ای میل سے دوبارہ رجسٹریشن نہ کریں؛ ایڈمن سے profile repair کروائیں۔" : "Login succeeded, but the donor profile is incomplete. Please ask the administrator to repair this account.");
+      }
+    } catch (error) {
+      const notConfirmed = /confirm|confirmed/i.test(error.message || "");
+      if (notConfirmed) setConfirmationEmail(login.email.trim());
+      setMessage(notConfirmed
+        ? (ur ? "پہلے اپنے ای میل میں Supabase کا confirmation link کھولیں، پھر لاگ اِن کریں۔" : "Open the Supabase confirmation link in your email first, then login.")
+        : error.message);
+    }
+    finally { setBusy(false); }
+  };
+
+  const resendConfirmation = async () => {
+    if (!confirmationEmail) return;
+    setBusy(true); setMessage("");
+    try {
+      await resendDonorConfirmation(confirmationEmail);
+      setMessage(ur ? "نیا confirmation link ای میل پر بھیج دیا گیا ہے۔" : "A new confirmation link has been sent to your email.");
+    } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
+  };
+
+  const resetPassword = async () => {
+    if (!login.email.trim()) {
+      setMessage(ur ? "پہلے اپنا ای میل لکھیں۔" : "Enter your email first.");
+      return;
+    }
+    setBusy(true); setMessage("");
+    try {
+      await sendDonorPasswordReset(login.email);
+      setMessage(ur ? "Password reset link ای میل پر بھیج دیا گیا ہے۔" : "A password reset link has been sent to your email.");
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
@@ -104,7 +148,12 @@ export default function BloodBankPublic({ language = "en" }) {
         })}
       </div>
 
-      {!session || !profile ? (
+      {profileLoading ? (
+        <div className="blood-auth-card blood-loading" role="status">
+          <span className="blood-spinner" />
+          <b>{ur ? "Donor dashboard تیار ہو رہا ہے…" : "Preparing your donor dashboard…"}</b>
+        </div>
+      ) : !session || !profile ? (
         <div className="blood-auth-card">
           <div className="blood-auth-tabs"><button className={mode === "register" ? "active" : ""} onClick={() => setMode("register")}>{ur ? "نیا donor رجسٹر کریں" : "Register as a donor"}</button><button className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>{ur ? "Donor لاگ اِن" : "Donor login"}</button></div>
           {mode === "register" ? (
@@ -122,8 +171,10 @@ export default function BloodBankPublic({ language = "en" }) {
               <label><span>Email</span><input required type="email" value={login.email} onChange={(event) => setLogin({ ...login, email: event.target.value })} /></label>
               <label><span>{ur ? "پاس ورڈ" : "Password"}</span><input required type="password" value={login.password} onChange={(event) => setLogin({ ...login, password: event.target.value })} /></label>
               <button className="blood-submit wide" disabled={busy}>{busy ? "..." : (ur ? "لاگ اِن کریں" : "Login")}</button>
+              <button className="blood-link-button wide" disabled={busy} type="button" onClick={resetPassword}>{ur ? "پاس ورڈ بھول گئے؟" : "Forgot password?"}</button>
             </form>
           )}
+          {confirmationEmail && <button className="blood-confirm-button" disabled={busy} type="button" onClick={resendConfirmation}>{ur ? "Confirmation email دوبارہ بھیجیں" : "Resend confirmation email"}</button>}
           {message && <p className="blood-message">{message}</p>}
         </div>
       ) : (
