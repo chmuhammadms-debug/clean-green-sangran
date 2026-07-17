@@ -232,7 +232,7 @@ export async function saveMyBloodDonorProfile(profile) {
 export async function fetchBloodDonors() {
   const { data, error } = await supabase
     .from("blood_donors")
-    .select("id,user_id,email,full_name,phone,address,blood_group,is_available,created_at,updated_at")
+    .select("id,user_id,email,full_name,phone,address,blood_group,is_available,last_donated_at,next_available_on,created_at,updated_at")
     .order("full_name");
   if (error) throw error;
   return data || [];
@@ -268,9 +268,14 @@ export async function recordBloodDonation({ donorId, donationDate, units, locati
 }
 
 export async function setBloodDonorAvailability(donorId, isAvailable) {
+  const changes = {
+    is_available: isAvailable,
+    updated_at: new Date().toISOString(),
+  };
+  if (isAvailable) changes.next_available_on = null;
   const { data, error } = await supabase
     .from("blood_donors")
-    .update({ is_available: isAvailable, updated_at: new Date().toISOString() })
+    .update(changes)
     .eq("id", donorId)
     .select()
     .single();
@@ -290,8 +295,11 @@ export async function fetchPublicBloodSummary() {
   return data || [];
 }
 
-export async function fetchPublicBloodDonors() {
-  const { data, error } = await supabase.rpc("public_blood_donor_directory");
+export async function fetchPublicBloodDonors(requestId) {
+  if (!requestId) return [];
+  const { data, error } = await supabase.rpc("public_blood_donor_directory", {
+    p_request_id: requestId,
+  });
   if (error) throw error;
   return data || [];
 }
@@ -324,7 +332,7 @@ export function printBloodRequestReport(requests) {
   const rows = (requests || []).map((request) => {
     const active = (request.assignments || []).filter((item) => item.status !== "cancelled");
     const donorText = active.length
-      ? active.map((item) => `${safe(item.donor?.full_name || "Unknown donor")} (${safe(item.donor?.blood_group || "—")}) — ${safe(item.status)}`).join("<br>")
+      ? active.map((item) => `${safe(item.donor?.full_name || "Unknown donor")} (${safe(item.donor?.blood_group || "—")}) — ${safe(item.status)}${item.donated_at ? ` · ${safe(new Date(item.donated_at).toLocaleString())}` : ""}`).join("<br>")
       : "Not assigned";
     return `<tr><td>${safe(request.patient_name)}</td><td>${safe(request.blood_group)}</td><td>${safe(request.phone)}</td><td>${safe(request.hospital_address)}</td><td>${safe(request.units)}</td><td>${safe(request.needed_on)}</td><td>${donorText}</td><td>${safe(request.status)}</td></tr>`;
   }).join("");

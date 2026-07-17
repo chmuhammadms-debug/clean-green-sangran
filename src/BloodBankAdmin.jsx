@@ -9,6 +9,7 @@ import {
   fetchBloodRequestReport,
   printBloodDonorSlip,
   printBloodRequestReport,
+  setBloodDonorAvailability,
   updateBloodAssignmentStatus,
 } from "./bloodBankService";
 import "./BloodBank.css";
@@ -74,6 +75,16 @@ export default function BloodBankAdmin() {
     setBusyId(donor.id); setMessage("");
     try { await deleteBloodDonor(donor.id); await loadData(); setMessage("Donor record deleted successfully."); }
     catch (error) { setMessage(error.message); }
+    finally { setBusyId(""); }
+  };
+
+  const changeDonorAvailability = async (donor, isAvailable) => {
+    setBusyId(donor.id); setMessage("");
+    try {
+      await setBloodDonorAvailability(donor.id, isAvailable);
+      await loadData();
+      setMessage(isAvailable ? "Donor is active and available again." : "Donor has been marked unavailable.");
+    } catch (error) { setMessage(error.message); }
     finally { setBusyId(""); }
   };
 
@@ -146,7 +157,7 @@ export default function BloodBankAdmin() {
             return <article className="blood-patient-card" key={request.id}>
               <header><b>{request.blood_group}</b><div><span>{request.status.toUpperCase()}</span><h3>{request.patient_name}</h3><p>{request.units} unit(s) · required {request.needed_on}</p></div></header>
               <div className="blood-patient-details"><p><span>Contact person</span><b>{request.attendant_name}</b></p><p><span>Phone</span><b>{request.phone}</b></p><p className="wide"><span>Hospital / address</span><b>{request.hospital_address}</b></p>{request.notes && <p className="wide"><span>Notes</span><b>{request.notes}</b></p>}</div>
-              {assignment?.donor ? <div className={`blood-assignment-summary ${assignment.status}`}><div><span>{assignment.status === "donated" ? "BLOOD DONATED BY" : "SELECTED DONOR"}</span><h4>{assignment.donor.full_name}</h4><p>{assignment.donor.blood_group} · {assignment.donor.phone}</p>{assignment.donated_at && <small>{new Date(assignment.donated_at).toLocaleString()}</small>}</div><div className="blood-assignment-actions">{assignment.status !== "donated" && <button disabled={busyId === assignment.id} onClick={() => changeAssignment(request, "donated")}>Mark blood donated</button>}<button disabled={busyId === assignment.id} onClick={() => removeAssignment(request)}>Remove donor</button></div></div>
+              {assignment?.donor ? <div className={`blood-assignment-summary ${assignment.status}`}><div><span>{assignment.status === "donated" ? "BLOOD DONATED BY" : "SELECTED DONOR"}</span><h4>{assignment.donor.full_name}</h4><p>{assignment.donor.blood_group} · {assignment.donor.phone}</p>{assignment.donated_at && <small>Donation date: {new Date(assignment.donated_at).toLocaleString()}</small>}</div><div className="blood-assignment-actions">{assignment.status !== "donated" && <><button disabled={busyId === assignment.id} onClick={() => changeAssignment(request, "donated")}>Mark blood donated</button><button disabled={busyId === assignment.id} onClick={() => removeAssignment(request)}>Remove donor</button></>}</div></div>
                 : <div className="blood-admin-assign"><select value={selectedDonors[request.id] || ""} onChange={(event) => setSelectedDonors((current) => ({ ...current, [request.id]: event.target.value }))}><option value="">Select matching donor</option>{matchingDonors.map((donor) => <option key={donor.id} value={donor.id}>{donor.full_name} · {donor.phone}</option>)}</select><button disabled={busyId === request.id} onClick={() => assignDonor(request)}>Assign donor</button></div>}
               <footer><small>Request: {new Date(request.created_at).toLocaleString()}</small><button className="blood-delete-button" disabled={busyId === request.id} onClick={() => removeRequest(request)}>Delete complete patient record</button></footer>
             </article>;
@@ -157,7 +168,7 @@ export default function BloodBankAdmin() {
       {!loading && tab === "donors" && <div className="blood-donor-list blood-donor-list--wide">
         <div className="blood-donor-list__title"><h3>Donor records / ڈونر ریکارڈ</h3><span>{filteredDonors.length} result(s)</span></div>
         {filteredDonors.length === 0 ? <p className="blood-empty">No matching donor found.</p> : <div className="blood-admin-card-grid">
-          {filteredDonors.map((donor) => <article className="blood-donor" key={donor.id}><div className="blood-donor__main"><strong>{donor.blood_group}</strong><span><b>{donor.full_name}</b><small>{donor.phone}</small><small>{donor.address}</small></span><em className="available">Registered</em></div><div className="blood-donor__actions"><button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Deleting…" : "Delete donor card"}</button></div></article>)}
+          {filteredDonors.map((donor) => <article className={`blood-donor ${donor.is_available === false ? "blood-donor--inactive" : ""}`} key={donor.id}><div className="blood-donor__main"><strong>{donor.blood_group}</strong><span><b>{donor.full_name}</b><small>{donor.phone}</small><small>{donor.address}</small>{donor.last_donated_at && <small className="blood-donor__last-date">Last donated: {new Date(donor.last_donated_at).toLocaleString()}</small>}{donor.next_available_on && <small>Next eligible date: {donor.next_available_on}</small>}</span><em className={donor.is_available === false ? "unavailable" : "available"}>{donor.is_available === false ? "INACTIVE" : "ACTIVE"}</em></div><div className="blood-donor__actions"><button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button type="button" disabled={busyId === donor.id} onClick={() => changeDonorAvailability(donor, donor.is_available === false)}>{donor.is_available === false ? "Reactivate donor" : "Mark unavailable"}</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Working…" : "Delete donor card"}</button></div></article>)}
         </div>}
       </div>}
     </section>

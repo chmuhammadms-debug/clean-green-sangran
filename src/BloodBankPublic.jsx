@@ -29,20 +29,6 @@ function readStoredDonor() {
   catch { return null; }
 }
 
-function normaliseDonorSearch(value) {
-  return String(value || "")
-    .toLowerCase()
-    .replace(/positive|پازیٹو|پوزیٹو|مثبت/g, "+")
-    .replace(/negative|نیگیٹو|منفی/g, "-")
-    .replace(/[‐‑‒–—]/g, "-")
-    .replace(/\s+/g, "")
-    .trim();
-}
-
-function normalisePhone(value) {
-  return String(value || "").replace(/\D/g, "").slice(-10);
-}
-
 function DonorCards({ donors, ur, emptyText, onSelect, selectedDonorId, donated }) {
   if (!donors.length) return <div className="blood-empty">{emptyText}</div>;
   return <div className="blood-public-grid">
@@ -60,7 +46,7 @@ function DonorCards({ donors, ur, emptyText, onSelect, selectedDonorId, donated 
 export default function BloodBankPublic({ language = "en" }) {
   const ur = language === "ur";
   const storedDonor = useMemo(readStoredDonor, []);
-  const [mode, setMode] = useState(storedDonor ? "donor" : "");
+  const [mode, setMode] = useState("");
   const [donorForm, setDonorForm] = useState(emptyDonorForm);
   const [patientForm, setPatientForm] = useState(emptyPatientForm);
   const [registeredDonor, setRegisteredDonor] = useState(storedDonor);
@@ -68,46 +54,21 @@ export default function BloodBankPublic({ language = "en" }) {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [summary, setSummary] = useState([]);
   const [donors, setDonors] = useState([]);
-  const [search, setSearch] = useState("");
-  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
   const [directoryError, setDirectoryError] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   const loadSummary = () => fetchPublicBloodSummary().then(setSummary).catch(() => setSummary([]));
-  const loadDonors = async () => {
+  const loadDonors = async (requestId) => {
     setDirectoryLoading(true);
     setDirectoryError("");
-    try { setDonors(await fetchPublicBloodDonors()); }
+    try { setDonors(await fetchPublicBloodDonors(requestId)); }
     catch (error) { setDonors([]); setDirectoryError(error.message); }
     finally { setDirectoryLoading(false); }
   };
 
-  useEffect(() => { loadSummary(); loadDonors(); }, []);
-
-  useEffect(() => {
-    if (directoryLoading || directoryError || !registeredDonor?.id) return;
-    const currentDonor = donors.find((donor) => donor.id === registeredDonor.id)
-      || donors.find((donor) => normalisePhone(donor.phone) === normalisePhone(registeredDonor.phone));
-    if (currentDonor) {
-      setRegisteredDonor(currentDonor);
-      window.localStorage.setItem(DONOR_STORAGE_KEY, JSON.stringify(currentDonor));
-    } else {
-      setRegisteredDonor(null);
-      window.localStorage.removeItem(DONOR_STORAGE_KEY);
-    }
-  }, [directoryLoading, directoryError, donors]);
-
-  const filteredDonors = useMemo(() => {
-    const query = normaliseDonorSearch(search);
-    if (!query) return donors;
-    return donors.filter((donor) => normaliseDonorSearch([
-      donor.blood_group,
-      donor.full_name,
-      donor.phone,
-      donor.address,
-    ].join(" ")).includes(query));
-  }, [donors, search]);
+  useEffect(() => { loadSummary(); }, []);
 
   const matchingPatientDonors = useMemo(() => {
     if (!bloodRequest) return [];
@@ -130,7 +91,6 @@ export default function BloodBankPublic({ language = "en" }) {
       setDonorForm(emptyDonorForm);
       setMessage(ur ? "آپ پہلے ہی بلڈ ڈونر فہرست میں شامل ہو چکے ہیں۔" : "You are now registered in the blood donor directory.");
       loadSummary();
-      await loadDonors();
       window.setTimeout(() => document.getElementById("blood-registration-result")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
@@ -144,7 +104,7 @@ export default function BloodBankPublic({ language = "en" }) {
       setBloodRequest(request);
       setSelectedAssignment(null);
       setMessage(ur ? "مریض کی درخواست محفوظ ہوگئی ہے۔ متعلقہ ڈونرز نیچے موجود ہیں۔" : "The patient request has been saved. Matching donors are shown below.");
-      await loadDonors();
+      await loadDonors(request.id);
       window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
@@ -170,6 +130,8 @@ export default function BloodBankPublic({ language = "en" }) {
       const assignment = await markBloodRequestDonated(bloodRequest.id, selectedAssignment.donor.id);
       setSelectedAssignment((current) => ({ ...current, ...assignment, status: "donated" }));
       setBloodRequest((current) => ({ ...current, status: "fulfilled" }));
+      setDonors((current) => current.filter((donor) => donor.id !== selectedAssignment.donor.id));
+      loadSummary();
       setMessage(ur ? "خون دینے کا مکمل ریکارڈ محفوظ ہوگیا ہے۔" : "The completed blood donation has been saved in the report.");
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
@@ -223,12 +185,7 @@ export default function BloodBankPublic({ language = "en" }) {
           {message && <p className="blood-message">{message}</p>}
         </div>}
 
-        <section className="blood-public-directory" aria-labelledby="blood-public-directory-title">
-          <div className="blood-public-directory__head"><div><span>{ur ? "ایمرجنسی ڈونر ڈائریکٹری" : "EMERGENCY DONOR DIRECTORY"}</span><h2 id="blood-public-directory-title">{ur ? "دستیاب بلڈ ڈونرز" : "Available blood donors"}</h2><p>{ur ? "بلڈ گروپ، نام، فون نمبر یا پتے سے تلاش کریں۔" : "Search by blood group, name, phone number or address."}</p></div><b>{filteredDonors.length}</b></div>
-          <label className="blood-public-search"><span aria-hidden="true">⌕</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "مثلاً A پازیٹو، B+، O نیگیٹو، نام یا فون" : "For example: A positive, B+, O negative, name or phone"} aria-label={ur ? "بلڈ ڈونر تلاش کریں" : "Search blood donors"} />{search && <button type="button" onClick={() => setSearch("")} aria-label={ur ? "تلاش صاف کریں" : "Clear search"}>×</button>}</label>
-          <div className="blood-public-quick-groups"><button type="button" className={!search ? "active" : ""} onClick={() => setSearch("")}>{ur ? "تمام" : "All"}</button>{BLOOD_GROUPS.map((group) => <button type="button" className={normaliseDonorSearch(search) === normaliseDonorSearch(group) ? "active" : ""} key={group} onClick={() => setSearch(group)}>{group}</button>)}</div>
-          {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" />{ur ? "ڈونرز لوڈ ہو رہے ہیں…" : "Loading donors…"}</div> : directoryError ? <p className="blood-directory-error">{ur ? "ڈونر فہرست لوڈ نہیں ہوئی۔ نئی SQL فائل چلائیں۔" : "The donor directory could not be loaded. Run the new SQL file."}</p> : <DonorCards donors={filteredDonors} ur={ur} emptyText={ur ? "اس تلاش کے مطابق کوئی دستیاب ڈونر نہیں ملا۔" : "No available donor matches this search."} />}
-        </section>
+        <p className="blood-private-directory-note">✚ {ur ? "ڈونر رجسٹریشن کے بعد عوامی فہرست ظاہر نہیں کی جاتی۔ ڈونر صرف متعلقہ مریض کی درخواست کے بعد دکھائے جاتے ہیں۔" : "The donor directory is private. Matching donors appear only after a patient submits a blood request."}</p>
       </div>}
 
       {mode === "patient" && <div className="blood-active-flow" id="blood-active-flow">
