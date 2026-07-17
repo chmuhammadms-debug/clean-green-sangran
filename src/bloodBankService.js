@@ -208,6 +208,12 @@ export async function fetchPublicBloodSummary() {
   return data || [];
 }
 
+export async function fetchPublicBloodDonors() {
+  const { data, error } = await supabase.rpc("public_blood_donor_directory");
+  if (error) throw error;
+  return data || [];
+}
+
 function safe(value) {
   return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",

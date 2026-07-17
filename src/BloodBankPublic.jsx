@@ -1,19 +1,51 @@
-import { useEffect, useState } from "react";
-import { BLOOD_GROUPS, fetchPublicBloodSummary, printBloodDonorSlip, registerPublicBloodDonor } from "./bloodBankService";
+import { useEffect, useMemo, useState } from "react";
+import { BLOOD_GROUPS, fetchPublicBloodDonors, fetchPublicBloodSummary, printBloodDonorSlip, registerPublicBloodDonor } from "./bloodBankService";
 import "./BloodBank.css";
 
 const emptyForm = { fullName: "", phone: "", address: "", bloodGroup: "A+" };
+
+function normaliseDonorSearch(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/positive|پازیٹو|پوزیٹو|مثبت/g, "+")
+    .replace(/negative|نیگیٹو|نیگیٹو|منفی/g, "-")
+    .replace(/[‐‑‒–—]/g, "-")
+    .replace(/\s+/g, "")
+    .trim();
+}
 
 export default function BloodBankPublic({ language = "en" }) {
   const ur = language === "ur";
   const [form, setForm] = useState(emptyForm);
   const [registeredDonor, setRegisteredDonor] = useState(null);
   const [summary, setSummary] = useState([]);
+  const [donors, setDonors] = useState([]);
+  const [search, setSearch] = useState("");
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryError, setDirectoryError] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
   const loadSummary = () => fetchPublicBloodSummary().then(setSummary).catch(() => setSummary([]));
-  useEffect(() => { loadSummary(); }, []);
+  const loadDonors = async () => {
+    setDirectoryLoading(true);
+    setDirectoryError("");
+    try { setDonors(await fetchPublicBloodDonors()); }
+    catch (error) { setDonors([]); setDirectoryError(error.message); }
+    finally { setDirectoryLoading(false); }
+  };
+  useEffect(() => { loadSummary(); loadDonors(); }, []);
+
+  const filteredDonors = useMemo(() => {
+    const query = normaliseDonorSearch(search);
+    if (!query) return donors;
+    return donors.filter((donor) => normaliseDonorSearch([
+      donor.blood_group,
+      donor.full_name,
+      donor.phone,
+      donor.address,
+    ].join(" ")).includes(query));
+  }, [donors, search]);
 
   const submitRegistration = async (event) => {
     event.preventDefault();
@@ -24,6 +56,7 @@ export default function BloodBankPublic({ language = "en" }) {
       setForm(emptyForm);
       setMessage(ur ? "آپ کا نام بلڈ ڈونر فہرست میں شامل ہوگیا ہے۔" : "You have been added to the blood donor registry.");
       loadSummary();
+      await loadDonors();
       window.setTimeout(() => document.getElementById("blood-registration-result")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
@@ -44,6 +77,44 @@ export default function BloodBankPublic({ language = "en" }) {
       <div className="blood-summary" aria-label="Available blood donors by group">
         {BLOOD_GROUPS.map((group) => { const row = summary.find((item) => item.blood_group === group); return <div key={group}><b>{group}</b><span>{Number(row?.available_donors || 0)} {ur ? "ڈونر" : "donor(s)"}</span></div>; })}
       </div>
+
+      <section className="blood-public-directory" aria-labelledby="blood-public-directory-title">
+        <div className="blood-public-directory__head">
+          <div>
+            <span>{ur ? "ایمرجنسی ڈونر ڈائریکٹری" : "EMERGENCY DONOR DIRECTORY"}</span>
+            <h2 id="blood-public-directory-title">{ur ? "دستیاب بلڈ ڈونرز" : "Available blood donors"}</h2>
+            <p>{ur ? "بلڈ گروپ، نام، فون نمبر یا پتے سے تلاش کریں۔" : "Search by blood group, name, phone number or address."}</p>
+          </div>
+          <b>{filteredDonors.length}</b>
+        </div>
+
+        <label className="blood-public-search">
+          <span aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={ur ? "مثلاً A پازیٹو، B+، O نیگیٹو، نام یا فون" : "For example: A positive, B+, O negative, name or phone"}
+            aria-label={ur ? "بلڈ ڈونر تلاش کریں" : "Search blood donors"}
+          />
+          {search && <button type="button" onClick={() => setSearch("")} aria-label={ur ? "تلاش صاف کریں" : "Clear search"}>×</button>}
+        </label>
+
+        <div className="blood-public-quick-groups" aria-label={ur ? "بلڈ گروپ منتخب کریں" : "Select a blood group"}>
+          <button type="button" className={!search ? "active" : ""} onClick={() => setSearch("")}>{ur ? "تمام" : "All"}</button>
+          {BLOOD_GROUPS.map((group) => <button type="button" className={normaliseDonorSearch(search) === normaliseDonorSearch(group) ? "active" : ""} key={group} onClick={() => setSearch(group)}>{group}</button>)}
+        </div>
+
+        {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" />{ur ? "ڈونرز لوڈ ہو رہے ہیں…" : "Loading donors…"}</div>
+          : directoryError ? <p className="blood-directory-error">{ur ? "ڈونر فہرست لوڈ نہیں ہوئی۔ Supabase میں نئی SQL فائل چلائیں۔" : "The donor directory could not be loaded. Run the new SQL file in Supabase."}</p>
+            : filteredDonors.length ? <div className="blood-public-grid">
+              {filteredDonors.map((donor) => <article className="blood-public-card" key={donor.id}>
+                <b className="blood-public-card__group">{donor.blood_group}</b>
+                <div><h3>{donor.full_name}</h3><p>{donor.address}</p></div>
+                <a href={`tel:${String(donor.phone || "").replace(/[^+\d]/g, "")}`}>{donor.phone}</a>
+              </article>)}
+            </div> : <div className="blood-empty">{ur ? "اس تلاش کے مطابق کوئی دستیاب ڈونر نہیں ملا۔" : "No available donor matches this search."}</div>}
+      </section>
 
       {!registeredDonor ? (
         <div className="blood-auth-card blood-simple-register" id="blood-registration-form">
@@ -67,7 +138,7 @@ export default function BloodBankPublic({ language = "en" }) {
           {message && <p className="blood-message">{message}</p>}
         </div>
       )}
-      <p className="blood-privacy">🔒 {ur ? "فون اور پتہ صرف مجاز ایڈمن کو نظر آئیں گے؛ عوام کو ذاتی معلومات نہیں دکھائی جاتیں۔" : "Phone numbers and addresses are visible only to the authorised administrator, never to the public."}</p>
+      <p className="blood-privacy">✚ {ur ? "ڈونر کی معلومات صرف حقیقی بلڈ ایمرجنسی کے لیے استعمال کریں۔" : "Use donor details only for a genuine blood emergency."}</p>
     </section>
   );
 }
