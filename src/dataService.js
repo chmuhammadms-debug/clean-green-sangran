@@ -32,6 +32,7 @@ export async function fetchDatabaseData() {
       name: project.name,
       description: project.description || "",
       icon: project.icon || "📁",
+      isActive: project.is_active !== false,
     })),
     transactions: (records || []).map((record) => ({
       id: record.app_id || record.id,
@@ -87,7 +88,7 @@ export async function syncDatabaseData(systems, transactions) {
     name: system.name,
     description: system.description || system.englishName || "Community management system",
     icon: system.icon || "📁",
-    is_active: true,
+    is_active: system.isActive !== false,
   }));
 
   const { error: projectError } = await supabase.from("projects").upsert(projectRows, { onConflict: "slug" });

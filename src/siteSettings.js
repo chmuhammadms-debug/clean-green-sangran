@@ -118,6 +118,7 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectUr: "صاف پانی اور گرین زون منصوبہ",
   comingProjectDateEn: "Expected soon",
   comingProjectDateUr: "جلد شروع ہوگا",
+  projectProfilesByProject: {},
   socialLinks: [],
   paymentMethods: [],
   projectFaithSlidesByProject: DEFAULT_PROJECT_FAITH_SLIDES,
@@ -149,6 +150,9 @@ export function mergeSiteSettings(value = {}) {
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
     paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,
+    projectProfilesByProject: value.projectProfilesByProject && typeof value.projectProfilesByProject === "object"
+      ? value.projectProfilesByProject
+      : {},
     projectFaithSlidesByProject: mergeProjectFaithSlides(value),
   };
 }

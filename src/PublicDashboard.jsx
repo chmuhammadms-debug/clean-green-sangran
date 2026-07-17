@@ -558,8 +558,27 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
   ).size;
 
-  const imageFor = (system) => projectImages[system.id] || welfareImage;
-  const photosFor = (system) => projectGalleries[system.id] || [{ image: imageFor(system), title: system.name }];
+  const profileFor = (system) => settings.projectProfilesByProject?.[system.id] || {};
+  const systemName = (system) => {
+    const profile = profileFor(system);
+    return ur
+      ? (profile.nameUr || projectUrdu[system.id]?.name || system.name)
+      : (profile.nameEn || system.name);
+  };
+  const systemDescription = (system) => {
+    const profile = profileFor(system);
+    return ur
+      ? (profile.descriptionUr || projectUrdu[system.id]?.description || system.description)
+      : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
+  };
+  const imageFor = (system) => profileFor(system).coverImage || projectImages[system.id] || welfareImage;
+  const photosFor = (system) => {
+    const galleryUrls = profileFor(system).galleryUrls;
+    if (Array.isArray(galleryUrls) && galleryUrls.length) {
+      return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+    }
+    return projectGalleries[system.id] || [{ image: imageFor(system), title: systemName(system) }];
+  };
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
@@ -585,10 +604,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [galleryIndex, activeGallery.length]);
-  const systemName = (system) => ur ? (projectUrdu[system.id]?.name || system.name) : system.name;
-  const systemDescription = (system) => ur
-    ? (projectUrdu[system.id]?.description || system.description)
-    : (system.description || system.englishName || "Transparent community project records.");
   const scrollTo = (id) => {
     setMenuOpen(false);
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
