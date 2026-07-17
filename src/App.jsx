@@ -3,7 +3,9 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
-import ProjectIcon from "./ProjectIcon";
+import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
+import BloodBankAdmin from "./BloodBankAdmin";
+import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
 
@@ -406,11 +408,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session && await isCurrentUserAdmin(data.session.user)) {
         setLoggedIn(true);
         setUsername(data.session.user.email || "");
         loadFromDatabase();
+      } else if (data.session) {
+        await supabase.auth.signOut();
       }
     });
   }, []);
@@ -488,12 +492,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   async function handleLogin(event) {
     event.preventDefault();
 
-    const { error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
-    if (!error) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
+    if (!error && await isCurrentUserAdmin(data.user)) {
       setLoggedIn(true);
       await loadFromDatabase();
     } else {
-      alert("Incorrect email or password");
+      if (!error) await supabase.auth.signOut();
+      alert(error ? "Incorrect email or password" : "This is a donor account, not an administrator account.");
     }
   }
 
@@ -1166,7 +1171,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 selectedSystem.englishName}
             </p>
 
-            <SummaryCards
+            {isBloodBankProject(selectedSystem) ? <BloodBankAdmin /> : <><SummaryCards
               totals={selectedTotals}
               labels={[
                 "Total Donations",
@@ -1595,6 +1600,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 </section>
               </>
             )}
+            </>}
           </>
         ) : (
           <>

@@ -1,6 +1,6 @@
 import bloodBankIcon from "./blood-bank-icon.png";
 
-function isBloodBankProject(project = {}) {
+export function isBloodBankProject(project = {}) {
   const searchableText = [
     project.id,
     project.slug,

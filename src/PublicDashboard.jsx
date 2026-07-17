@@ -3,7 +3,8 @@ import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
-import ProjectIcon from "./ProjectIcon";
+import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
+import BloodBankPublic from "./BloodBankPublic";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -632,7 +633,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
-            <span className="section-kicker">PUBLIC PROJECT LEDGER</span>
+            <span className="section-kicker">{isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
             <h1>{systemName(selectedSystem)}</h1>
             <p>{systemDescription(selectedSystem)}</p>
           </div>
@@ -640,7 +641,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            <MoneyCards totals={selectedTotals} language={language} />
+            {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} /> : <MoneyCards totals={selectedTotals} language={language} />}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
@@ -665,7 +666,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 ))}
               </div>
             </div>
-            <div className="ledger-card reveal">
+            {!isBloodBankProject(selectedSystem) && <div className="ledger-card reveal">
               <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>Public financial records</h2></div><p>Attachments and administrative controls remain private.</p></div>
               <div className="ledger-toolbar">
                 <div className="filter-tabs">
@@ -676,7 +677,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search public records" /></label>
               </div>
               <RecordsTable records={filteredRecords} systems={systems} language={language} />
-            </div>
+            </div>}
           </section>
         </main>
         {galleryIndex !== null && activeGallery[galleryIndex] && (
