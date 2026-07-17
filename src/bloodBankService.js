@@ -78,6 +78,71 @@ export async function registerBloodRequest(form) {
   return request;
 }
 
+export async function selectDonorForBloodRequest(requestId, donorId) {
+  const { data, error } = await supabase.rpc("select_blood_donor_for_request", {
+    p_request_id: requestId,
+    p_donor_id: donorId,
+  });
+  if (error) throw error;
+  const assignment = Array.isArray(data) ? data[0] : data;
+  if (!assignment) throw new Error("The donor could not be selected for this patient.");
+  return assignment;
+}
+
+export async function markBloodRequestDonated(requestId, donorId) {
+  const { data, error } = await supabase.rpc("mark_blood_request_donated", {
+    p_request_id: requestId,
+    p_donor_id: donorId,
+  });
+  if (error) throw error;
+  const assignment = Array.isArray(data) ? data[0] : data;
+  if (!assignment) throw new Error("The blood donation could not be confirmed.");
+  return assignment;
+}
+
+export async function fetchBloodRequestReport() {
+  const [{ data: requests, error: requestError }, { data: assignments, error: assignmentError }] = await Promise.all([
+    supabase.from("blood_requests").select("id,patient_name,attendant_name,phone,hospital_address,blood_group,units,needed_on,notes,status,created_at").order("created_at", { ascending: false }),
+    supabase.from("blood_request_donors").select("id,request_id,donor_id,status,units,notes,selected_at,donated_at").order("selected_at", { ascending: false }),
+  ]);
+  if (requestError) throw requestError;
+  if (assignmentError) throw assignmentError;
+
+  const donors = await fetchBloodDonors();
+  const donorMap = new Map(donors.map((donor) => [donor.id, donor]));
+  return (requests || []).map((request) => ({
+    ...request,
+    assignments: (assignments || [])
+      .filter((assignment) => assignment.request_id === request.id)
+      .map((assignment) => ({ ...assignment, donor: donorMap.get(assignment.donor_id) || null })),
+  }));
+}
+
+export async function assignDonorToBloodRequest(requestId, donorId) {
+  return selectDonorForBloodRequest(requestId, donorId);
+}
+
+export async function updateBloodAssignmentStatus(assignmentId, status) {
+  const { data, error } = await supabase.rpc("admin_update_blood_assignment", {
+    p_assignment_id: assignmentId,
+    p_status: status,
+  });
+  if (error) throw error;
+  return Array.isArray(data) ? data[0] : data;
+}
+
+export async function deleteBloodAssignment(assignmentId) {
+  const { error } = await supabase.from("blood_request_donors").delete().eq("id", assignmentId);
+  if (error) throw error;
+  return assignmentId;
+}
+
+export async function deleteBloodRequest(requestId) {
+  const { error } = await supabase.from("blood_requests").delete().eq("id", requestId);
+  if (error) throw error;
+  return requestId;
+}
+
 export async function loginBloodDonor(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;
@@ -250,5 +315,20 @@ export function printBloodDonorSlip(donor, donation = null) {
     <div class="group"><span>Blood Group</span><b>${safe(donor.blood_group)}</b></div>
     <div class="grid"><div class="field"><span>Donor Number</span><b>${safe(bloodDonorNumber(donor))}</b></div><div class="field"><span>Name</span><b>${safe(donor.full_name)}</b></div><div class="field"><span>Phone</span><b>${safe(donor.phone)}</b></div><div class="field"><span>Availability</span><b>${donor.is_available === false ? "Not Available" : "Available"}</b></div><div class="field wide"><span>Address</span><b>${safe(donor.address)}</b></div>${donation ? `<div class="field"><span>Donation Date</span><b>${safe(donation.donation_date)}</b></div><div class="field"><span>Units</span><b>${safe(donation.units)}</b></div><div class="field wide"><span>Location / Notes</span><b>${safe(donation.location || donation.notes || "—")}</b></div>` : ""}</div>
     <p class="foot">Private donor information — for authorised community blood-bank use only.</p></main><script>window.onload=()=>window.print()</script></body></html>`);
+  popup.document.close();
+}
+
+export function printBloodRequestReport(requests) {
+  const popup = window.open("", "_blank", "width=1100,height=900");
+  if (!popup) throw new Error("Please allow pop-ups to print the patient report.");
+  const rows = (requests || []).map((request) => {
+    const active = (request.assignments || []).filter((item) => item.status !== "cancelled");
+    const donorText = active.length
+      ? active.map((item) => `${safe(item.donor?.full_name || "Unknown donor")} (${safe(item.donor?.blood_group || "—")}) — ${safe(item.status)}`).join("<br>")
+      : "Not assigned";
+    return `<tr><td>${safe(request.patient_name)}</td><td>${safe(request.blood_group)}</td><td>${safe(request.phone)}</td><td>${safe(request.hospital_address)}</td><td>${safe(request.units)}</td><td>${safe(request.needed_on)}</td><td>${donorText}</td><td>${safe(request.status)}</td></tr>`;
+  }).join("");
+  popup.document.write(`<!doctype html><html><head><title>Blood Bank Patient & Donor Report</title><style>
+    body{font-family:Arial,sans-serif;color:#17251d;padding:24px}h1{margin-bottom:4px;color:#7f1d1d}p{color:#647268}table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:10px;border:1px solid #ccd9d0;text-align:left;vertical-align:top}th{color:#fff;background:#7f1d1d}@media print{body{padding:0}}</style></head><body><h1>Clean &amp; Green Sangran</h1><p>Blood Bank — Patient and Donor Report</p><table><thead><tr><th>Patient</th><th>Group</th><th>Phone</th><th>Hospital / Address</th><th>Units</th><th>Required date</th><th>Selected / Donated by</th><th>Status</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No patient requests.</td></tr>'}</tbody></table><script>window.onload=()=>window.print()</script></body></html>`);
   popup.document.close();
 }

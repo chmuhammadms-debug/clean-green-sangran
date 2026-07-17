@@ -3,9 +3,11 @@ import {
   BLOOD_GROUPS,
   fetchPublicBloodDonors,
   fetchPublicBloodSummary,
+  markBloodRequestDonated,
   printBloodDonorSlip,
   registerBloodRequest,
   registerPublicBloodDonor,
+  selectDonorForBloodRequest,
 } from "./bloodBankService";
 import "./BloodBank.css";
 
@@ -41,13 +43,16 @@ function normalisePhone(value) {
   return String(value || "").replace(/\D/g, "").slice(-10);
 }
 
-function DonorCards({ donors, ur, emptyText }) {
+function DonorCards({ donors, ur, emptyText, onSelect, selectedDonorId, donated }) {
   if (!donors.length) return <div className="blood-empty">{emptyText}</div>;
   return <div className="blood-public-grid">
     {donors.map((donor) => <article className="blood-public-card" key={donor.id}>
       <b className="blood-public-card__group">{donor.blood_group}</b>
       <div><h3>{donor.full_name}</h3><p>{donor.address}</p></div>
-      <a href={`tel:${String(donor.phone || "").replace(/[^+\d]/g, "")}`}>{ur ? "کال کریں" : "Call"} · {donor.phone}</a>
+      <div className="blood-public-card__actions">
+        <a href={`tel:${String(donor.phone || "").replace(/[^+\d]/g, "")}`}>{ur ? "کال کریں" : "Call"} · {donor.phone}</a>
+        {onSelect && <button className={selectedDonorId === donor.id ? "selected" : ""} disabled={donated} type="button" onClick={() => onSelect(donor)}>{selectedDonorId === donor.id ? (donated ? (ur ? "خون دے دیا" : "Blood donated") : (ur ? "منتخب ہوگیا" : "Selected")) : (ur ? "اس ڈونر کو منتخب کریں" : "Select donor")}</button>}
+      </div>
     </article>)}
   </div>;
 }
@@ -60,6 +65,7 @@ export default function BloodBankPublic({ language = "en" }) {
   const [patientForm, setPatientForm] = useState(emptyPatientForm);
   const [registeredDonor, setRegisteredDonor] = useState(storedDonor);
   const [bloodRequest, setBloodRequest] = useState(null);
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [summary, setSummary] = useState([]);
   const [donors, setDonors] = useState([]);
   const [search, setSearch] = useState("");
@@ -136,6 +142,7 @@ export default function BloodBankPublic({ language = "en" }) {
     try {
       const request = await registerBloodRequest(patientForm);
       setBloodRequest(request);
+      setSelectedAssignment(null);
       setMessage(ur ? "مریض کی درخواست محفوظ ہوگئی ہے۔ متعلقہ ڈونرز نیچے موجود ہیں۔" : "The patient request has been saved. Matching donors are shown below.");
       await loadDonors();
       window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
@@ -143,9 +150,35 @@ export default function BloodBankPublic({ language = "en" }) {
     finally { setBusy(false); }
   };
 
+  const selectPatientDonor = async (donor) => {
+    if (!bloodRequest?.id || busy) return;
+    setBusy(true); setMessage("");
+    try {
+      const assignment = await selectDonorForBloodRequest(bloodRequest.id, donor.id);
+      setSelectedAssignment({ ...assignment, donor });
+      setMessage(ur ? `${donor.full_name} کو اس مریض کے لیے منتخب کرلیا گیا ہے۔` : `${donor.full_name} has been selected for this patient.`);
+      window.setTimeout(() => document.getElementById("blood-selected-donor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
+    } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
+  };
+
+  const confirmBloodReceived = async () => {
+    if (!bloodRequest?.id || !selectedAssignment?.donor?.id || busy) return;
+    if (!window.confirm(ur ? "کیا اس ڈونر نے مریض کو خون دے دیا ہے؟" : "Confirm that this donor has given blood to the patient?")) return;
+    setBusy(true); setMessage("");
+    try {
+      const assignment = await markBloodRequestDonated(bloodRequest.id, selectedAssignment.donor.id);
+      setSelectedAssignment((current) => ({ ...current, ...assignment, status: "donated" }));
+      setBloodRequest((current) => ({ ...current, status: "fulfilled" }));
+      setMessage(ur ? "خون دینے کا مکمل ریکارڈ محفوظ ہوگیا ہے۔" : "The completed blood donation has been saved in the report.");
+    } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
+  };
+
   const startNewRequest = () => {
     setPatientForm(emptyPatientForm);
     setBloodRequest(null);
+    setSelectedAssignment(null);
     setMessage("");
   };
 
@@ -217,8 +250,12 @@ export default function BloodBankPublic({ language = "en" }) {
           <div className="blood-request-result__head"><span>✓</span><div><small>{ur ? "درخواست محفوظ ہوگئی" : "REQUEST SAVED"}</small><h2>{bloodRequest.patient_name}</h2><p>{ur ? `${bloodRequest.blood_group} کے دستیاب ڈونرز سے رابطہ کریں۔` : `Contact an available ${bloodRequest.blood_group} donor below.`}</p></div><b>{bloodRequest.blood_group}</b></div>
           <div className="blood-request-summary"><p><span>{ur ? "رابطہ" : "Contact"}</span><b>{bloodRequest.attendant_name} · {bloodRequest.phone}</b></p><p><span>{ur ? "ہسپتال / پتہ" : "Hospital / address"}</span><b>{bloodRequest.hospital_address}</b></p><p><span>{ur ? "ضرورت" : "Required"}</span><b>{bloodRequest.units} {ur ? "یونٹ" : "unit(s)"} · {bloodRequest.needed_on}</b></p></div>
           {message && <p className="blood-message">{message}</p>}
+          {selectedAssignment?.donor && <section className="blood-selected-assignment" id="blood-selected-donor">
+            <div><span>{selectedAssignment.status === "donated" ? (ur ? "خون دے دیا گیا" : "DONATION COMPLETED") : (ur ? "مریض کے لیے منتخب ڈونر" : "SELECTED FOR THIS PATIENT")}</span><h3>{selectedAssignment.donor.full_name}</h3><p>{selectedAssignment.donor.blood_group} · {selectedAssignment.donor.phone}</p></div>
+            <div className="blood-selected-assignment__actions"><a href={`tel:${String(selectedAssignment.donor.phone || "").replace(/[^+\d]/g, "")}`}>{ur ? "ڈونر کو کال کریں" : "Call donor"}</a>{selectedAssignment.status !== "donated" && <button disabled={busy} type="button" onClick={confirmBloodReceived}>{ur ? "تصدیق کریں: خون دے دیا" : "Confirm: blood donated"}</button>}</div>
+          </section>}
           <h3>{ur ? "متعلقہ دستیاب ڈونرز" : "Matching available donors"}</h3>
-          {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" /></div> : <DonorCards donors={matchingPatientDonors} ur={ur} emptyText={ur ? "اس بلڈ گروپ کا کوئی دستیاب ڈونر ابھی موجود نہیں۔" : "No available donor in this blood group is currently listed."} />}
+          {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" /></div> : <DonorCards donors={matchingPatientDonors} ur={ur} onSelect={selectPatientDonor} selectedDonorId={selectedAssignment?.donor?.id} donated={selectedAssignment?.status === "donated"} emptyText={ur ? "اس بلڈ گروپ کا کوئی دستیاب ڈونر ابھی موجود نہیں۔" : "No available donor in this blood group is currently listed."} />}
           <button className="blood-new-request" type="button" onClick={startNewRequest}>{ur ? "نئی درخواست درج کریں" : "Create another request"}</button>
         </section>}
       </div>}
