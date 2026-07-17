@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./ProjectManager.css";
+import ProjectIcon from "./ProjectIcon";
 
 function buildItems(systems = [], settings = {}) {
   const profiles = settings.projectProfilesByProject || {};
@@ -100,7 +101,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
           {items.map((item, index) => (
             <article className="project-editor" id={`project-editor-${item.id}`} key={item.id}>
               <div className="project-editor__top">
-                <div className="project-editor__identity"><span>{item.icon || "📁"}</span><div><small>PROJECT {index + 1}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
+                <div className="project-editor__identity"><ProjectIcon project={item} size={34} /><div><small>PROJECT {index + 1}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
                 <label className="project-editor__visibility"><input type="checkbox" checked={item.isActive !== false} onChange={(event) => updateItem(item.id, "isActive", event.target.checked)} /><b>{item.isActive !== false ? "Public" : "Hidden"}</b></label>
               </div>
 

@@ -3,6 +3,7 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
+import ProjectIcon from "./ProjectIcon";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
 
@@ -1156,7 +1157,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             </button>
 
             <h1 className="page-heading">
-              {selectedSystem.icon}{" "}
+              <ProjectIcon project={selectedSystem} size={42} />{" "}
               {selectedSystem.name}
             </h1>
 
@@ -1668,7 +1669,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     <div
                       style={{ fontSize: "35px" }}
                     >
-                      {system.icon}
+                      <ProjectIcon project={system} size={35} />
                     </div>
 
                     <h2

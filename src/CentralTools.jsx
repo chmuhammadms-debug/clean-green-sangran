@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import ProjectIcon from "./ProjectIcon";
 
 const coreSystemIds = [
   "cemetery",
@@ -414,11 +415,10 @@ function CentralTools({
         className="panel"
         style={{ marginTop: "22px" }}
       >
-        <h3>Manage Systems</h3>
+        <h3>Quick System List</h3>
 
         <p style={{ color: "#6b7280" }}>
-          Core systems are protected. Custom
-          systems can be renamed or deleted.
+          Full editing is available in the Project Manager above. This list is kept for quick controls.
         </p>
 
         <div
@@ -457,7 +457,7 @@ function CentralTools({
                   }}
                 >
                   <span style={{ fontSize: "28px" }}>
-                    {system.icon}
+                    <ProjectIcon project={system} size={28} />
                   </span>
 
                   <div>

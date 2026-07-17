@@ -3,6 +3,7 @@ import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
+import ProjectIcon from "./ProjectIcon";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -822,7 +823,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <img src={imageFor(system)} alt={system.name} />
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content"><span>{system.icon} {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{systemName(system)}</h3><p>{systemDescription(system)}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
+                  <div className="project-card__content"><span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span><h3>{systemName(system)}</h3><p>{systemDescription(system)}</p><div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div><button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button></div>
                 </article>
               );
             })}
