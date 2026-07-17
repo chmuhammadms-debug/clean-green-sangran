@@ -61,6 +61,23 @@ export async function registerPublicBloodDonor(form) {
   return donor;
 }
 
+export async function registerBloodRequest(form) {
+  const { data, error } = await supabase.rpc("register_blood_request", {
+    p_patient_name: form.patientName.trim(),
+    p_attendant_name: form.attendantName.trim(),
+    p_phone: form.phone.trim(),
+    p_hospital_address: form.hospitalAddress.trim(),
+    p_blood_group: form.bloodGroup,
+    p_units: Number(form.units) || 1,
+    p_needed_on: form.neededOn,
+    p_notes: form.notes.trim(),
+  });
+  if (error) throw error;
+  const request = Array.isArray(data) ? data[0] : data;
+  if (!request) throw new Error("The blood request could not be created.");
+  return request;
+}
+
 export async function loginBloodDonor(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;
