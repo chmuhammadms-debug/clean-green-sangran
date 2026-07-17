@@ -464,6 +464,27 @@ function ProjectFaithSlider({ slides = [], language = "en", projectId = "" }) {
 
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
+  const slides = useMemo(() => {
+    const configured = (settings.homeHeroSlides || [])
+      .filter((slide) => slide?.enabled !== false && (slide.url || slide.image))
+      .map((slide, index) => {
+        const fallback = heroSlides[index % heroSlides.length];
+        return {
+          id: slide.id || `custom-hero-${index}`,
+          image: slide.url || slide.image,
+          eyebrow: slide.eyebrowEn || fallback.eyebrow,
+          eyebrowUr: slide.eyebrowUr || fallback.eyebrowUr,
+          title: slide.titleEn || fallback.title,
+          titleUr: slide.titleUr || fallback.titleUr,
+          copy: slide.copyEn || fallback.copy,
+          copyUr: slide.copyUr || fallback.copyUr,
+        };
+      });
+    return shuffledSlides(configured.length ? configured : heroSlides);
+  }, [siteSettings]);
+  const activeReelSlides = (settings.homeReelSlides || []).filter((slide) => (
+    slide?.enabled !== false && (slide.url || slide.image)
+  ));
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
   const themeStyle = {
     "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
@@ -475,7 +496,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
-  const [slides] = useState(() => shuffledSlides(heroSlides));
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSystemId, setSelectedSystemId] = useState(null);
@@ -530,6 +550,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     setShowWelcome(false);
     setShowFullMission(false);
   };
+
+  useEffect(() => {
+    setSlideIndex(0);
+  }, [slides]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -848,7 +872,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="visual-reel-section">
           <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
-          <div className="visual-reel"><div className="visual-reel__track">{[...gallerySlides, ...gallerySlides].map((slide, index) => <figure key={`${slide.id}-reel-${index}`}><img src={slide.image} alt={slide.title} /><figcaption><span>{slide.eyebrow}</span><b>{slide.title}</b></figcaption></figure>)}</div></div>
+          <div className="visual-reel"><div className="visual-reel__track">{[...(activeReelSlides.length ? activeReelSlides : gallerySlides), ...(activeReelSlides.length ? activeReelSlides : gallerySlides)].map((slide, index) => {
+            const image = slide.url || slide.image;
+            const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
+            const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
+            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
+          })}</div></div>
         </section>
 
         <section className="about-section" id="about">
