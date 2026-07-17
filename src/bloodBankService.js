@@ -48,6 +48,19 @@ export async function registerBloodDonor(form) {
   return data;
 }
 
+export async function registerPublicBloodDonor(form) {
+  const { data, error } = await supabase.rpc("register_blood_donor", {
+    p_full_name: form.fullName.trim(),
+    p_phone: form.phone.trim(),
+    p_address: form.address.trim(),
+    p_blood_group: form.bloodGroup,
+  });
+  if (error) throw error;
+  const donor = Array.isArray(data) ? data[0] : data;
+  if (!donor) throw new Error("The donor record could not be created.");
+  return donor;
+}
+
 export async function loginBloodDonor(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) throw error;
@@ -181,6 +194,12 @@ export async function setBloodDonorAvailability(donorId, isAvailable) {
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function deleteBloodDonor(donorId) {
+  const { error } = await supabase.from("blood_donors").delete().eq("id", donorId);
+  if (error) throw error;
+  return donorId;
 }
 
 export async function fetchPublicBloodSummary() {
