@@ -3,11 +3,10 @@ import {
   BLOOD_GROUPS,
   fetchPublicBloodDonors,
   fetchPublicBloodSummary,
-  markBloodRequestDonated,
   printBloodDonorSlip,
   registerBloodRequest,
   registerPublicBloodDonor,
-  selectDonorForBloodRequest,
+  verifyBloodRequestAccess,
 } from "./bloodBankService";
 import "./BloodBank.css";
 
@@ -29,21 +28,18 @@ function readStoredDonor() {
   catch { return null; }
 }
 
-function DonorCards({ donors, ur, emptyText, onSelect, selectedDonorId, donated }) {
-  if (!donors.length) return <div className="blood-empty">{emptyText}</div>;
-  return <div className="blood-public-grid">
-    {donors.map((donor) => <article className="blood-public-card" key={donor.id}>
-      <b className="blood-public-card__group">{donor.blood_group}</b>
-      <div><h3>{donor.full_name}</h3><p>{donor.address}</p></div>
-      <div className="blood-public-card__actions">
-        <a href={`tel:${String(donor.phone || "").replace(/[^+\d]/g, "")}`}>{ur ? "کال کریں" : "Call"} · {donor.phone}</a>
-        {onSelect && <button className={selectedDonorId === donor.id ? "selected" : ""} disabled={donated} type="button" onClick={() => onSelect(donor)}>{selectedDonorId === donor.id ? (donated ? (ur ? "خون دے دیا" : "Blood donated") : (ur ? "منتخب ہوگیا" : "Selected")) : (ur ? "اس ڈونر کو منتخب کریں" : "Select donor")}</button>}
-      </div>
-    </article>)}
-  </div>;
+function phoneLink(phone) {
+  return String(phone || "").replace(/[^+\d]/g, "");
 }
 
-export default function BloodBankPublic({ language = "en" }) {
+function whatsAppLink(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.startsWith("92")) return digits;
+  if (digits.startsWith("0")) return `92${digits.slice(1)}`;
+  return digits;
+}
+
+export default function BloodBankPublic({ language = "en", managementPhone = "03269842000" }) {
   const ur = language === "ur";
   const storedDonor = useMemo(readStoredDonor, []);
   const [mode, setMode] = useState("");
@@ -51,7 +47,8 @@ export default function BloodBankPublic({ language = "en" }) {
   const [patientForm, setPatientForm] = useState(emptyPatientForm);
   const [registeredDonor, setRegisteredDonor] = useState(storedDonor);
   const [bloodRequest, setBloodRequest] = useState(null);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [accessCode, setAccessCode] = useState("");
+  const [approvalVerified, setApprovalVerified] = useState(false);
   const [summary, setSummary] = useState([]);
   const [donors, setDonors] = useState([]);
   const [directoryLoading, setDirectoryLoading] = useState(false);
@@ -60,10 +57,10 @@ export default function BloodBankPublic({ language = "en" }) {
   const [message, setMessage] = useState("");
 
   const loadSummary = () => fetchPublicBloodSummary().then(setSummary).catch(() => setSummary([]));
-  const loadDonors = async (requestId) => {
+  const loadDonors = async (requestId, code) => {
     setDirectoryLoading(true);
     setDirectoryError("");
-    try { setDonors(await fetchPublicBloodDonors(requestId)); }
+    try { setDonors(await fetchPublicBloodDonors(requestId, code)); }
     catch (error) { setDonors([]); setDirectoryError(error.message); }
     finally { setDirectoryLoading(false); }
   };
@@ -102,47 +99,44 @@ export default function BloodBankPublic({ language = "en" }) {
     try {
       const request = await registerBloodRequest(patientForm);
       setBloodRequest(request);
-      setSelectedAssignment(null);
-      setMessage(ur ? "مریض کی درخواست محفوظ ہوگئی ہے۔ متعلقہ ڈونرز نیچے موجود ہیں۔" : "The patient request has been saved. Matching donors are shown below.");
-      await loadDonors(request.id);
+      setAccessCode("");
+      setApprovalVerified(false);
+      setDonors([]);
+      setMessage(ur ? "درخواست محفوظ ہوگئی ہے۔ اب management سے رابطہ کرکے approval code حاصل کریں۔" : "The request has been saved. Contact management to receive the approval code.");
       window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (error) { setMessage(error.message); }
     finally { setBusy(false); }
   };
 
-  const selectPatientDonor = async (donor) => {
-    if (!bloodRequest?.id || busy) return;
-    setBusy(true); setMessage("");
+  const verifyApprovalCode = async (event) => {
+    event.preventDefault();
+    if (!bloodRequest?.id || accessCode.trim().length < 6) return;
+    setBusy(true); setMessage(""); setDirectoryError("");
     try {
-      const assignment = await selectDonorForBloodRequest(bloodRequest.id, donor.id);
-      setSelectedAssignment({ ...assignment, donor });
-      setMessage(ur ? `${donor.full_name} کو اس مریض کے لیے منتخب کرلیا گیا ہے۔` : `${donor.full_name} has been selected for this patient.`);
-      window.setTimeout(() => document.getElementById("blood-selected-donor")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
-    } catch (error) { setMessage(error.message); }
-    finally { setBusy(false); }
-  };
-
-  const confirmBloodReceived = async () => {
-    if (!bloodRequest?.id || !selectedAssignment?.donor?.id || busy) return;
-    if (!window.confirm(ur ? "کیا اس ڈونر نے مریض کو خون دے دیا ہے؟" : "Confirm that this donor has given blood to the patient?")) return;
-    setBusy(true); setMessage("");
-    try {
-      const assignment = await markBloodRequestDonated(bloodRequest.id, selectedAssignment.donor.id);
-      setSelectedAssignment((current) => ({ ...current, ...assignment, status: "donated" }));
-      setBloodRequest((current) => ({ ...current, status: "fulfilled" }));
-      setDonors((current) => current.filter((donor) => donor.id !== selectedAssignment.donor.id));
-      loadSummary();
-      setMessage(ur ? "خون دینے کا مکمل ریکارڈ محفوظ ہوگیا ہے۔" : "The completed blood donation has been saved in the report.");
-    } catch (error) { setMessage(error.message); }
-    finally { setBusy(false); }
+      await verifyBloodRequestAccess(bloodRequest.id, accessCode);
+      setApprovalVerified(true);
+      setBloodRequest((current) => ({ ...current, approval_status: "approved" }));
+      await loadDonors(bloodRequest.id, accessCode);
+      setMessage(ur ? "Management approval مکمل ہوگئی۔ متعلقہ ڈونرز اب نیچے موجود ہیں۔" : "Management approval is complete. Matching donors are now available below.");
+    } catch (error) {
+      setApprovalVerified(false);
+      setDirectoryError(error.message);
+    } finally { setBusy(false); }
   };
 
   const startNewRequest = () => {
     setPatientForm(emptyPatientForm);
     setBloodRequest(null);
-    setSelectedAssignment(null);
+    setAccessCode("");
+    setApprovalVerified(false);
+    setDonors([]);
     setMessage("");
   };
+
+  const requestReference = bloodRequest?.id ? bloodRequest.id.slice(0, 8).toUpperCase() : "";
+  const managementMessage = bloodRequest
+    ? encodeURIComponent(`Blood request ${requestReference}\nPatient: ${bloodRequest.patient_name}\nBlood group: ${bloodRequest.blood_group}\nPlease verify the request and share its approval code.`)
+    : "";
 
   return (
     <section className="blood-bank" dir={ur ? "rtl" : "ltr"}>
@@ -190,7 +184,7 @@ export default function BloodBankPublic({ language = "en" }) {
 
       {mode === "patient" && <div className="blood-active-flow" id="blood-active-flow">
         {!bloodRequest ? <div className="blood-auth-card blood-patient-request">
-          <div className="blood-simple-register__head"><span>{ur ? "خون کی درخواست" : "BLOOD REQUEST"}</span><h2>{ur ? "مریض کی مکمل تفصیل درج کریں" : "Enter the patient details"}</h2><p>{ur ? "درخواست محفوظ ہونے کے بعد متعلقہ بلڈ گروپ کے ڈونرز سامنے آجائیں گے۔" : "Matching donors will appear after the request is saved."}</p></div>
+          <div className="blood-simple-register__head"><span>{ur ? "خون کی درخواست" : "BLOOD REQUEST"}</span><h2>{ur ? "مریض کی مکمل تفصیل درج کریں" : "Enter the patient details"}</h2><p>{ur ? "درخواست محفوظ ہونے کے بعد management verification ہوگی؛ approval code کے بغیر ڈونرز ظاہر نہیں ہوں گے۔" : "After saving, management will verify the request. Donors remain hidden until the approval code is entered."}</p></div>
           <form className="blood-form" onSubmit={submitBloodRequest}>
             <label><span>{ur ? "مریض کا نام" : "Patient name"}</span><input required value={patientForm.patientName} onChange={(event) => setPatientForm({ ...patientForm, patientName: event.target.value })} /></label>
             <label><span>{ur ? "رابطہ کرنے والے کا نام" : "Contact person"}</span><input required value={patientForm.attendantName} onChange={(event) => setPatientForm({ ...patientForm, attendantName: event.target.value })} /></label>
@@ -200,19 +194,34 @@ export default function BloodBankPublic({ language = "en" }) {
             <label><span>{ur ? "ضرورت کی تاریخ" : "Required date"}</span><input required type="date" value={patientForm.neededOn} onChange={(event) => setPatientForm({ ...patientForm, neededOn: event.target.value })} /></label>
             <label className="wide"><span>{ur ? "ہسپتال اور مکمل پتہ" : "Hospital and complete address"}</span><textarea required rows="3" value={patientForm.hospitalAddress} onChange={(event) => setPatientForm({ ...patientForm, hospitalAddress: event.target.value })} /></label>
             <label className="wide"><span>{ur ? "مزید تفصیل (اختیاری)" : "Additional details (optional)"}</span><textarea rows="2" value={patientForm.notes} onChange={(event) => setPatientForm({ ...patientForm, notes: event.target.value })} /></label>
-            <button className="blood-submit wide" disabled={busy}>{busy ? (ur ? "محفوظ ہو رہا ہے…" : "Saving…") : (ur ? "درخواست محفوظ کریں اور ڈونرز دکھائیں" : "Save request and show donors")}</button>
+            <button className="blood-submit wide" disabled={busy}>{busy ? (ur ? "محفوظ ہو رہا ہے…" : "Saving…") : (ur ? "درخواست محفوظ کریں" : "Save blood request")}</button>
           </form>
           {message && <p className="blood-message">{message}</p>}
         </div> : <section className="blood-request-result" id="blood-request-result">
-          <div className="blood-request-result__head"><span>✓</span><div><small>{ur ? "درخواست محفوظ ہوگئی" : "REQUEST SAVED"}</small><h2>{bloodRequest.patient_name}</h2><p>{ur ? `${bloodRequest.blood_group} کے دستیاب ڈونرز سے رابطہ کریں۔` : `Contact an available ${bloodRequest.blood_group} donor below.`}</p></div><b>{bloodRequest.blood_group}</b></div>
+          <div className="blood-request-result__head"><span>{approvalVerified ? "✓" : "⌛"}</span><div><small>{approvalVerified ? (ur ? "MANAGEMENT APPROVAL مکمل" : "MANAGEMENT APPROVED") : (ur ? "MANAGEMENT APPROVAL باقی ہے" : "MANAGEMENT APPROVAL REQUIRED")}</small><h2>{bloodRequest.patient_name}</h2><p>{approvalVerified ? (ur ? `${bloodRequest.blood_group} کے متعلقہ ڈونرز اب دکھائے جارہے ہیں۔` : `Matching ${bloodRequest.blood_group} donors are now visible.`) : (ur ? "Management سے رابطہ کرکے چھ ہندسوں کا approval code حاصل کریں۔" : "Contact management and obtain the six-digit approval code.")}</p></div><b>{bloodRequest.blood_group}</b></div>
           <div className="blood-request-summary"><p><span>{ur ? "رابطہ" : "Contact"}</span><b>{bloodRequest.attendant_name} · {bloodRequest.phone}</b></p><p><span>{ur ? "ہسپتال / پتہ" : "Hospital / address"}</span><b>{bloodRequest.hospital_address}</b></p><p><span>{ur ? "ضرورت" : "Required"}</span><b>{bloodRequest.units} {ur ? "یونٹ" : "unit(s)"} · {bloodRequest.needed_on}</b></p></div>
           {message && <p className="blood-message">{message}</p>}
-          {selectedAssignment?.donor && <section className="blood-selected-assignment" id="blood-selected-donor">
-            <div><span>{selectedAssignment.status === "donated" ? (ur ? "خون دے دیا گیا" : "DONATION COMPLETED") : (ur ? "مریض کے لیے منتخب ڈونر" : "SELECTED FOR THIS PATIENT")}</span><h3>{selectedAssignment.donor.full_name}</h3><p>{selectedAssignment.donor.blood_group} · {selectedAssignment.donor.phone}</p></div>
-            <div className="blood-selected-assignment__actions"><a href={`tel:${String(selectedAssignment.donor.phone || "").replace(/[^+\d]/g, "")}`}>{ur ? "ڈونر کو کال کریں" : "Call donor"}</a>{selectedAssignment.status !== "donated" && <button disabled={busy} type="button" onClick={confirmBloodReceived}>{ur ? "تصدیق کریں: خون دے دیا" : "Confirm: blood donated"}</button>}</div>
+          {!approvalVerified && <section className="blood-management-approval">
+            <div className="blood-management-approval__contact">
+              <span>{ur ? "MANAGEMENT رابطہ" : "MANAGEMENT CONTACT"}</span>
+              <h3>{managementPhone || (ur ? "نمبر دستیاب نہیں" : "Number not available")}</h3>
+              <p>{ur ? `درخواست نمبر: ${requestReference}` : `Request reference: ${requestReference}`}</p>
+              <div><a href={`tel:${phoneLink(managementPhone)}`}>{ur ? "کال کریں" : "Call management"}</a><a target="_blank" rel="noreferrer" href={`https://wa.me/${whatsAppLink(managementPhone)}?text=${managementMessage}`}>WhatsApp</a></div>
+            </div>
+            <form className="blood-approval-form" onSubmit={verifyApprovalCode}>
+              <label><span>{ur ? "Management سے ملا ہوا 6 ہندسوں کا code" : "Six-digit code from management"}</span><input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength="6" value={accessCode} onChange={(event) => setAccessCode(event.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" /></label>
+              <button disabled={busy || accessCode.length !== 6}>{busy ? (ur ? "تصدیق ہو رہی ہے…" : "Verifying…") : (ur ? "Code کی تصدیق کریں" : "Verify code & show donors")}</button>
+            </form>
+            {directoryError && <p className="blood-message blood-message--error">{directoryError}</p>}
+            <small>{ur ? "ڈونر کی نجی معلومات درست code کی تصدیق تک محفوظ رہیں گی۔" : "Private donor details stay locked until the correct code is verified."}</small>
           </section>}
-          <h3>{ur ? "متعلقہ دستیاب ڈونرز" : "Matching available donors"}</h3>
-          {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" /></div> : <DonorCards donors={matchingPatientDonors} ur={ur} onSelect={selectPatientDonor} selectedDonorId={selectedAssignment?.donor?.id} donated={selectedAssignment?.status === "donated"} emptyText={ur ? "اس بلڈ گروپ کا کوئی دستیاب ڈونر ابھی موجود نہیں۔" : "No available donor in this blood group is currently listed."} />}
+          {approvalVerified && <><h3>{ur ? "Management donor کا انتظام کرے گی" : "Management will arrange the donor"}</h3>
+          {directoryError ? <p className="blood-message blood-message--error">{directoryError}</p> : null}
+          {directoryLoading ? <div className="blood-loading"><span className="blood-spinner" /></div> : <section className="blood-secure-match">
+            <b>{matchingPatientDonors.length}</b>
+            <div><span>{ur ? `${bloodRequest.blood_group} کے دستیاب matching donors` : `available matching ${bloodRequest.blood_group} donor(s)`}</span><p>{ur ? "حفاظت اور رازداری کی وجہ سے ڈونر کا نام، فون اور پتہ public نہیں دکھایا جاتا۔ Management مناسب ڈونر سے تصدیق کرکے آپ سے رابطہ کرے گی۔" : "For safety and privacy, donor names, phone numbers and addresses are never shown publicly. Management will confirm a suitable donor and contact you."}</p></div>
+            <div className="blood-secure-match__actions"><a href={`tel:${phoneLink(managementPhone)}`}>{ur ? "Management کو کال کریں" : "Call management"}</a><a target="_blank" rel="noreferrer" href={`https://wa.me/${whatsAppLink(managementPhone)}?text=${managementMessage}`}>WhatsApp</a></div>
+          </section>}</>}
           <button className="blood-new-request" type="button" onClick={startNewRequest}>{ur ? "نئی درخواست درج کریں" : "Create another request"}</button>
         </section>}
       </div>}

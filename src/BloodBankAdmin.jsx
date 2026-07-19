@@ -9,6 +9,7 @@ import {
   fetchBloodRequestReport,
   printBloodDonorSlip,
   printBloodRequestReport,
+  regenerateBloodRequestCode,
   setBloodDonorAvailability,
   updateBloodAssignmentStatus,
 } from "./bloodBankService";
@@ -100,7 +101,7 @@ export default function BloodBankAdmin() {
     const donorId = selectedDonors[request.id];
     if (!donorId) { setMessage("Please select a matching donor first."); return; }
     setBusyId(request.id); setMessage("");
-    try { await assignDonorToBloodRequest(request.id, donorId); await loadData(); setMessage("Donor assigned to patient successfully."); }
+    try { await assignDonorToBloodRequest(request.id, donorId); await loadData(); setMessage("Donor confirmed for this patient. Management may now coordinate both parties."); }
     catch (error) { setMessage(error.message); }
     finally { setBusyId(""); }
   };
@@ -120,6 +121,17 @@ export default function BloodBankAdmin() {
     setBusyId(assignment.id); setMessage("");
     try { await deleteBloodAssignment(assignment.id); await loadData(); setMessage("Donor removed from patient request."); }
     catch (error) { setMessage(error.message); }
+    finally { setBusyId(""); }
+  };
+
+  const regenerateApprovalCode = async (request) => {
+    if (!window.confirm(`Generate a new approval code for ${request.patient_name}?\nThe previous code will stop working.`)) return;
+    setBusyId(`code-${request.id}`); setMessage("");
+    try {
+      const result = await regenerateBloodRequestCode(request.id);
+      await loadData();
+      setMessage(`New management approval code: ${result.approval_code}`);
+    } catch (error) { setMessage(error.message); }
     finally { setBusyId(""); }
   };
 
@@ -155,10 +167,14 @@ export default function BloodBankAdmin() {
             const assignment = activeAssignment(request);
             const matchingDonors = donors.filter((donor) => donor.blood_group === request.blood_group && donor.is_available !== false);
             return <article className="blood-patient-card" key={request.id}>
-              <header><b>{request.blood_group}</b><div><span>{request.status.toUpperCase()}</span><h3>{request.patient_name}</h3><p>{request.units} unit(s) · required {request.needed_on}</p></div></header>
+              <header><b>{request.blood_group}</b><div><span>{request.status.toUpperCase()} · {(request.approval_status || "pending").toUpperCase()}</span><h3>{request.patient_name}</h3><p>{request.units} unit(s) · required {request.needed_on}</p></div></header>
               <div className="blood-patient-details"><p><span>Contact person</span><b>{request.attendant_name}</b></p><p><span>Phone</span><b>{request.phone}</b></p><p className="wide"><span>Hospital / address</span><b>{request.hospital_address}</b></p>{request.notes && <p className="wide"><span>Notes</span><b>{request.notes}</b></p>}</div>
-              {assignment?.donor ? <div className={`blood-assignment-summary ${assignment.status}`}><div><span>{assignment.status === "donated" ? "BLOOD DONATED BY" : "SELECTED DONOR"}</span><h4>{assignment.donor.full_name}</h4><p>{assignment.donor.blood_group} · {assignment.donor.phone}</p>{assignment.donated_at && <small>Donation date: {new Date(assignment.donated_at).toLocaleString()}</small>}</div><div className="blood-assignment-actions">{assignment.status !== "donated" && <><button disabled={busyId === assignment.id} onClick={() => changeAssignment(request, "donated")}>Mark blood donated</button><button disabled={busyId === assignment.id} onClick={() => removeAssignment(request)}>Remove donor</button></>}</div></div>
-                : <div className="blood-admin-assign"><select value={selectedDonors[request.id] || ""} onChange={(event) => setSelectedDonors((current) => ({ ...current, [request.id]: event.target.value }))}><option value="">Select matching donor</option>{matchingDonors.map((donor) => <option key={donor.id} value={donor.id}>{donor.full_name} · {donor.phone}</option>)}</select><button disabled={busyId === request.id} onClick={() => assignDonor(request)}>Assign donor</button></div>}
+              <section className={`blood-admin-approval ${request.approval_status === "approved" ? "approved" : "pending"}`}>
+                <div><span>MANAGEMENT APPROVAL CODE</span><strong>{request.approval_code || "Not generated"}</strong><small>{request.approval_status === "approved" ? `Verified${request.approved_at ? ` · ${new Date(request.approved_at).toLocaleString()}` : ""}` : `Pending · expires ${request.access_code_expires_at ? new Date(request.access_code_expires_at).toLocaleString() : "after 24 hours"}`}</small></div>
+                <div><button type="button" onClick={() => navigator.clipboard?.writeText(request.approval_code || "")}>Copy code</button><button type="button" disabled={busyId === `code-${request.id}`} onClick={() => regenerateApprovalCode(request)}>{busyId === `code-${request.id}` ? "Generating…" : "New OTP"}</button></div>
+              </section>
+              {assignment?.donor ? <div className={`blood-assignment-summary ${assignment.status}`}><div><span>{assignment.status === "donated" ? "BLOOD DONATED BY · COMPLETED" : "DONOR CONFIRMED BY MANAGEMENT"}</span><h4>{assignment.donor.full_name}</h4><p>{assignment.donor.blood_group} · {assignment.donor.phone}</p>{assignment.donated_at && <small>Donation date: {new Date(assignment.donated_at).toLocaleString()}</small>}</div><div className="blood-assignment-actions">{assignment.status !== "donated" && <><button disabled={busyId === assignment.id} onClick={() => changeAssignment(request, "donated")}>Confirm blood donated &amp; complete</button><button disabled={busyId === assignment.id} onClick={() => removeAssignment(request)}>Cancel confirmed donor</button></>}</div></div>
+                : <div className="blood-admin-assign"><select value={selectedDonors[request.id] || ""} onChange={(event) => setSelectedDonors((current) => ({ ...current, [request.id]: event.target.value }))}><option value="">Select matching active donor</option>{matchingDonors.map((donor) => <option key={donor.id} value={donor.id}>{donor.full_name} · {donor.phone}</option>)}</select><button disabled={busyId === request.id} onClick={() => assignDonor(request)}>Confirm donor</button></div>}
               <footer><small>Request: {new Date(request.created_at).toLocaleString()}</small><button className="blood-delete-button" disabled={busyId === request.id} onClick={() => removeRequest(request)}>Delete complete patient record</button></footer>
             </article>;
           })}
