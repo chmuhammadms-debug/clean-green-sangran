@@ -6,6 +6,15 @@ import WebsiteSettings from "./WebsiteSettings";
 import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
+import MosqueManagementHub from "./MosqueManagementHub";
+import {
+  defaultMosqueSystems,
+  ensureMosqueSystems,
+  isMosqueChild,
+  isMosqueParent,
+  mosqueParentRecords,
+  topLevelSystems,
+} from "./mosqueManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
@@ -35,6 +44,7 @@ const defaultSystems = [
     description: "Other community projects",
     icon: "🤝",
   },
+  ...defaultMosqueSystems,
 ];
 
 const defaultTransactions = [
@@ -78,17 +88,13 @@ function loadSystems() {
       localStorage.getItem("sangrahnSystems")
     );
 
-    if (!Array.isArray(saved)) {
-      return defaultSystems;
-    }
+    if (!Array.isArray(saved)) return defaultSystems;
 
-    return saved.map((savedSystem) => {
-      const fixedSystem = defaultSystems.find(
-        (system) => system.id === savedSystem.id
-      );
-
-      return fixedSystem || savedSystem;
-    });
+    const savedIds = new Set(saved.map((system) => String(system.id)));
+    return ensureMosqueSystems([
+      ...saved,
+      ...defaultSystems.filter((system) => !savedIds.has(String(system.id))),
+    ]);
   } catch {
     return defaultSystems;
   }
@@ -391,13 +397,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       const localSystems = loadSystems();
       const localTransactions = loadTransactions();
       const databaseSlugs = new Set(databaseData.systems.map((system) => String(system.id)));
-      const mergedSystems = [...databaseData.systems, ...localSystems.filter((system) => !databaseSlugs.has(String(system.id)))];
+      const mergedSystems = ensureMosqueSystems([
+        ...databaseData.systems,
+        ...localSystems.filter((system) => !databaseSlugs.has(String(system.id))),
+      ]);
       if (databaseData.transactions.length === 0 && localTransactions.length > 0) {
         setSystems(mergedSystems.length ? mergedSystems : localSystems);
         setTransactions(localTransactions);
         setDatabaseMessage("Local records are being migrated to Supabase...");
       } else {
-        setSystems(databaseData.systems.length ? databaseData.systems : localSystems);
+        setSystems(databaseData.systems.length ? mergedSystems : ensureMosqueSystems(localSystems));
         setTransactions(databaseData.transactions);
         setDatabaseMessage("Database connected");
       }
@@ -438,10 +447,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     (system) => system.id === selectedSystemId
   );
 
-  const selectedTransactions = transactions
-    .filter(
-      (record) => record.systemId === selectedSystemId
-    )
+  const selectedTransactions = (isMosqueParent(selectedSystemId)
+    ? mosqueParentRecords(transactions)
+    : transactions.filter((record) => record.systemId === selectedSystemId))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
@@ -1154,7 +1162,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             <button
               className="logout-button"
               onClick={() =>
-                setSelectedSystemId(null)
+                setSelectedSystemId(
+                  isMosqueChild(selectedSystem)
+                    ? "mosque"
+                    : null
+                )
               }
               style={{
                 marginBottom: "20px",
@@ -1162,7 +1174,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 background: "#166534",
               }}
             >
-              ← Central Dashboard
+              {isMosqueChild(selectedSystem)
+                ? "← Mosque Management"
+                : "← Central Dashboard"}
             </button>
 
             <h1 className="page-heading">
@@ -1175,7 +1189,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 selectedSystem.englishName}
             </p>
 
-            {isBloodBankProject(selectedSystem) ? <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} /> : <><SummaryCards
+            {isBloodBankProject(selectedSystem) ? (
+              <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
+            ) : isMosqueParent(selectedSystem) ? (
+              <MosqueManagementHub
+                systems={systems}
+                transactions={transactions}
+                onOpenSystem={openSystem}
+                adminMode
+              />
+            ) : <><SummaryCards
               totals={selectedTotals}
               labels={[
                 "Total Donations",
@@ -1654,12 +1677,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             </h2>
 
             <div className="summary-grid">
-              {systems.map((system) => {
+              {topLevelSystems(systems).map((system) => {
                 const systemTotals = totalsFor(
-                  transactions.filter(
-                    (record) =>
-                      record.systemId === system.id
-                  )
+                  isMosqueParent(system)
+                    ? mosqueParentRecords(transactions)
+                    : transactions.filter(
+                        (record) =>
+                          record.systemId === system.id
+                      )
                 );
 
                 return (

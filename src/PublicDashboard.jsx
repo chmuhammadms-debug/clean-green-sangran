@@ -6,6 +6,15 @@ import { mergeSiteSettings } from "./siteSettings";
 import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
+import MosqueManagementHub from "./MosqueManagementHub";
+import {
+  defaultMosqueSystems,
+  ensureMosqueSystems,
+  isMosqueChild,
+  isMosqueParent,
+  mosqueParentRecords,
+  topLevelSystems,
+} from "./mosqueManagement";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -43,6 +52,7 @@ const fallbackSystems = [
   { id: "plantation", name: "Plantation Management", description: "Greener roads, healthier spaces and a better future for Sangran.", icon: "🌳" },
   { id: "mosque", name: "Mosque Management", description: "Community-supported maintenance, improvements and transparent records.", icon: "🕌" },
   { id: "welfare", name: "Community Welfare", description: "Dignified support for families and shared village initiatives.", icon: "🤝" },
+  ...defaultMosqueSystems,
 ];
 
 const fallbackTransactions = [
@@ -492,7 +502,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     "--leaf": settings.colors.leaf, "--lime": settings.colors.lime,
     "--cream": settings.colors.cream, "--ink": settings.colors.ink,
   };
-  const [systems, setSystems] = useState(() => loadArray("sangrahnSystems", fallbackSystems));
+  const [systems, setSystems] = useState(() => ensureMosqueSystems(loadArray("sangrahnSystems", fallbackSystems)));
   const [transactions, setTransactions] = useState(() => loadArray("sangrahnTransactions", fallbackTransactions));
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
@@ -520,7 +530,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       try {
         const data = await fetchPublicDatabaseData();
         if (!active) return;
-        if (data.systems.length) setSystems(data.systems);
+        if (data.systems.length) setSystems(ensureMosqueSystems(data.systems));
         setTransactions(data.transactions);
       } catch (error) {
         console.error("Public database load failed", error);
@@ -574,7 +584,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const totals = useMemo(() => totalsFor(transactions), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
-  const selectedAllRecords = transactions.filter((record) => record.systemId === selectedSystemId);
+  const selectedAllRecords = isMosqueParent(selectedSystemId)
+    ? mosqueParentRecords(transactions)
+    : transactions.filter((record) => record.systemId === selectedSystemId);
   const selectedTotals = totalsFor(selectedAllRecords);
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
@@ -589,28 +601,32 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const systemName = (system) => {
     const profile = profileFor(system);
     return ur
-      ? (profile.nameUr || projectUrdu[system.id]?.name || system.name)
+      ? (profile.nameUr || system.nameUr || projectUrdu[system.id]?.name || system.name)
       : (profile.nameEn || system.name);
   };
   const systemDescription = (system) => {
     const profile = profileFor(system);
     return ur
-      ? (profile.descriptionUr || projectUrdu[system.id]?.description || system.description)
+      ? (profile.descriptionUr || system.descriptionUr || projectUrdu[system.id]?.description || system.description)
       : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
   };
-  const imageFor = (system) => profileFor(system).coverImage || projectImages[system.id] || welfareImage;
+  const imageFor = (system) => profileFor(system).coverImage
+    || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
+    || welfareImage;
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
       return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
-    return projectGalleries[system.id] || [{ image: imageFor(system), title: systemName(system) }];
+    return (isMosqueChild(system) ? projectGalleries.mosque : projectGalleries[system.id])
+      || [{ image: imageFor(system), title: systemName(system) }];
   };
   const faithSlidesFor = (system) => {
     const slidesByProject = settings.projectFaithSlidesByProject || {};
     if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
       return slidesByProject[system.id] || [];
     }
+    if (isMosqueChild(system)) return slidesByProject.mosque || [];
     return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
   };
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
@@ -647,11 +663,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return (
       <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
-          <button className="brand-button" onClick={() => setSelectedSystemId(null)}>
+          <button className="brand-button" onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
           <div className="nav-actions project-nav-actions">
-            <button className="project-top-back" onClick={() => setSelectedSystemId(null)}>{ur ? "← واپس" : "← Back"}</button>
+            <button className="project-top-back" onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
+              {isMosqueChild(selectedSystem)
+                ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
+                : (ur ? "← واپس" : "← Back")}
+            </button>
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
             <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
           </div>
@@ -673,6 +693,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
+            {isMosqueParent(selectedSystem) ? (
+              <MosqueManagementHub
+                systems={systems}
+                transactions={transactions}
+                onOpenSystem={setSelectedSystemId}
+                language={language}
+                getName={systemName}
+                getDescription={systemDescription}
+              />
+            ) : <>
             {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} /> : <MoneyCards totals={selectedTotals} language={language} />}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
@@ -710,6 +740,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               </div>
               <RecordsTable records={filteredRecords} systems={systems} language={language} />
             </div>}
+            </>}
           </section>
         </main>
         {galleryIndex !== null && activeGallery[galleryIndex] && (
@@ -764,7 +795,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
           </nav>
-          <button onClick={() => setSelectedSystemId(null)}>{ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑"}</button>
+          <button onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
+            {isMosqueChild(selectedSystem)
+              ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
+              : (ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑")}
+          </button>
         </footer>
         <SuggestionBox language={language} />
       </div>
@@ -851,15 +886,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="content-section">
             <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
             <MoneyCards totals={totals} light language={language} />
-            <div className="impact-numbers reveal"><div><strong>{systems.length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
+            <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
           </div>
         </section>
 
         <section className="projects-section content-section" id="projects">
           <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
           <div className="project-grid">
-            {systems.map((system, index) => {
-              const projectTotals = totalsFor(transactions.filter((record) => record.systemId === system.id));
+            {topLevelSystems(systems).map((system, index) => {
+              const projectTotals = totalsFor(
+                isMosqueParent(system)
+                  ? mosqueParentRecords(transactions)
+                  : transactions.filter((record) => record.systemId === system.id)
+              );
               return (
                 <article className="project-card reveal" key={system.id} onClick={() => setSelectedSystemId(system.id)}>
                   <img src={imageFor(system)} alt={system.name} />

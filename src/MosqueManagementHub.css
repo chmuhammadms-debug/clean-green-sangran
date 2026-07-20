@@ -1,0 +1,107 @@
+.mosque-hub {
+  margin-top: 24px;
+  padding: clamp(20px, 3vw, 36px);
+  border: 1px solid rgba(22, 101, 52, 0.18);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 95% 0%, rgba(163, 230, 53, 0.22), transparent 30%),
+    linear-gradient(145deg, #f8fff4, #eef9ed);
+  color: #123b25;
+}
+
+.mosque-hub__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.mosque-hub__heading span {
+  color: #4d7c0f;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.mosque-hub__heading h2 { margin: 8px 0; font-size: clamp(26px, 4vw, 42px); }
+.mosque-hub__heading p { max-width: 720px; margin: 0; color: #4b6354; line-height: 1.7; }
+
+.mosque-hub__count {
+  display: grid;
+  min-width: 92px;
+  padding: 14px;
+  border-radius: 20px;
+  background: #123b25;
+  color: white;
+  text-align: center;
+}
+
+.mosque-hub__count strong { font-size: 30px; }
+.mosque-hub__count small { color: #bef264; font-weight: 800; letter-spacing: .1em; }
+
+.mosque-hub__admin-note {
+  margin-bottom: 20px;
+  padding: 13px 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  background: white;
+  line-height: 1.6;
+}
+
+.mosque-hub__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.mosque-account-card {
+  padding: 22px;
+  border: 1px solid rgba(22, 101, 52, .15);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 18px 45px rgba(18, 59, 37, .08);
+}
+
+.mosque-account-card__top { display: flex; align-items: center; justify-content: space-between; }
+.mosque-account-card__number { color: #84cc16; font-weight: 900; letter-spacing: .14em; }
+.mosque-account-card h3 { margin: 13px 0 7px; font-size: clamp(20px, 2.5vw, 28px); }
+.mosque-account-card > p { min-height: 48px; margin: 0; color: #647568; line-height: 1.55; }
+
+.mosque-account-card__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.mosque-account-card__stats span { padding: 10px; border-radius: 12px; background: #f1f8ee; }
+.mosque-account-card__stats small, .mosque-account-card__stats b { display: block; }
+.mosque-account-card__stats small { margin-bottom: 5px; color: #6b7d70; font-size: 11px; }
+.mosque-account-card__stats b { font-size: 14px; }
+
+.mosque-account-card > button {
+  width: 100%;
+  padding: 13px 16px;
+  border: 0;
+  border-radius: 13px;
+  background: #166534;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.mosque-account-card > button span { float: right; }
+[dir="rtl"] .mosque-account-card > button span { float: left; }
+
+@media (max-width: 720px) {
+  .mosque-hub { padding: 16px; border-radius: 20px; }
+  .mosque-hub__heading { align-items: center; }
+  .mosque-hub__count { min-width: 68px; }
+  .mosque-hub__grid { grid-template-columns: 1fr; }
+  .mosque-account-card { padding: 17px; }
+  .mosque-account-card > p { min-height: 0; }
+  .mosque-account-card__stats { gap: 5px; }
+  .mosque-account-card__stats span { padding: 8px 6px; }
+  .mosque-account-card__stats b { font-size: 12px; }
+}
