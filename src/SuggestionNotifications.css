@@ -1,0 +1,70 @@
+.suggestion-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 24px;
+  z-index: 2100;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 0 18px;
+  color: #082516;
+  font: inherit;
+  font-weight: 900;
+  background: #a3f23c;
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 999px;
+  box-shadow: 0 16px 40px rgba(3,42,22,.28);
+  cursor: pointer;
+}
+.suggestion-fab span { font-size: 20px; }
+.suggestion-modal { position: fixed; inset: 0; z-index: 5000; display: grid; place-items: center; padding: 18px; }
+.suggestion-modal__backdrop { position: absolute; inset: 0; width: 100%; background: rgba(2,15,9,.78); border: 0; backdrop-filter: blur(7px); }
+.suggestion-card { position: relative; width: min(620px, 100%); max-height: calc(100vh - 36px); overflow: auto; padding: 28px; color: #10261a; background: #f7faee; border: 1px solid rgba(163,242,60,.5); border-radius: 26px; box-shadow: 0 30px 90px rgba(0,0,0,.45); }
+.suggestion-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.suggestion-card__header span { color: #397419; font-size: 11px; font-weight: 900; letter-spacing: .16em; }
+.suggestion-card__header h2 { margin: 5px 0 0; font-size: clamp(28px, 5vw, 44px); line-height: 1; }
+.suggestion-card__header > button { width: 38px; height: 38px; color: #12321e; font-size: 27px; background: #dfff93; border: 0; border-radius: 50%; cursor: pointer; }
+.suggestion-card > p { max-width: 520px; color: #506159; line-height: 1.65; }
+.suggestion-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.suggestion-card label { display: grid; gap: 7px; margin-top: 14px; font-size: 13px; font-weight: 800; }
+.suggestion-card input, .suggestion-card select, .suggestion-card textarea { box-sizing: border-box; width: 100%; padding: 13px 14px; color: #153321; font: inherit; background: white; border: 1px solid #cbd8c6; border-radius: 12px; outline: none; }
+.suggestion-card input:focus, .suggestion-card select:focus, .suggestion-card textarea:focus { border-color: #5cae24; box-shadow: 0 0 0 3px rgba(92,174,36,.14); }
+.suggestion-card textarea { resize: vertical; }
+.suggestion-feedback { margin-top: 14px; padding: 11px 13px; color: #194813; font-weight: 700; background: #e8f9c9; border-radius: 10px; }
+.suggestion-submit { width: 100%; margin-top: 16px; padding: 14px 20px; color: #082516; font: inherit; font-weight: 900; background: #a3f23c; border: 0; border-radius: 12px; cursor: pointer; }
+.suggestion-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+.admin-notification-center { position: relative; z-index: 3000; }
+.notification-bell { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 14px; color: #efffe5; font: inherit; font-weight: 800; background: #194f31; border: 1px solid rgba(163,242,60,.35); border-radius: 11px; cursor: pointer; }
+.notification-bell span { color: #a3f23c; font-size: 20px; }
+.notification-bell i { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; color: #3a0711; font-size: 11px; font-style: normal; background: #ff6b81; border-radius: 999px; }
+.notification-panel { position: fixed; top: 82px; right: 22px; z-index: 4000; display: flex; flex-direction: column; width: min(440px, calc(100vw - 28px)); max-height: calc(100vh - 105px); overflow: hidden; color: #eaffdf; background: #0b2819; border: 1px solid rgba(163,242,60,.34); border-radius: 22px; box-shadow: 0 28px 80px rgba(0,0,0,.48); }
+.notification-panel > header { display: flex; justify-content: space-between; gap: 15px; padding: 20px; background: linear-gradient(135deg,#103a23,#185b34); }
+.notification-panel > header span { color: #a3f23c; font-size: 10px; font-weight: 900; letter-spacing: .16em; }
+.notification-panel > header h2 { margin: 4px 0 0; color: white; font-size: 25px; }
+.notification-panel > header button { width: 34px; height: 34px; color: #15321e; font-size: 23px; background: #dfff93; border: 0; border-radius: 50%; cursor: pointer; }
+.notification-panel__toolbar { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; color: #c9dfd0; background: #0d2116; border-bottom: 1px solid rgba(255,255,255,.08); }
+.notification-panel__toolbar button { color: #a3f23c; font: inherit; font-size: 12px; font-weight: 800; background: transparent; border: 0; cursor: pointer; }
+.notification-panel__toolbar button:disabled { opacity: .4; }
+.notification-list { overflow-y: auto; padding: 8px; }
+.notification-item { display: grid; grid-template-columns: 43px 1fr 28px; gap: 11px; margin-bottom: 7px; padding: 13px 9px; color: #d7e5dc; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; cursor: pointer; }
+.notification-item--unread { background: rgba(163,242,60,.1); border-color: rgba(163,242,60,.32); }
+.notification-item__icon { display: grid; place-items: center; width: 42px; height: 42px; color: #092415; font-weight: 900; background: #a3f23c; border-radius: 12px; }
+.notification-item__icon--blood_request { color: white; background: #bf2947; }
+.notification-item__icon--expense { color: white; background: #9a5a2c; }
+.notification-item > div:nth-child(2) > span { color: #a3f23c; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.notification-item h3 { margin: 3px 0 4px; color: white; font-size: 15px; }
+.notification-item p { margin: 0; color: #bdcec3; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+.notification-item small { display: block; margin-top: 7px; color: #7f9b89; font-size: 10px; }
+.notification-item > button { width: 26px; height: 26px; color: #9cb0a2; font-size: 19px; background: transparent; border: 0; cursor: pointer; }
+.notification-state { padding: 34px 16px; color: #b7c9bd; text-align: center; }
+.notification-state--error { color: #ffbbc5; }
+
+@media (max-width: 720px) {
+  .suggestion-fab { right: 14px; bottom: 92px; min-height: 44px; padding: 0 14px; font-size: 12px; }
+  .suggestion-card { padding: 21px 17px; border-radius: 20px; }
+  .suggestion-form-grid { grid-template-columns: 1fr; gap: 0; }
+  .notification-bell b { display: none; }
+  .notification-panel { top: 70px; right: 14px; max-height: calc(100vh - 88px); }
+}

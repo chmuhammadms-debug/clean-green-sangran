@@ -5,6 +5,7 @@ import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
 import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
+import SuggestionBox from "./SuggestionBox";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -672,7 +673,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} /> : <MoneyCards totals={selectedTotals} language={language} />}
+            {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} /> : <MoneyCards totals={selectedTotals} language={language} />}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
@@ -756,7 +757,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             </div>
           </div>
         )}
-        <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><button onClick={() => setSelectedSystemId(null)}>Back to Public Home ↑</button></footer>
+        <footer className="site-footer">
+          <LogoMark compact />
+          <div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div>
+          <nav className="footer-policy-links">
+            <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
+            <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
+          </nav>
+          <button onClick={() => setSelectedSystemId(null)}>{ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑"}</button>
+        </footer>
+        <SuggestionBox language={language} />
       </div>
     );
   }
@@ -925,7 +935,21 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </div>
       )}
 
-      <footer className="site-footer"><LogoMark compact /><div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div><nav><button onClick={() => scrollTo("projects")}>Projects</button><button onClick={() => setShowPublicRecords(true)}>Public Records</button><button onClick={onAdminLogin}>Admin</button></nav>{settings.socialLinks?.some((link) => link.enabled !== false && link.url) && <div className="footer-social-links">{settings.socialLinks.filter((link) => link.enabled !== false && link.url).map((link) => <a href={link.url} key={link.id || `${link.name}-${link.url}`} target="_blank" rel="noreferrer" title={link.name} aria-label={link.name}><span>{link.name === "X / Twitter" ? "X" : link.name.slice(0, 1).toUpperCase()}</span>{link.name}</a>)}</div>}<small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small></footer>
+      <footer className="site-footer">
+        <LogoMark compact />
+        <div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div>
+        <nav>
+          <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
+          <button onClick={() => setShowPublicRecords(true)}>{ur ? "عوامی ریکارڈ" : "Public Records"}</button>
+          <button onClick={onAdminLogin}>{ur ? "ایڈمن" : "Admin"}</button>
+        </nav>
+        <nav className="footer-policy-links">
+          <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
+          <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
+        </nav>
+        {settings.socialLinks?.some((link) => link.enabled !== false && link.url) && <div className="footer-social-links">{settings.socialLinks.filter((link) => link.enabled !== false && link.url).map((link) => <a href={link.url} key={link.id || `${link.name}-${link.url}`} target="_blank" rel="noreferrer" title={link.name} aria-label={link.name}><span>{link.name === "X / Twitter" ? "X" : link.name.slice(0, 1).toUpperCase()}</span>{link.name}</a>)}</div>}
+        <small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small>
+      </footer>
       <nav className="mobile-app-nav" aria-label="Mobile app navigation">
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
@@ -933,6 +957,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
+      <SuggestionBox language={language} />
     </div>
   );
 }

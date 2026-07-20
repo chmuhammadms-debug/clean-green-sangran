@@ -5,6 +5,7 @@ import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
 import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
+import AdminNotificationCenter from "./AdminNotificationCenter";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
@@ -1136,12 +1137,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
           <p>Central Management System • {databaseMessage}</p>
         </div>
 
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <AdminNotificationCenter />
+          <button
+            className="logout-button"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="container">
