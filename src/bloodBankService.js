@@ -114,18 +114,29 @@ export async function markBloodRequestDonated(requestId, donorId, accessCode) {
 }
 
 export async function fetchBloodRequestReport() {
+  const { data: report, error: reportError } = await supabase.rpc("admin_blood_request_report");
+  if (!reportError) {
+    if (Array.isArray(report)) return report;
+    if (Array.isArray(report?.requests)) return report.requests;
+    return [];
+  }
+
+  // Compatibility fallback for databases that have not run the latest
+  // Blood Bank admin-report SQL yet. Patient cards must not disappear merely
+  // because the optional assignment table cannot be read.
   const [{ data: requests, error: requestError }, { data: assignments, error: assignmentError }] = await Promise.all([
     supabase.from("blood_requests").select("id,patient_name,attendant_name,phone,hospital_address,blood_group,units,needed_on,notes,status,approval_status,approval_code,access_code_expires_at,approved_at,created_at").order("created_at", { ascending: false }),
     supabase.from("blood_request_donors").select("id,request_id,donor_id,status,units,notes,selected_at,donated_at").order("selected_at", { ascending: false }),
   ]);
   if (requestError) throw requestError;
-  if (assignmentError) throw assignmentError;
+  const safeAssignments = assignmentError ? [] : (assignments || []);
 
-  const donors = await fetchBloodDonors();
+  let donors = [];
+  try { donors = await fetchBloodDonors(); } catch { donors = []; }
   const donorMap = new Map(donors.map((donor) => [donor.id, donor]));
   return (requests || []).map((request) => ({
     ...request,
-    assignments: (assignments || [])
+    assignments: safeAssignments
       .filter((assignment) => assignment.request_id === request.id)
       .map((assignment) => ({ ...assignment, donor: donorMap.get(assignment.donor_id) || null })),
   }));

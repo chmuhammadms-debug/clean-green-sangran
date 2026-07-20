@@ -44,12 +44,15 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
 
   const loadData = async () => {
     setLoading(true); setMessage("");
-    try {
-      const [donorRows, requestRows] = await Promise.all([fetchBloodDonors(), fetchBloodRequestReport()]);
-      setDonors(donorRows);
-      setRequests(requestRows);
-    } catch (error) { setMessage(error.message); }
-    finally { setLoading(false); }
+    const [donorResult, requestResult] = await Promise.allSettled([fetchBloodDonors(), fetchBloodRequestReport()]);
+    if (donorResult.status === "fulfilled") setDonors(donorResult.value || []);
+    if (requestResult.status === "fulfilled") setRequests(requestResult.value || []);
+
+    const errors = [];
+    if (requestResult.status === "rejected") errors.push(`Patient records: ${requestResult.reason?.message || "could not be loaded"}`);
+    if (donorResult.status === "rejected") errors.push(`Donor records: ${donorResult.reason?.message || "could not be loaded"}`);
+    setMessage(errors.join(" | "));
+    setLoading(false);
   };
 
   useEffect(() => { loadData(); }, []);
