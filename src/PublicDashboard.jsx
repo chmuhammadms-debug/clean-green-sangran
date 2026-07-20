@@ -6,6 +6,7 @@ import { mergeSiteSettings } from "./siteSettings";
 import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
+import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
 import {
   defaultMosqueSystems,
@@ -659,6 +660,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const openBloodRequestUpdate = () => {
+    const bloodSystem = systems.find((system) => isBloodBankProject(system));
+    if (!bloodSystem) return;
+    setSelectedSystemId(bloodSystem.id);
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent("cgs-open-blood-request"));
+      document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 250);
+  };
+
   if (selectedSystem) {
     return (
       <div className="public-site project-page" style={themeStyle}>
@@ -801,6 +812,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               : (ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑")}
           </button>
         </footer>
+        <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
         <SuggestionBox language={language} />
       </div>
     );
@@ -996,6 +1008,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
+      <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
       <SuggestionBox language={language} />
     </div>
   );

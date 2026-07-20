@@ -536,6 +536,18 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     resetForm();
   }
 
+  function openAdminNotification(item) {
+    const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
+    if (notificationType.includes("blood")) {
+      const bloodSystem = systems.find((system) => isBloodBankProject(system));
+      if (bloodSystem) openSystem(bloodSystem.id);
+      return;
+    }
+    if (item?.source_id && systems.some((system) => system.id === item.source_id)) {
+      openSystem(item.source_id);
+    }
+  }
+
   function changeSection(sectionId) {
     setActiveSection(sectionId);
     resetForm();
@@ -1146,7 +1158,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <AdminNotificationCenter />
+          <AdminNotificationCenter onOpenNotification={openAdminNotification} />
           <button
             className="logout-button"
             onClick={handleLogout}

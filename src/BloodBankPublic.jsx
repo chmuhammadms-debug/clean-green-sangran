@@ -6,12 +6,13 @@ import {
   printBloodDonorSlip,
   registerBloodRequest,
   registerPublicBloodDonor,
+  resumeBloodRequest,
   verifyBloodRequestAccess,
 } from "./bloodBankService";
+import { readActiveBloodRequest, saveActiveBloodRequest } from "./bloodRequestStorage";
 import "./BloodBank.css";
 
 const DONOR_STORAGE_KEY = "cgs_registered_blood_donor";
-const REQUEST_STORAGE_KEY = "cgs_active_blood_request";
 const emptyDonorForm = { fullName: "", phone: "", address: "", bloodGroup: "A+" };
 const emptyPatientForm = {
   patientName: "",
@@ -29,20 +30,6 @@ function readStoredDonor() {
   catch { return null; }
 }
 
-function readStoredRequest() {
-  try {
-    const request = JSON.parse(window.localStorage.getItem(REQUEST_STORAGE_KEY) || "null");
-    return request?.id && request?.patient_name && request?.blood_group ? request : null;
-  } catch {
-    return null;
-  }
-}
-
-function storeActiveRequest(request) {
-  if (request?.id) window.localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify(request));
-  else window.localStorage.removeItem(REQUEST_STORAGE_KEY);
-}
-
 function phoneLink(phone) {
   return String(phone || "").replace(/[^+\d]/g, "");
 }
@@ -57,14 +44,17 @@ function whatsAppLink(phone) {
 export default function BloodBankPublic({ language = "en", managementPhone = "03269042000" }) {
   const ur = language === "ur";
   const storedDonor = useMemo(readStoredDonor, []);
-  const storedRequest = useMemo(readStoredRequest, []);
+  const storedRequest = useMemo(readActiveBloodRequest, []);
   const [mode, setMode] = useState(storedRequest ? "patient" : "");
   const [donorForm, setDonorForm] = useState(emptyDonorForm);
   const [patientForm, setPatientForm] = useState(emptyPatientForm);
   const [registeredDonor, setRegisteredDonor] = useState(storedDonor);
   const [bloodRequest, setBloodRequest] = useState(storedRequest);
   const [accessCode, setAccessCode] = useState("");
-  const [approvalVerified, setApprovalVerified] = useState(false);
+  const [approvalVerified, setApprovalVerified] = useState(storedRequest?.approval_status === "approved");
+  const [recoveryForm, setRecoveryForm] = useState({ reference: "", phone: "" });
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState("");
   const [summary, setSummary] = useState([]);
   const [donors, setDonors] = useState([]);
   const [directoryLoading, setDirectoryLoading] = useState(false);
@@ -84,9 +74,31 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
   useEffect(() => {
     loadSummary();
     if (storedRequest) {
+      resumeBloodRequest(storedRequest.id, storedRequest.phone)
+        .then((latest) => {
+          const merged = { ...storedRequest, ...latest };
+          setBloodRequest(merged);
+          saveActiveBloodRequest(merged);
+          setApprovalVerified(merged.approval_status === "approved");
+        })
+        .catch(() => {});
       window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
     }
   }, [storedRequest]);
+
+  useEffect(() => {
+    const openSavedRequest = () => {
+      const saved = readActiveBloodRequest();
+      if (saved) {
+        setBloodRequest(saved);
+        setApprovalVerified(saved.approval_status === "approved");
+      }
+      setMode("patient");
+      window.setTimeout(() => document.getElementById(saved ? "blood-request-result" : "blood-request-recovery")?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    };
+    window.addEventListener("cgs-open-blood-request", openSavedRequest);
+    return () => window.removeEventListener("cgs-open-blood-request", openSavedRequest);
+  }, []);
 
   const matchingPatientDonors = useMemo(() => {
     if (!bloodRequest) return [];
@@ -120,7 +132,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     try {
       const request = await registerBloodRequest(patientForm);
       setBloodRequest(request);
-      storeActiveRequest(request);
+      saveActiveBloodRequest(request);
       setAccessCode("");
       setApprovalVerified(false);
       setDonors([]);
@@ -139,7 +151,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
       setApprovalVerified(true);
       setBloodRequest((current) => {
         const approvedRequest = { ...current, approval_status: "approved" };
-        storeActiveRequest(approvedRequest);
+        saveActiveBloodRequest(approvedRequest);
         return approvedRequest;
       });
       await loadDonors(bloodRequest.id, accessCode);
@@ -150,6 +162,27 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     } finally { setBusy(false); }
   };
 
+  const submitRecovery = async (event) => {
+    event.preventDefault();
+    setRecoveryBusy(true);
+    setRecoveryMessage("");
+    try {
+      const request = await resumeBloodRequest(recoveryForm.reference, recoveryForm.phone);
+      setBloodRequest(request);
+      saveActiveBloodRequest(request);
+      setMode("patient");
+      setApprovalVerified(request.approval_status === "approved");
+      setAccessCode("");
+      setDonors([]);
+      setRecoveryMessage(ur ? "آپ کی محفوظ درخواست دوبارہ کھول دی گئی ہے۔" : "Your saved request has been restored.");
+      window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    } catch (error) {
+      setRecoveryMessage(error.message);
+    } finally {
+      setRecoveryBusy(false);
+    }
+  };
+
   const startNewRequest = () => {
     const confirmed = window.confirm(ur
       ? "کیا آپ موجودہ درخواست ہٹا کر نئی درخواست بنانا چاہتے ہیں؟"
@@ -157,7 +190,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     if (!confirmed) return;
     setPatientForm(emptyPatientForm);
     setBloodRequest(null);
-    storeActiveRequest(null);
+    saveActiveBloodRequest(null);
     setAccessCode("");
     setApprovalVerified(false);
     setDonors([]);
@@ -214,7 +247,17 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
       </div>}
 
       {mode === "patient" && <div className="blood-active-flow" id="blood-active-flow">
-        {!bloodRequest ? <div className="blood-auth-card blood-patient-request">
+        {!bloodRequest ? <>
+        <section className="blood-request-recovery" id="blood-request-recovery">
+          <div><span>{ur ? "درخواست پہلے ہی بھیج چکے ہیں؟" : "ALREADY SENT A REQUEST?"}</span><h3>{ur ? "اپنی محفوظ درخواست دوبارہ کھولیں" : "Open your saved request"}</h3><p>{ur ? "درخواست نمبر اور وہی فون نمبر درج کریں جو مریض کی درخواست میں دیا تھا۔" : "Enter the request reference and the same phone number used for the patient request."}</p></div>
+          <form onSubmit={submitRecovery}>
+            <label><span>{ur ? "درخواست نمبر" : "Request reference"}</span><input required value={recoveryForm.reference} onChange={(event) => setRecoveryForm({ ...recoveryForm, reference: event.target.value })} placeholder="D79B15C3" /></label>
+            <label><span>{ur ? "فون نمبر" : "Phone number"}</span><input required inputMode="tel" value={recoveryForm.phone} onChange={(event) => setRecoveryForm({ ...recoveryForm, phone: event.target.value })} placeholder="03XXXXXXXXX" /></label>
+            <button disabled={recoveryBusy}>{recoveryBusy ? (ur ? "کھل رہی ہے…" : "Opening…") : (ur ? "درخواست کھولیں" : "Open request")}</button>
+          </form>
+          {recoveryMessage && <p className="blood-message">{recoveryMessage}</p>}
+        </section>
+        <div className="blood-auth-card blood-patient-request">
           <div className="blood-simple-register__head"><span>{ur ? "خون کی درخواست" : "BLOOD REQUEST"}</span><h2>{ur ? "مریض کی مکمل تفصیل درج کریں" : "Enter the patient details"}</h2><p>{ur ? "درخواست محفوظ ہونے کے بعد management verification ہوگی؛ approval code کے بغیر ڈونرز ظاہر نہیں ہوں گے۔" : "After saving, management will verify the request. Donors remain hidden until the approval code is entered."}</p></div>
           <form className="blood-form" onSubmit={submitBloodRequest}>
             <label><span>{ur ? "مریض کا نام" : "Patient name"}</span><input required value={patientForm.patientName} onChange={(event) => setPatientForm({ ...patientForm, patientName: event.target.value })} /></label>
@@ -228,9 +271,10 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
             <button className="blood-submit wide" disabled={busy}>{busy ? (ur ? "محفوظ ہو رہا ہے…" : "Saving…") : (ur ? "درخواست محفوظ کریں" : "Save blood request")}</button>
           </form>
           {message && <p className="blood-message">{message}</p>}
-        </div> : <section className="blood-request-result" id="blood-request-result">
+        </div></> : <section className="blood-request-result" id="blood-request-result">
           <div className="blood-request-result__head"><span>{approvalVerified ? "✓" : "⌛"}</span><div><small>{approvalVerified ? (ur ? "MANAGEMENT APPROVAL مکمل" : "MANAGEMENT APPROVED") : (ur ? "MANAGEMENT APPROVAL باقی ہے" : "MANAGEMENT APPROVAL REQUIRED")}</small><h2>{bloodRequest.patient_name}</h2><p>{approvalVerified ? (ur ? `${bloodRequest.blood_group} کے متعلقہ ڈونرز اب دکھائے جارہے ہیں۔` : `Matching ${bloodRequest.blood_group} donors are now visible.`) : (ur ? "Management سے رابطہ کرکے چھ ہندسوں کا approval code حاصل کریں۔" : "Contact management and obtain the six-digit approval code.")}</p></div><b>{bloodRequest.blood_group}</b></div>
           <div className="blood-request-summary"><p><span>{ur ? "رابطہ" : "Contact"}</span><b>{bloodRequest.attendant_name} · {bloodRequest.phone}</b></p><p><span>{ur ? "ہسپتال / پتہ" : "Hospital / address"}</span><b>{bloodRequest.hospital_address}</b></p><p><span>{ur ? "ضرورت" : "Required"}</span><b>{bloodRequest.units} {ur ? "یونٹ" : "unit(s)"} · {bloodRequest.needed_on}</b></p></div>
+          {(bloodRequest.assignment_status || bloodRequest.status === "fulfilled") && <div className={`blood-request-live-status ${bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? "complete" : ""}`}><span>●</span><div><b>{bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? (ur ? "خون کا عطیہ مکمل ہوگیا" : "Blood donation completed") : (ur ? "Management نے ڈونر منتخب کرلیا" : "Management has arranged a donor")}</b><p>{ur ? "یہ تازہ حالت management کی طرف سے اپڈیٹ ہوئی ہے۔" : "This is the latest status updated by management."}</p></div></div>}
           {message && <p className="blood-message">{message}</p>}
           {!approvalVerified && <section className="blood-management-approval">
             <div className="blood-management-approval__contact">

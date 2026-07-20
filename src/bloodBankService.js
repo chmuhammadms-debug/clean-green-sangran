@@ -78,6 +78,17 @@ export async function registerBloodRequest(form) {
   return request;
 }
 
+export async function resumeBloodRequest(reference, phone) {
+  const { data, error } = await supabase.rpc("resume_blood_request", {
+    p_reference: String(reference || "").trim(),
+    p_phone: String(phone || "").trim(),
+  });
+  if (error) throw error;
+  const request = Array.isArray(data) ? data[0] : data;
+  if (!request) throw new Error("No matching blood request was found.");
+  return request;
+}
+
 export async function verifyBloodRequestAccess(requestId, accessCode) {
   const { data, error } = await supabase.rpc("verify_blood_request_access", {
     p_request_id: requestId,
