@@ -39,7 +39,7 @@ function whatsAppLink(phone) {
   return digits;
 }
 
-export default function BloodBankPublic({ language = "en", managementPhone = "03269842000" }) {
+export default function BloodBankPublic({ language = "en", managementPhone = "03269042000" }) {
   const ur = language === "ur";
   const storedDonor = useMemo(readStoredDonor, []);
   const [mode, setMode] = useState("");

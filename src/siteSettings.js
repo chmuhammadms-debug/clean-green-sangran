@@ -147,6 +147,7 @@ export const DEFAULT_SITE_SETTINGS = {
   homeReelSlides: [],
   socialLinks: [],
   paymentMethods: [],
+  bloodBankManagementPhone: "03269042000",
   projectFaithSlidesByProject: DEFAULT_PROJECT_FAITH_SLIDES,
 };
 
@@ -175,7 +176,7 @@ export function mergeSiteSettings(value = {}) {
     ...value,
     colors: {
       ...DEFAULT_SITE_SETTINGS.colors,
-      ...(value.colors || {}),
+      ...value.colors,
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
     paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,

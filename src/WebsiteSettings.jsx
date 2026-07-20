@@ -56,7 +56,7 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
   const addProjectFaithSlide = () => setDraft((current) => ({
     ...current,
     projectFaithSlidesByProject: {
-      ...(current.projectFaithSlidesByProject || {}),
+      ...current.projectFaithSlidesByProject,
       [faithProject]: [...(current.projectFaithSlidesByProject?.[faithProject] || []), {
         id: `${faithProject}-${Date.now()}-${Math.random()}`,
         typeEn: "Quranic guidance",
@@ -72,7 +72,7 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
   const updateProjectFaithSlide = (id, key, value) => setDraft((current) => ({
     ...current,
     projectFaithSlidesByProject: {
-      ...(current.projectFaithSlidesByProject || {}),
+      ...current.projectFaithSlidesByProject,
       [faithProject]: (current.projectFaithSlidesByProject?.[faithProject] || []).map((slide) => (
         slide.id === id ? { ...slide, [key]: value } : slide
       )),
@@ -81,7 +81,7 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
   const removeProjectFaithSlide = (id) => setDraft((current) => ({
     ...current,
     projectFaithSlidesByProject: {
-      ...(current.projectFaithSlidesByProject || {}),
+      ...current.projectFaithSlidesByProject,
       [faithProject]: (current.projectFaithSlidesByProject?.[faithProject] || []).filter((slide) => slide.id !== id),
     },
   }));
@@ -231,6 +231,8 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
           {!(draft.paymentMethods || []).length && <p className="social-settings-empty">Abhi koi bank, JazzCash ya Easypaisa detail add nahi ki gayi.</p>}
         </div>
         <button type="button" className="social-settings-add" onClick={addPaymentMethod}>+ Add Donation Method</button>
+        <div className="settings-heading"><div><span>BLOOD BANK APPROVAL</span><h2>Management Contact Number</h2></div><p>مریض کی درخواست کے بعد یہی نمبر رابطے اور OTP approval کے لیے دکھایا جائے گا۔</p></div>
+        <label className="settings-field"><span>Blood Bank management phone / WhatsApp</span><input inputMode="tel" value={draft.bloodBankManagementPhone || ""} onChange={(e) => update("bloodBankManagementPhone", e.target.value)} placeholder="03XX XXXXXXX" /></label>
         <label className="settings-field"><span>Intro short message</span><textarea dir="rtl" rows="4" value={draft.introSummary} onChange={(e) => update("introSummary", e.target.value)} /></label>
         <div className="settings-heading"><div><span>PROJECT TICKERS</span><h2>Ongoing & Coming Soon</h2></div><p>Public page ke dono project boxes ka naam aur date/detail yahan se edit karein.</p></div>
         <div className="settings-text-grid">
