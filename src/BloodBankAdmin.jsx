@@ -25,7 +25,7 @@ function activeAssignment(request) {
     || null;
 }
 
-export default function BloodBankAdmin() {
+export default function BloodBankAdmin({ settings, onSaveSettings, savingSettings = false }) {
   const [tab, setTab] = useState("patients");
   const [donors, setDonors] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -36,6 +36,11 @@ export default function BloodBankAdmin() {
   const [busyId, setBusyId] = useState("");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [managementPhone, setManagementPhone] = useState(settings?.bloodBankManagementPhone || "03269042000");
+
+  useEffect(() => {
+    setManagementPhone(settings?.bloodBankManagementPhone || "03269042000");
+  }, [settings?.bloodBankManagementPhone]);
 
   const loadData = async () => {
     setLoading(true); setMessage("");
@@ -135,12 +140,46 @@ export default function BloodBankAdmin() {
     finally { setBusyId(""); }
   };
 
+  const saveManagementPhone = async (event) => {
+    event.preventDefault();
+    const phone = managementPhone.trim();
+    if (phone.replace(/\D/g, "").length < 10) {
+      setMessage("Please enter a valid management phone / WhatsApp number.");
+      return;
+    }
+    if (!onSaveSettings) {
+      setMessage("Website settings connection is not available.");
+      return;
+    }
+    setMessage("");
+    try {
+      await onSaveSettings({ ...settings, bloodBankManagementPhone: phone });
+      setMessage(`Management contact saved: ${phone}`);
+    } catch (error) {
+      setMessage(`Management number could not be saved: ${error.message}`);
+    }
+  };
+
   return (
     <section className="blood-admin">
       <div className="blood-admin__hero">
         <div><span>COMPLETE BLOOD BANK CONTROL</span><h2>Blood Bank Management / بلڈ بینک انتظام</h2><p>Check donors and patients, connect a donor with a patient, confirm completed donations, print reports and delete records.</p></div>
         <div className="blood-admin__stats"><b>{donors.length}</b><span>Donors · {requests.length} patients</span></div>
       </div>
+
+      <form className="blood-admin-contact-settings" onSubmit={saveManagementPhone}>
+        <div>
+          <span>PUBLIC MANAGEMENT CONTACT</span>
+          <h3>Management phone / WhatsApp</h3>
+          <p>This number is shown to patients after they submit a Blood Bank request.</p>
+        </div>
+        <label>
+          <span>Number</span>
+          <input inputMode="tel" value={managementPhone} onChange={(event) => setManagementPhone(event.target.value)} placeholder="03XX XXXXXXX" />
+        </label>
+        <button type="submit" disabled={savingSettings}>{savingSettings ? "Saving…" : "Save number"}</button>
+        <small><b>OTP system:</b> every patient request gets its own temporary 6-digit code. It appears in this Admin page; it is not automatically sent by SMS and it is not one permanent code.</small>
+      </form>
 
       <div className="blood-admin-tabs">
         <button className={tab === "patients" ? "active" : ""} onClick={() => setTab("patients")}>Patient requests / مریض</button>

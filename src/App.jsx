@@ -1171,7 +1171,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 selectedSystem.englishName}
             </p>
 
-            {isBloodBankProject(selectedSystem) ? <BloodBankAdmin /> : <><SummaryCards
+            {isBloodBankProject(selectedSystem) ? <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} /> : <><SummaryCards
               totals={selectedTotals}
               labels={[
                 "Total Donations",
