@@ -11,6 +11,7 @@ import {
 import "./BloodBank.css";
 
 const DONOR_STORAGE_KEY = "cgs_registered_blood_donor";
+const REQUEST_STORAGE_KEY = "cgs_active_blood_request";
 const emptyDonorForm = { fullName: "", phone: "", address: "", bloodGroup: "A+" };
 const emptyPatientForm = {
   patientName: "",
@@ -28,6 +29,20 @@ function readStoredDonor() {
   catch { return null; }
 }
 
+function readStoredRequest() {
+  try {
+    const request = JSON.parse(window.localStorage.getItem(REQUEST_STORAGE_KEY) || "null");
+    return request?.id && request?.patient_name && request?.blood_group ? request : null;
+  } catch {
+    return null;
+  }
+}
+
+function storeActiveRequest(request) {
+  if (request?.id) window.localStorage.setItem(REQUEST_STORAGE_KEY, JSON.stringify(request));
+  else window.localStorage.removeItem(REQUEST_STORAGE_KEY);
+}
+
 function phoneLink(phone) {
   return String(phone || "").replace(/[^+\d]/g, "");
 }
@@ -42,11 +57,12 @@ function whatsAppLink(phone) {
 export default function BloodBankPublic({ language = "en", managementPhone = "03269042000" }) {
   const ur = language === "ur";
   const storedDonor = useMemo(readStoredDonor, []);
-  const [mode, setMode] = useState("");
+  const storedRequest = useMemo(readStoredRequest, []);
+  const [mode, setMode] = useState(storedRequest ? "patient" : "");
   const [donorForm, setDonorForm] = useState(emptyDonorForm);
   const [patientForm, setPatientForm] = useState(emptyPatientForm);
   const [registeredDonor, setRegisteredDonor] = useState(storedDonor);
-  const [bloodRequest, setBloodRequest] = useState(null);
+  const [bloodRequest, setBloodRequest] = useState(storedRequest);
   const [accessCode, setAccessCode] = useState("");
   const [approvalVerified, setApprovalVerified] = useState(false);
   const [summary, setSummary] = useState([]);
@@ -65,7 +81,12 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     finally { setDirectoryLoading(false); }
   };
 
-  useEffect(() => { loadSummary(); }, []);
+  useEffect(() => {
+    loadSummary();
+    if (storedRequest) {
+      window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+    }
+  }, [storedRequest]);
 
   const matchingPatientDonors = useMemo(() => {
     if (!bloodRequest) return [];
@@ -99,6 +120,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     try {
       const request = await registerBloodRequest(patientForm);
       setBloodRequest(request);
+      storeActiveRequest(request);
       setAccessCode("");
       setApprovalVerified(false);
       setDonors([]);
@@ -115,7 +137,11 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     try {
       await verifyBloodRequestAccess(bloodRequest.id, accessCode);
       setApprovalVerified(true);
-      setBloodRequest((current) => ({ ...current, approval_status: "approved" }));
+      setBloodRequest((current) => {
+        const approvedRequest = { ...current, approval_status: "approved" };
+        storeActiveRequest(approvedRequest);
+        return approvedRequest;
+      });
       await loadDonors(bloodRequest.id, accessCode);
       setMessage(ur ? "Management approval مکمل ہوگئی۔ متعلقہ ڈونرز اب نیچے موجود ہیں۔" : "Management approval is complete. Matching donors are now available below.");
     } catch (error) {
@@ -125,8 +151,13 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
   };
 
   const startNewRequest = () => {
+    const confirmed = window.confirm(ur
+      ? "کیا آپ موجودہ درخواست ہٹا کر نئی درخواست بنانا چاہتے ہیں؟"
+      : "Remove the saved request and create a new one?");
+    if (!confirmed) return;
     setPatientForm(emptyPatientForm);
     setBloodRequest(null);
+    storeActiveRequest(null);
     setAccessCode("");
     setApprovalVerified(false);
     setDonors([]);
@@ -149,7 +180,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
         <div className="blood-entry-choice__head"><span>{ur ? "سب سے پہلے انتخاب کریں" : "CHOOSE HOW TO CONTINUE"}</span><h2 id="blood-entry-title">{ur ? "آپ ڈونر ہیں یا آپ کو خون چاہیے؟" : "Are you a donor, or do you need blood?"}</h2></div>
         <div className="blood-entry-choice__grid">
           <button type="button" className={mode === "donor" ? "active" : ""} onClick={() => chooseMode("donor")}><b>♥</b><span><strong>{ur ? "میں بلڈ ڈونر ہوں" : "I am a blood donor"}</strong><small>{registeredDonor ? (ur ? "آپ کا ریکارڈ محفوظ ہے" : "Your record is already saved") : (ur ? "اپنا ریکارڈ شامل کریں" : "Register your donor details")}</small></span><em>→</em></button>
-          <button type="button" className={mode === "patient" ? "active" : ""} onClick={() => chooseMode("patient")}><b>✚</b><span><strong>{ur ? "مجھے خون چاہیے" : "I need blood"}</strong><small>{ur ? "مریض کی تفصیل درج کریں" : "Enter the patient details"}</small></span><em>→</em></button>
+          <button type="button" className={mode === "patient" ? "active" : ""} onClick={() => chooseMode("patient")}><b>✚</b><span><strong>{ur ? "مجھے خون چاہیے" : "I need blood"}</strong><small>{bloodRequest ? (ur ? "اپنی محفوظ درخواست دوبارہ کھولیں" : "Resume your saved request") : (ur ? "مریض کی تفصیل درج کریں" : "Enter the patient details")}</small></span><em>→</em></button>
         </div>
       </section>
 
