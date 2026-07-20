@@ -78,10 +78,22 @@ export async function registerBloodRequest(form) {
   return request;
 }
 
-export async function selectDonorForBloodRequest(requestId, donorId) {
+export async function verifyBloodRequestAccess(requestId, accessCode) {
+  const { data, error } = await supabase.rpc("verify_blood_request_access", {
+    p_request_id: requestId,
+    p_access_code: accessCode.trim(),
+  });
+  if (error) throw error;
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result?.verified) throw new Error("The management approval code could not be verified.");
+  return result;
+}
+
+export async function selectDonorForBloodRequest(requestId, donorId, accessCode) {
   const { data, error } = await supabase.rpc("select_blood_donor_for_request", {
     p_request_id: requestId,
     p_donor_id: donorId,
+    p_access_code: accessCode.trim(),
   });
   if (error) throw error;
   const assignment = Array.isArray(data) ? data[0] : data;
@@ -89,10 +101,11 @@ export async function selectDonorForBloodRequest(requestId, donorId) {
   return assignment;
 }
 
-export async function markBloodRequestDonated(requestId, donorId) {
+export async function markBloodRequestDonated(requestId, donorId, accessCode) {
   const { data, error } = await supabase.rpc("mark_blood_request_donated", {
     p_request_id: requestId,
     p_donor_id: donorId,
+    p_access_code: accessCode.trim(),
   });
   if (error) throw error;
   const assignment = Array.isArray(data) ? data[0] : data;
@@ -102,7 +115,7 @@ export async function markBloodRequestDonated(requestId, donorId) {
 
 export async function fetchBloodRequestReport() {
   const [{ data: requests, error: requestError }, { data: assignments, error: assignmentError }] = await Promise.all([
-    supabase.from("blood_requests").select("id,patient_name,attendant_name,phone,hospital_address,blood_group,units,needed_on,notes,status,created_at").order("created_at", { ascending: false }),
+    supabase.from("blood_requests").select("id,patient_name,attendant_name,phone,hospital_address,blood_group,units,needed_on,notes,status,approval_status,approval_code,access_code_expires_at,approved_at,created_at").order("created_at", { ascending: false }),
     supabase.from("blood_request_donors").select("id,request_id,donor_id,status,units,notes,selected_at,donated_at").order("selected_at", { ascending: false }),
   ]);
   if (requestError) throw requestError;
@@ -119,7 +132,24 @@ export async function fetchBloodRequestReport() {
 }
 
 export async function assignDonorToBloodRequest(requestId, donorId) {
-  return selectDonorForBloodRequest(requestId, donorId);
+  const { data, error } = await supabase.rpc("admin_assign_blood_donor_to_request", {
+    p_request_id: requestId,
+    p_donor_id: donorId,
+  });
+  if (error) throw error;
+  const assignment = Array.isArray(data) ? data[0] : data;
+  if (!assignment) throw new Error("The donor could not be assigned to this patient.");
+  return assignment;
+}
+
+export async function regenerateBloodRequestCode(requestId) {
+  const { data, error } = await supabase.rpc("admin_regenerate_blood_request_code", {
+    p_request_id: requestId,
+  });
+  if (error) throw error;
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) throw new Error("A new approval code could not be generated.");
+  return result;
 }
 
 export async function updateBloodAssignmentStatus(assignmentId, status) {
@@ -295,10 +325,11 @@ export async function fetchPublicBloodSummary() {
   return data || [];
 }
 
-export async function fetchPublicBloodDonors(requestId) {
-  if (!requestId) return [];
+export async function fetchPublicBloodDonors(requestId, accessCode) {
+  if (!requestId || !accessCode) return [];
   const { data, error } = await supabase.rpc("public_blood_donor_directory", {
     p_request_id: requestId,
+    p_access_code: accessCode.trim(),
   });
   if (error) throw error;
   return data || [];
