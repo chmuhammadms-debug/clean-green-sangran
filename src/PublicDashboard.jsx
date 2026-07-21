@@ -3,7 +3,10 @@ import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
 import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
-import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
+import ProjectIcon, {
+  ensureSingleBloodBankSystem,
+  isBloodBankProject,
+} from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
 import PublicNotificationCenter from "./PublicNotificationCenter";
@@ -68,11 +71,9 @@ const fallbackSystems = [
 ];
 
 function ensurePublicSystems(systems = []) {
-  const list = Array.isArray(systems) ? systems : [];
-  const withBloodBank = list.some((system) => isBloodBankProject(system))
-    ? list
-    : [defaultBloodBankSystem, ...list];
-  return ensureMosqueSystems(withBloodBank);
+  return ensureMosqueSystems(
+    ensureSingleBloodBankSystem(systems, defaultBloodBankSystem)
+  );
 }
 
 const fallbackTransactions = [

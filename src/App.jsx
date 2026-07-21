@@ -3,7 +3,10 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
-import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
+import ProjectIcon, {
+  ensureSingleBloodBankSystem,
+  isBloodBankProject,
+} from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
@@ -56,6 +59,12 @@ const defaultSystems = [
   ...defaultMosqueSystems,
 ];
 
+function normalizeSystems(systems = []) {
+  return ensureMosqueSystems(
+    ensureSingleBloodBankSystem(systems, defaultSystems[0])
+  );
+}
+
 const defaultTransactions = [
   {
     id: "cemetery-first-record",
@@ -97,15 +106,15 @@ function loadSystems() {
       localStorage.getItem("sangrahnSystems")
     );
 
-    if (!Array.isArray(saved)) return defaultSystems;
+    if (!Array.isArray(saved)) return normalizeSystems(defaultSystems);
 
     const savedIds = new Set(saved.map((system) => String(system.id)));
-    return ensureMosqueSystems([
+    return normalizeSystems([
       ...saved,
       ...defaultSystems.filter((system) => !savedIds.has(String(system.id))),
     ]);
   } catch {
-    return defaultSystems;
+    return normalizeSystems(defaultSystems);
   }
 }
 
@@ -406,7 +415,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       const localSystems = loadSystems();
       const localTransactions = loadTransactions();
       const databaseSlugs = new Set(databaseData.systems.map((system) => String(system.id)));
-      const mergedSystems = ensureMosqueSystems([
+      const mergedSystems = normalizeSystems([
         ...databaseData.systems,
         ...localSystems.filter((system) => !databaseSlugs.has(String(system.id))),
       ]);
@@ -415,7 +424,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
         setTransactions(localTransactions);
         setDatabaseMessage("Local records are being migrated to Supabase...");
       } else {
-        setSystems(databaseData.systems.length ? mergedSystems : ensureMosqueSystems(localSystems));
+        setSystems(databaseData.systems.length ? mergedSystems : normalizeSystems(localSystems));
         setTransactions(databaseData.transactions);
         setDatabaseMessage("Database connected");
       }
@@ -571,7 +580,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       return;
     }
 
-    setSystems((currentSystems) => [
+    setSystems((currentSystems) => normalizeSystems([
       ...currentSystems,
       {
         id: Date.now().toString(),
@@ -579,7 +588,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
         description: "Community management system",
         icon: "📁",
       },
-    ]);
+    ]));
   }
 
   function handleFileChange(event) {
@@ -1674,7 +1683,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
             <ProjectManager
               systems={systems}
-              setSystems={setSystems}
+              setSystems={(updater) => setSystems((currentSystems) =>
+                normalizeSystems(
+                  typeof updater === "function" ? updater(currentSystems) : updater
+                )
+              )}
               settings={siteSettings}
               onSaveSettings={onSaveSiteSettings}
               saving={savingSiteSettings}
