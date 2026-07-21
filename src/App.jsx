@@ -21,6 +21,14 @@ import { fetchDatabaseData, syncDatabaseData } from "./dataService";
 
 const defaultSystems = [
   {
+    id: "blood-bank",
+    name: "Blood Bank",
+    nameUr: "بلڈ بینک",
+    description: "Blood donor registry and emergency request management",
+    descriptionUr: "خون کے عطیہ دہندگان کا محفوظ ریکارڈ اور ہنگامی درخواستوں کا نظام",
+    icon: "🩸",
+  },
+  {
     id: "cemetery",
     name: "Cemetery Management",
     description: "Cemetery funds, expenses and reports",
