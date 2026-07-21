@@ -7,6 +7,7 @@ import ProjectIcon, { isBloodBankProject } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
+import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
@@ -1226,6 +1227,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 "Current Balance",
               ]}
             />
+
+            {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
 
             <section
               className="panel"

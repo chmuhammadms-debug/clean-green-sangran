@@ -8,6 +8,7 @@ import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
+import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
@@ -733,6 +734,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               />
             ) : <>
             {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} /> : <MoneyCards totals={selectedTotals} language={language} />}
+            {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
