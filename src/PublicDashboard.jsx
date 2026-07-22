@@ -11,6 +11,7 @@ import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
+import WelfareManagementHub from "./WelfareManagementHub";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import {
   defaultMosqueSystems,
@@ -20,6 +21,13 @@ import {
   mosqueParentRecords,
   topLevelSystems,
 } from "./mosqueManagement";
+import {
+  defaultWelfareSystems,
+  ensureWelfareSystems,
+  isWelfareChild,
+  isWelfareParent,
+  welfareParentRecords,
+} from "./welfareManagement";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -68,11 +76,14 @@ const fallbackSystems = [
   { id: "mosque", name: "Mosque Management", description: "Community-supported maintenance, improvements and transparent records.", icon: "🕌" },
   { id: "welfare", name: "Community Welfare", description: "Dignified support for families and shared village initiatives.", icon: "🤝" },
   ...defaultMosqueSystems,
+  ...defaultWelfareSystems,
 ];
 
 function ensurePublicSystems(systems = []) {
-  return ensureMosqueSystems(
-    ensureSingleBloodBankSystem(systems, defaultBloodBankSystem)
+  return ensureWelfareSystems(
+    ensureMosqueSystems(
+      ensureSingleBloodBankSystem(systems, defaultBloodBankSystem)
+    )
   );
 }
 
@@ -85,6 +96,9 @@ const projectUrdu = {
   plantation: { name: "شجرکاری مینجمنٹ", description: "سرسبز سڑکیں، صاف فضا اور سنگراں کا بہتر مستقبل۔" },
   mosque: { name: "مسجد مینجمنٹ", description: "مسجد کی دیکھ بھال، بہتری اور شفاف عوامی حساب۔" },
   welfare: { name: "فلاحی منصوبے", description: "گاؤں کی اجتماعی فلاح اور ضرورت مند خاندانوں کی مدد۔" },
+  "welfare-general": { name: "اجتماعی فلاح و معاونت", description: "مستحق خاندانوں اور اجتماعی ضروریات کے لیے شفاف معاونت۔" },
+  "welfare-filtration": { name: "واٹر فلٹریشن پلانٹ", description: "سنگراں کے لیے صاف اور محفوظ پینے کے پانی کا منصوبہ۔" },
+  "welfare-sports": { name: "کھیل اور نوجوانوں کی سرگرمیاں", description: "صحت مند کھیل اور نوجوانوں کی مثبت اجتماعی سرگرمیاں۔" },
 };
 
 const projectImages = {
@@ -607,7 +621,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
   const selectedAllRecords = isMosqueParent(selectedSystemId)
     ? mosqueParentRecords(transactions)
-    : transactions.filter((record) => record.systemId === selectedSystemId);
+    : isWelfareParent(selectedSystemId)
+      ? welfareParentRecords(transactions)
+      : transactions.filter((record) => record.systemId === selectedSystemId);
   const selectedTotals = totalsFor(selectedAllRecords);
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
@@ -633,13 +649,18 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   };
   const imageFor = (system) => profileFor(system).coverImage
     || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
+    || (isWelfareChild(system) ? projectImages.welfare : null)
     || welfareImage;
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
       return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
-    return (isMosqueChild(system) ? projectGalleries.mosque : projectGalleries[system.id])
+    return (isMosqueChild(system)
+      ? projectGalleries.mosque
+      : isWelfareChild(system)
+        ? projectGalleries.welfare
+        : projectGalleries[system.id])
       || [{ image: imageFor(system), title: systemName(system) }];
   };
   const faithSlidesFor = (system) => {
@@ -648,8 +669,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       return slidesByProject[system.id] || [];
     }
     if (isMosqueChild(system)) return slidesByProject.mosque || [];
+    if (isWelfareChild(system)) return slidesByProject.welfare || [];
     return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
   };
+  const selectedParentId = selectedSystem
+    ? (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null)
+    : null;
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
@@ -694,13 +719,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return (
       <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
-          <button className="brand-button" onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
+          <button className="brand-button" onClick={() => setSelectedSystemId(selectedParentId)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
           <div className="nav-actions project-nav-actions">
-            <button className="project-top-back" onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
+            <button className="project-top-back" onClick={() => setSelectedSystemId(selectedParentId)}>
               {isMosqueChild(selectedSystem)
                 ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
+                : isWelfareChild(selectedSystem)
+                  ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
                 : (ur ? "← واپس" : "← Back")}
             </button>
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
@@ -726,6 +753,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <section className="content-section project-finance">
             {isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
+                systems={systems}
+                transactions={transactions}
+                onOpenSystem={setSelectedSystemId}
+                language={language}
+                getName={systemName}
+                getDescription={systemDescription}
+              />
+            ) : isWelfareParent(selectedSystem) ? (
+              <WelfareManagementHub
                 systems={systems}
                 transactions={transactions}
                 onOpenSystem={setSelectedSystemId}
@@ -827,9 +863,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
           </nav>
-          <button onClick={() => setSelectedSystemId(isMosqueChild(selectedSystem) ? "mosque" : null)}>
+          <button onClick={() => setSelectedSystemId(selectedParentId)}>
             {isMosqueChild(selectedSystem)
               ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
+              : isWelfareChild(selectedSystem)
+                ? (ur ? "فلاحی منصوبوں پر واپس جائیں ↑" : "Back to Welfare Management ↑")
               : (ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑")}
           </button>
         </footer>

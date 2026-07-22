@@ -10,6 +10,7 @@ import ProjectIcon, {
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
+import WelfareManagementHub from "./WelfareManagementHub";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import {
   defaultMosqueSystems,
@@ -19,6 +20,13 @@ import {
   mosqueParentRecords,
   topLevelSystems,
 } from "./mosqueManagement";
+import {
+  defaultWelfareSystems,
+  ensureWelfareSystems,
+  isWelfareChild,
+  isWelfareParent,
+  welfareParentRecords,
+} from "./welfareManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
@@ -52,16 +60,21 @@ const defaultSystems = [
   },
   {
     id: "welfare",
-    name: "Other Welfare Projects",
-    description: "Other community projects",
+    name: "Welfare Management",
+    nameUr: "فلاحی منصوبہ جات",
+    description: "Clean water, community support, sports and youth development projects",
+    descriptionUr: "صاف پانی، اجتماعی معاونت، کھیل اور نوجوانوں کی ترقی کے منصوبے",
     icon: "🤝",
   },
   ...defaultMosqueSystems,
+  ...defaultWelfareSystems,
 ];
 
 function normalizeSystems(systems = []) {
-  return ensureMosqueSystems(
-    ensureSingleBloodBankSystem(systems, defaultSystems[0])
+  return ensureWelfareSystems(
+    ensureMosqueSystems(
+      ensureSingleBloodBankSystem(systems, defaultSystems[0])
+    )
   );
 }
 
@@ -467,7 +480,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
   const selectedTransactions = (isMosqueParent(selectedSystemId)
     ? mosqueParentRecords(transactions)
-    : transactions.filter((record) => record.systemId === selectedSystemId))
+    : isWelfareParent(selectedSystemId)
+      ? welfareParentRecords(transactions)
+      : transactions.filter((record) => record.systemId === selectedSystemId))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
@@ -1195,7 +1210,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 setSelectedSystemId(
                   isMosqueChild(selectedSystem)
                     ? "mosque"
-                    : null
+                    : isWelfareChild(selectedSystem)
+                      ? "welfare"
+                      : null
                 )
               }
               style={{
@@ -1206,7 +1223,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             >
               {isMosqueChild(selectedSystem)
                 ? "← Mosque Management"
-                : "← Central Dashboard"}
+                : isWelfareChild(selectedSystem)
+                  ? "← Welfare Management"
+                  : "← Central Dashboard"}
             </button>
 
             <h1 className="page-heading">
@@ -1223,6 +1242,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
             ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
+                systems={systems}
+                transactions={transactions}
+                onOpenSystem={openSystem}
+                adminMode
+              />
+            ) : isWelfareParent(selectedSystem) ? (
+              <WelfareManagementHub
                 systems={systems}
                 transactions={transactions}
                 onOpenSystem={openSystem}
@@ -1717,6 +1743,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 const systemTotals = totalsFor(
                   isMosqueParent(system)
                     ? mosqueParentRecords(transactions)
+                    : isWelfareParent(system)
+                      ? welfareParentRecords(transactions)
                     : transactions.filter(
                         (record) =>
                           record.systemId === system.id

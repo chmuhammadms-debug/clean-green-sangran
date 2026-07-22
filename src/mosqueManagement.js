@@ -59,7 +59,9 @@ export function ensureMosqueSystems(systems = []) {
 }
 
 export function topLevelSystems(systems = []) {
-  return systems.filter((system) => !isMosqueChild(system));
+  return systems.filter((system) => (
+    !isMosqueChild(system) && !String(system?.id || "").startsWith("welfare-")
+  ));
 }
 
 export function mosqueChildSystems(systems = []) {
