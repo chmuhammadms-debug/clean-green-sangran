@@ -11,6 +11,7 @@ import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
 import WelfareManagementHub from "./WelfareManagementHub";
+import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import {
   defaultMosqueSystems,
@@ -1264,6 +1265,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             />
 
             {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
+            {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+              <WelfareOperationsPanel
+                projectId={selectedSystem.id}
+                settings={siteSettings}
+                onSave={onSaveSiteSettings}
+                saving={savingSiteSettings}
+              />
+            )}
 
             <section
               className="panel"

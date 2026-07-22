@@ -81,6 +81,29 @@ function SportsIcon({ size, className }) {
   );
 }
 
+function WelfareCategoryIcon({ type, size, className }) {
+  const colors = {
+    education: ["#ede9fe", "#6d28d9"],
+    health: ["#ffe4e6", "#be123c"],
+    sanitation: ["#dcfce7", "#15803d"],
+    infrastructure: ["#fef3c7", "#b45309"],
+    volunteers: ["#e0f2fe", "#0369a1"],
+    emergency: ["#ffedd5", "#c2410c"],
+  };
+  const [background, stroke] = colors[type] || colors.volunteers;
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={type}>
+      <rect x="7" y="7" width="50" height="50" rx="15" fill={background} />
+      {type === "education" && <><path d="M17 21h12c3 0 5 2 5 5v22c0-4-3-6-7-6H17V21Zm30 0H35v27c0-4 3-6 7-6h5V21Z" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" /><path d="M23 28h6M40 28h3" stroke={stroke} strokeWidth="3" strokeLinecap="round" /></>}
+      {type === "health" && <><path d="M32 48S17 39 17 27c0-6 4-10 10-10 3 0 5 2 5 4 1-2 3-4 6-4 6 0 10 4 10 10 0 12-16 21-16 21Z" fill="none" stroke={stroke} strokeWidth="3.5" /><path d="M32 24v13M25.5 30.5h13" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /></>}
+      {type === "sanitation" && <><path d="M23 24h20l-2 24H25l-2-24Zm-3 0h26M28 19h10" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M30 31v10M36 31v10M48 17v6M45 20h6" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" /></>}
+      {type === "infrastructure" && <><path d="M20 48V25a12 12 0 0 1 24 0v23M14 48h36" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /><path d="M26 25h12M32 25v23M27 48l5-9 5 9" fill="none" stroke={stroke} strokeWidth="3" strokeLinejoin="round" /><circle cx="32" cy="20" r="4" fill={stroke} /></>}
+      {type === "volunteers" && <><circle cx="32" cy="23" r="6" fill="none" stroke={stroke} strokeWidth="3.5" /><circle cx="18" cy="27" r="4" fill="none" stroke={stroke} strokeWidth="3" /><circle cx="46" cy="27" r="4" fill="none" stroke={stroke} strokeWidth="3" /><path d="M20 47c1-9 5-13 12-13s11 4 12 13M10 45c1-7 4-10 9-10M54 45c-1-7-4-10-9-10" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /></>}
+      {type === "emergency" && <><path d="M32 15c5 4 10 5 15 6v10c0 10-6 17-15 20-9-3-15-10-15-20V21c5-1 10-2 15-6Z" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" /><path d="M32 24v15M25 31.5h14" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /></>}
+    </svg>
+  );
+}
+
 export default function ProjectIcon({ project, size = 32, className = "" }) {
   if (isBloodBankProject(project)) {
     return (
@@ -106,6 +129,19 @@ export default function ProjectIcon({ project, size = 32, className = "" }) {
 
   if (String(project?.id || "") === "welfare-sports") {
     return <SportsIcon size={size} className={className} />;
+  }
+
+  const welfareIconType = {
+    "welfare-education": "education",
+    "welfare-health": "health",
+    "welfare-sanitation": "sanitation",
+    "welfare-infrastructure": "infrastructure",
+    "welfare-volunteers": "volunteers",
+    "welfare-emergency": "emergency",
+  }[String(project?.id || "")];
+
+  if (welfareIconType) {
+    return <WelfareCategoryIcon type={welfareIconType} size={size} className={className} />;
   }
 
   return (

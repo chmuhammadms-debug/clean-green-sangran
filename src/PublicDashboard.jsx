@@ -12,6 +12,7 @@ import SuggestionBox from "./SuggestionBox";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
 import WelfareManagementHub from "./WelfareManagementHub";
+import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import {
   defaultMosqueSystems,
@@ -99,6 +100,12 @@ const projectUrdu = {
   "welfare-general": { name: "اجتماعی فلاح و معاونت", description: "مستحق خاندانوں اور اجتماعی ضروریات کے لیے شفاف معاونت۔" },
   "welfare-filtration": { name: "واٹر فلٹریشن پلانٹ", description: "سنگراں کے لیے صاف اور محفوظ پینے کے پانی کا منصوبہ۔" },
   "welfare-sports": { name: "کھیل اور نوجوانوں کی سرگرمیاں", description: "صحت مند کھیل اور نوجوانوں کی مثبت اجتماعی سرگرمیاں۔" },
+  "welfare-education": { name: "تعلیم اور وظائف معاونت", description: "مستحق طلبہ کے لیے تعلیم، وظائف اور ضروری وسائل کی معاونت۔" },
+  "welfare-health": { name: "طبی کیمپ اور صحت معاونت", description: "طبی کیمپ، ادویات اور گاؤں کی صحت کے لیے منظم معاونت۔" },
+  "welfare-sanitation": { name: "صفائی اور کچرا انتظام", description: "صاف گلیوں، ڈسٹ بن اور اجتماعی صفائی مہم کا منظم نظام۔" },
+  "welfare-infrastructure": { name: "سٹریٹ لائٹس، سڑکیں اور نکاسی", description: "گلی، سڑک، روشنی اور نکاسیٔ آب کی بہتری کا منصوبہ۔" },
+  "welfare-volunteers": { name: "ہنر، روزگار اور نوجوان رضاکار", description: "رضاکارانہ خدمت، تربیت، ہنر اور روزگار کا نوجوان نیٹ ورک۔" },
+  "welfare-emergency": { name: "ہنگامی اور آفات امداد", description: "حادثات، آفات اور فوری ضروریات کے لیے شفاف امداد۔" },
 };
 
 const projectImages = {
@@ -772,6 +779,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             ) : <>
             {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} /> : <MoneyCards totals={selectedTotals} language={language} />}
             {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
+            {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+              <WelfareOperationsPublic
+                projectId={selectedSystem.id}
+                settings={settings}
+                language={language}
+              />
+            )}
             <div className="project-gallery reveal">
               <div className="section-heading section-heading--compact">
                 <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
@@ -968,6 +982,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               const projectTotals = totalsFor(
                 isMosqueParent(system)
                   ? mosqueParentRecords(transactions)
+                  : isWelfareParent(system)
+                    ? welfareParentRecords(transactions)
                   : transactions.filter((record) => record.systemId === system.id)
               );
               return (

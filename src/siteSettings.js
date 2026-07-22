@@ -143,6 +143,7 @@ export const DEFAULT_SITE_SETTINGS = {
   comingProjectDateEn: "Expected soon",
   comingProjectDateUr: "جلد شروع ہوگا",
   projectProfilesByProject: {},
+  welfareOperationsByProject: {},
   homeHeroSlides: [],
   homeReelSlides: [],
   socialLinks: [],
@@ -184,6 +185,9 @@ export function mergeSiteSettings(value = {}) {
     homeReelSlides: Array.isArray(value.homeReelSlides) ? value.homeReelSlides : DEFAULT_SITE_SETTINGS.homeReelSlides,
     projectProfilesByProject: value.projectProfilesByProject && typeof value.projectProfilesByProject === "object"
       ? value.projectProfilesByProject
+      : {},
+    welfareOperationsByProject: value.welfareOperationsByProject && typeof value.welfareOperationsByProject === "object"
+      ? value.welfareOperationsByProject
       : {},
     projectFaithSlidesByProject: mergeProjectFaithSlides(value),
   };
