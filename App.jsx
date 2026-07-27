@@ -3,10 +3,45 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
+import ProjectIcon, {
+  ensureSingleBloodBankSystem,
+  isBloodBankProject,
+} from "./ProjectIcon";
+import BloodBankAdmin from "./BloodBankAdmin";
+import AdminNotificationCenter from "./AdminNotificationCenter";
+import MosqueManagementHub from "./MosqueManagementHub";
+import WelfareManagementHub from "./WelfareManagementHub";
+import WelfareOperationsPanel from "./WelfareOperationsPanel";
+import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
+import {
+  defaultMosqueSystems,
+  ensureMosqueSystems,
+  isMosqueChild,
+  isMosqueParent,
+  mosqueParentRecords,
+  topLevelSystems,
+} from "./mosqueManagement";
+import {
+  defaultWelfareSystems,
+  ensureWelfareSystems,
+  isWelfareChild,
+  isWelfareParent,
+  welfareParentRecords,
+} from "./welfareManagement";
+import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
+import { uploadWebsiteImage } from "./mediaUpload";
 
 const defaultSystems = [
+  {
+    id: "blood-bank",
+    name: "Blood Bank",
+    nameUr: "بلڈ بینک",
+    description: "Blood donor registry and emergency request management",
+    descriptionUr: "خون کے عطیہ دہندگان کا محفوظ ریکارڈ اور ہنگامی درخواستوں کا نظام",
+    icon: "🩸",
+  },
   {
     id: "cemetery",
     name: "Cemetery Management",
@@ -27,11 +62,23 @@ const defaultSystems = [
   },
   {
     id: "welfare",
-    name: "Other Welfare Projects",
-    description: "Other community projects",
+    name: "Welfare Management",
+    nameUr: "فلاحی منصوبہ جات",
+    description: "Clean water, community support, sports and youth development projects",
+    descriptionUr: "صاف پانی، اجتماعی معاونت، کھیل اور نوجوانوں کی ترقی کے منصوبے",
     icon: "🤝",
   },
+  ...defaultMosqueSystems,
+  ...defaultWelfareSystems,
 ];
+
+function normalizeSystems(systems = []) {
+  return ensureWelfareSystems(
+    ensureMosqueSystems(
+      ensureSingleBloodBankSystem(systems, defaultSystems[0])
+    )
+  );
+}
 
 const defaultTransactions = [
   {
@@ -65,6 +112,8 @@ function emptyForm() {
     details: "",
     slipName: "",
     slipData: "",
+    donorPhoto: "",
+    donorPhotoName: "",
   };
 }
 
@@ -74,19 +123,15 @@ function loadSystems() {
       localStorage.getItem("sangrahnSystems")
     );
 
-    if (!Array.isArray(saved)) {
-      return defaultSystems;
-    }
+    if (!Array.isArray(saved)) return normalizeSystems(defaultSystems);
 
-    return saved.map((savedSystem) => {
-      const fixedSystem = defaultSystems.find(
-        (system) => system.id === savedSystem.id
-      );
-
-      return fixedSystem || savedSystem;
-    });
+    const savedIds = new Set(saved.map((system) => String(system.id)));
+    return normalizeSystems([
+      ...saved,
+      ...defaultSystems.filter((system) => !savedIds.has(String(system.id))),
+    ]);
   } catch {
-    return defaultSystems;
+    return normalizeSystems(defaultSystems);
   }
 }
 
@@ -246,7 +291,20 @@ function RecordsTable({
                 </strong>
               </td>
 
-              <td>{record.person}</td>
+              <td>
+                <div className="record-person-with-photo">
+                  {record.type === "income" && record.donorPhoto ? (
+                    <a href={record.donorPhoto} target="_blank" rel="noreferrer" title="Open donor photo">
+                      <img className="donor-avatar" src={record.donorPhoto} alt={`${record.person} donor`} />
+                    </a>
+                  ) : (
+                    <span className="donor-avatar donor-avatar--placeholder" aria-hidden="true">
+                      {record.type === "income" ? String(record.person || "?").slice(0, 1).toUpperCase() : "—"}
+                    </span>
+                  )}
+                  <span>{record.person}</span>
+                </div>
+              </td>
 
               <td>
                 Rs. {Number(record.amount).toLocaleString()}
@@ -356,6 +414,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     useState(null);
 
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [donorPhotoInputKey, setDonorPhotoInputKey] = useState(0);
+  const [uploadingDonorPhoto, setUploadingDonorPhoto] = useState(false);
   const [donorSearch, setDonorSearch] = useState("");
   const [dailyDate, setDailyDate] = useState(getToday());
   const [monthlyDate, setMonthlyDate] =
@@ -387,13 +447,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       const localSystems = loadSystems();
       const localTransactions = loadTransactions();
       const databaseSlugs = new Set(databaseData.systems.map((system) => String(system.id)));
-      const mergedSystems = [...databaseData.systems, ...localSystems.filter((system) => !databaseSlugs.has(String(system.id)))];
+      const mergedSystems = normalizeSystems([
+        ...databaseData.systems,
+        ...localSystems.filter((system) => !databaseSlugs.has(String(system.id))),
+      ]);
       if (databaseData.transactions.length === 0 && localTransactions.length > 0) {
         setSystems(mergedSystems.length ? mergedSystems : localSystems);
         setTransactions(localTransactions);
         setDatabaseMessage("Local records are being migrated to Supabase...");
       } else {
-        setSystems(databaseData.systems.length ? databaseData.systems : localSystems);
+        setSystems(databaseData.systems.length ? mergedSystems : normalizeSystems(localSystems));
         setTransactions(databaseData.transactions);
         setDatabaseMessage("Database connected");
       }
@@ -405,11 +468,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (data.session && await isCurrentUserAdmin(data.session.user)) {
         setLoggedIn(true);
         setUsername(data.session.user.email || "");
         loadFromDatabase();
+      } else if (data.session) {
+        await supabase.auth.signOut();
       }
     });
   }, []);
@@ -432,10 +497,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     (system) => system.id === selectedSystemId
   );
 
-  const selectedTransactions = transactions
-    .filter(
-      (record) => record.systemId === selectedSystemId
-    )
+  const selectedTransactions = (isMosqueParent(selectedSystemId)
+    ? mosqueParentRecords(transactions)
+    : isWelfareParent(selectedSystemId)
+      ? welfareParentRecords(transactions)
+      : transactions.filter((record) => record.systemId === selectedSystemId))
     .sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
@@ -487,12 +553,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   async function handleLogin(event) {
     event.preventDefault();
 
-    const { error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
-    if (!error) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
+    if (!error && await isCurrentUserAdmin(data.user)) {
       setLoggedIn(true);
       await loadFromDatabase();
     } else {
-      alert("Incorrect email or password");
+      if (!error) await supabase.auth.signOut();
+      alert(error ? "Incorrect email or password" : "This is a donor account, not an administrator account.");
     }
   }
 
@@ -512,6 +579,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     setFileInputKey(
       (currentKey) => currentKey + 1
     );
+    setDonorPhotoInputKey(
+      (currentKey) => currentKey + 1
+    );
   }
 
   function openSystem(systemId) {
@@ -519,6 +589,18 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     setActiveSection("income");
     setDonorSearch("");
     resetForm();
+  }
+
+  function openAdminNotification(item) {
+    const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
+    if (notificationType.includes("blood")) {
+      const bloodSystem = systems.find((system) => isBloodBankProject(system));
+      if (bloodSystem) openSystem(bloodSystem.id);
+      return;
+    }
+    if (item?.source_id && systems.some((system) => system.id === item.source_id)) {
+      openSystem(item.source_id);
+    }
   }
 
   function changeSection(sectionId) {
@@ -535,7 +617,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       return;
     }
 
-    setSystems((currentSystems) => [
+    setSystems((currentSystems) => normalizeSystems([
       ...currentSystems,
       {
         id: Date.now().toString(),
@@ -543,7 +625,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
         description: "Community management system",
         icon: "📁",
       },
-    ]);
+    ]));
   }
 
   function handleFileChange(event) {
@@ -591,6 +673,40 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     );
   }
 
+  async function handleDonorPhotoChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDonorPhoto(true);
+    setDatabaseMessage("Uploading donor photo...");
+
+    try {
+      const uploaded = await uploadWebsiteImage(file, "donors");
+      setEntryForm((currentForm) => ({
+        ...currentForm,
+        donorPhoto: uploaded.url,
+        donorPhotoName: uploaded.name,
+      }));
+      setDatabaseMessage("Donor photo uploaded");
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Donor photo could not be uploaded");
+      setDatabaseMessage(`Donor photo upload failed: ${error.message}`);
+      event.target.value = "";
+    } finally {
+      setUploadingDonorPhoto(false);
+    }
+  }
+
+  function removeDonorPhoto() {
+    setEntryForm((currentForm) => ({
+      ...currentForm,
+      donorPhoto: "",
+      donorPhotoName: "",
+    }));
+    setDonorPhotoInputKey((currentKey) => currentKey + 1);
+  }
+
   function startEditing(record) {
     setSelectedSystemId(record.systemId);
     setActiveSection(record.type);
@@ -604,9 +720,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       details: record.details || "",
       slipName: record.slipName || "",
       slipData: record.slipData || "",
+      donorPhoto: record.donorPhoto || "",
+      donorPhotoName: record.donorPhotoName || "",
     });
 
     setFileInputKey(
+      (currentKey) => currentKey + 1
+    );
+    setDonorPhotoInputKey(
       (currentKey) => currentKey + 1
     );
 
@@ -643,6 +764,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       details: entryForm.details.trim(),
       slipName: entryForm.slipName,
       slipData: entryForm.slipData,
+      donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
+      donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
     };
 
     let nextTransactions;
@@ -1130,12 +1253,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
           <p>Central Management System • {databaseMessage}</p>
         </div>
 
-        <button
-          className="logout-button"
-          onClick={handleLogout}
-        >
-          Logout
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <AdminNotificationCenter onOpenNotification={openAdminNotification} />
+          <button
+            className="logout-button"
+            onClick={handleLogout}
+          >
+            Logout
+          </button>
+        </div>
       </header>
 
       <main className="container">
@@ -1144,7 +1270,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             <button
               className="logout-button"
               onClick={() =>
-                setSelectedSystemId(null)
+                setSelectedSystemId(
+                  isMosqueChild(selectedSystem)
+                    ? "mosque"
+                    : isWelfareChild(selectedSystem)
+                      ? "welfare"
+                      : null
+                )
               }
               style={{
                 marginBottom: "20px",
@@ -1152,11 +1284,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 background: "#166534",
               }}
             >
-              ← Central Dashboard
+              {isMosqueChild(selectedSystem)
+                ? "← Mosque Management"
+                : isWelfareChild(selectedSystem)
+                  ? "← Welfare Management"
+                  : "← Central Dashboard"}
             </button>
 
             <h1 className="page-heading">
-              {selectedSystem.icon}{" "}
+              <ProjectIcon project={selectedSystem} size={42} />{" "}
               {selectedSystem.name}
             </h1>
 
@@ -1165,6 +1301,64 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 selectedSystem.englishName}
             </p>
 
+            {isBloodBankProject(selectedSystem) ? (
+              <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
+            ) : isMosqueParent(selectedSystem) ? (
+              <MosqueManagementHub
+                systems={systems}
+                transactions={transactions}
+                onOpenSystem={openSystem}
+                adminMode
+              />
+            ) : isWelfareChild(selectedSystem) ? (
+              <>
+                <section className="panel welfare-child-admin" style={{ marginTop: "22px" }}>
+                  <div className="welfare-child-admin__cover">
+                    <img
+                      src={siteSettings.projectProfilesByProject?.[selectedSystem.id]?.coverImage || selectedSystem.coverImage}
+                      alt=""
+                    />
+                  </div>
+                  <span>SEPARATE PROJECT GALLERY</span>
+                  <h2>{selectedSystem.name}</h2>
+                  <p>
+                    This subproject does not keep a separate donation or expense account.
+                    Add every financial entry in the main Community Welfare project.
+                    Its name, icon, cover and gallery can be changed from Project Manager.
+                  </p>
+                  <button type="button" className="primary-button" onClick={() => setSelectedSystemId("welfare")}>
+                    Open Central Welfare Fund
+                  </button>
+                </section>
+                {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+                  <WelfareOperationsPanel
+                    projectId={selectedSystem.id}
+                    settings={siteSettings}
+                    onSave={onSaveSiteSettings}
+                    saving={savingSiteSettings}
+                  />
+                )}
+              </>
+            ) : <>
+            {isWelfareParent(selectedSystem) && (
+              <WelfareManagementHub
+                systems={systems}
+                onOpenSystem={openSystem}
+                getImage={(project) => (
+                  siteSettings.projectProfilesByProject?.[project.id]?.coverImage
+                  || project.coverImage
+                  || ""
+                )}
+                getPhotoCount={(project) => {
+                  const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
+                  const gallery = Array.isArray(savedGallery) && savedGallery.length
+                    ? savedGallery
+                    : project.galleryUrls;
+                  return Array.isArray(gallery) ? gallery.length : 0;
+                }}
+                adminMode
+              />
+            )}
             <SummaryCards
               totals={selectedTotals}
               labels={[
@@ -1174,6 +1368,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               ]}
             />
 
+            {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
             <section
               className="panel"
               style={{ marginTop: "22px" }}
@@ -1331,6 +1526,37 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     />
                   </div>
 
+                  {activeSection === "income" && (
+                    <div className="form-field donor-photo-upload">
+                      <label>Donor Photo (optional)</label>
+                      <small>Add a clear donor picture from your phone or computer gallery.</small>
+
+                      <input
+                        key={donorPhotoInputKey}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleDonorPhotoChange}
+                        disabled={uploadingDonorPhoto}
+                      />
+
+                      {uploadingDonorPhoto && (
+                        <p className="donor-photo-status">Uploading photo...</p>
+                      )}
+
+                      {entryForm.donorPhoto && (
+                        <div className="donor-photo-preview">
+                          <img src={entryForm.donorPhoto} alt="Selected donor" />
+                          <div>
+                            <b>{entryForm.donorPhotoName || "Donor photo"}</b>
+                            <button type="button" onClick={removeDonorPhoto}>
+                              Remove Photo
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="form-field">
                     <label>Amount</label>
 
@@ -1449,8 +1675,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   <button
                     className="primary-button"
                     type="submit"
+                    disabled={uploadingDonorPhoto}
                   >
-                    {editingRecordId
+                    {uploadingDonorPhoto
+                      ? "Uploading Donor Photo..."
+                      : editingRecordId
                       ? "Update Record"
                       : activeSection === "income"
                         ? "Save Donation"
@@ -1594,6 +1823,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 </section>
               </>
             )}
+            </>}
           </>
         ) : (
           <>
@@ -1617,7 +1847,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
             <ProjectManager
               systems={systems}
-              setSystems={setSystems}
+              setSystems={(updater) => setSystems((currentSystems) =>
+                normalizeSystems(
+                  typeof updater === "function" ? updater(currentSystems) : updater
+                )
+              )}
               settings={siteSettings}
               onSaveSettings={onSaveSiteSettings}
               saving={savingSiteSettings}
@@ -1643,12 +1877,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             </h2>
 
             <div className="summary-grid">
-              {systems.map((system) => {
+              {topLevelSystems(systems).map((system) => {
                 const systemTotals = totalsFor(
-                  transactions.filter(
-                    (record) =>
-                      record.systemId === system.id
-                  )
+                  isMosqueParent(system)
+                    ? mosqueParentRecords(transactions)
+                    : isWelfareParent(system)
+                      ? welfareParentRecords(transactions)
+                    : transactions.filter(
+                        (record) =>
+                          record.systemId === system.id
+                      )
                 );
 
                 return (
@@ -1668,7 +1906,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     <div
                       style={{ fontSize: "35px" }}
                     >
-                      {system.icon}
+                      <ProjectIcon project={system} size={35} />
                     </div>
 
                     <h2
@@ -1682,10 +1920,12 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                         system.englishName}
                     </p>
 
-                    <strong>
-                      Balance: Rs.{" "}
-                      {systemTotals.balance.toLocaleString()}
-                    </strong>
+                    {!isBloodBankProject(system) && (
+                      <strong>
+                        Balance: Rs.{" "}
+                        {systemTotals.balance.toLocaleString()}
+                      </strong>
+                    )}
                   </button>
                 );
               })}

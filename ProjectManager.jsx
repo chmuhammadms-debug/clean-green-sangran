@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import "./ProjectManager.css";
 import ProjectIcon from "./ProjectIcon";
 import { uploadWebsiteImage, uploadWebsiteImages } from "./mediaUpload";
+import { isMosqueChild } from "./mosqueManagement";
+import { isWelfareChild } from "./welfareManagement";
 
 function buildItems(systems = [], settings = {}) {
   const profiles = settings.projectProfilesByProject || {};
@@ -10,12 +12,16 @@ function buildItems(systems = [], settings = {}) {
     return {
       id: system.id,
       nameEn: profile.nameEn || system.name || "",
-      nameUr: profile.nameUr || "",
+      nameUr: profile.nameUr || system.nameUr || "",
       descriptionEn: profile.descriptionEn || system.description || "",
-      descriptionUr: profile.descriptionUr || "",
+      descriptionUr: profile.descriptionUr || system.descriptionUr || "",
       icon: system.icon || "📁",
-      coverImage: profile.coverImage || "",
-      galleryText: Array.isArray(profile.galleryUrls) ? profile.galleryUrls.join("\n") : "",
+      coverImage: profile.coverImage || system.coverImage || "",
+      galleryText: Array.isArray(profile.galleryUrls) && profile.galleryUrls.length
+        ? profile.galleryUrls.join("\n")
+        : Array.isArray(system.galleryUrls)
+          ? system.galleryUrls.join("\n")
+          : "",
       isActive: system.isActive !== false,
     };
   });
@@ -144,14 +150,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         <div><span>ADMIN PROJECT CONTROL</span><h2>Project Manager</h2></div>
         <button type="button" onClick={addProject}>+ نیا منصوبہ</button>
       </div>
-      <p className="project-manager__intro">یہاں سے ہر منصوبے کا اردو/انگریزی تعارف، آئیکن، کور تصویر، گیلری اور Public حالت تبدیل کریں۔</p>
+      <p className="project-manager__intro">یہاں سے ہر منصوبے کا اردو/انگریزی تعارف، آئیکن، کور تصویر، گیلری اور Public حالت تبدیل کریں۔ مسجد اور فلاحی منصوبوں کے تمام ذیلی اکاؤنٹس بھی الگ تبدیل کیے جاسکتے ہیں۔</p>
 
       <form onSubmit={saveProjects}>
         <div className="project-manager__list">
           {items.map((item, index) => (
             <article className="project-editor" id={`project-editor-${item.id}`} key={item.id}>
               <div className="project-editor__top">
-                <div className="project-editor__identity"><ProjectIcon project={item} size={34} /><div><small>PROJECT {index + 1}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
+                <div className="project-editor__identity"><ProjectIcon project={item} size={34} /><div><small>{isMosqueChild(item) ? "MOSQUE ACCOUNT" : isWelfareChild(item) ? "WELFARE PROJECT" : `PROJECT ${index + 1}`}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
                 <label className="project-editor__visibility"><input type="checkbox" checked={item.isActive !== false} onChange={(event) => updateItem(item.id, "isActive", event.target.checked)} /><b>{item.isActive !== false ? "Public" : "Hidden"}</b></label>
               </div>
 
