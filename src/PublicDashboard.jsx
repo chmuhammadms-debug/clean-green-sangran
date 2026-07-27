@@ -389,6 +389,68 @@ function MoneyCards({ totals, light = false, language = "en" }) {
   );
 }
 
+function socialPlatform(name = "") {
+  const value = String(name).toLowerCase();
+  if (value.includes("facebook")) return "facebook";
+  if (value.includes("instagram")) return "instagram";
+  if (value.includes("youtube")) return "youtube";
+  if (value.includes("whatsapp")) return "whatsapp";
+  if (value.includes("tiktok")) return "tiktok";
+  if (value.includes("linkedin")) return "linkedin";
+  if (value.includes("twitter") || value.trim() === "x") return "x";
+  return "link";
+}
+
+function SocialMediaIcon({ name }) {
+  const platform = socialPlatform(name);
+
+  if (platform === "facebook") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.2 8.2V6.4c0-.8.5-1 1-1h2.6V1.2L14.3 1C10.8 1 9 3.1 9 6v2.2H6v4.7h3V23h5.2V12.9h3.5l.6-4.7h-4.1Z" /></svg>;
+  }
+  if (platform === "instagram") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" /><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" strokeWidth="2" /><circle cx="17.5" cy="6.6" r="1.1" /></svg>;
+  }
+  if (platform === "youtube") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 7.2a3 3 0 0 0-2.1-2.1C18 4.6 15.7 4.5 12 4.5s-6 .1-7.9.6A3 3 0 0 0 2 7.2 21 21 0 0 0 1.5 12 21 21 0 0 0 2 16.8a3 3 0 0 0 2.1 2.1c1.9.5 4.2.6 7.9.6s6-.1 7.9-.6a3 3 0 0 0 2.1-2.1 21 21 0 0 0 .5-4.8 21 21 0 0 0-.5-4.8ZM9.8 15.8V8.2l6.5 3.8-6.5 3.8Z" /></svg>;
+  }
+  if (platform === "whatsapp") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a9.7 9.7 0 0 0-8.3 14.8L2.4 22l5.3-1.4A9.8 9.8 0 1 0 12 2Zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3.1.8.8-3-.2-.4A7.8 7.8 0 1 1 12 19.7Zm4.3-5.8c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-1.4-.7-2.4-1.5-3.3-3-.2-.3 0-.5.1-.6l.6-.7c.1-.2.1-.4.1-.5L9.6 8c-.1-.3-.3-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.7.7-1.1 1.7-1 2.7.1 1.2.5 2.3 1.2 3.2 1.3 1.9 3.1 3.4 5.2 4.1.7.3 1.5.3 2.2.1.9-.2 1.6-.8 1.9-1.6.2-.5.2-1 .1-1.5-.2-.4-.5-.6-1.1-.9Z" /></svg>;
+  }
+  if (platform === "linkedin") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.1 3.1a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM2 9.7h4.2V22H2V9.7Zm6.8 0h4v1.7h.1a4.4 4.4 0 0 1 4-2.2c4.3 0 5.1 2.8 5.1 6.5V22h-4.2v-5.6c0-1.3 0-3.1-1.9-3.1s-2.2 1.5-2.2 3V22H8.8V9.7Z" /></svg>;
+  }
+  if (platform === "tiktok") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.1 2h3.3a5.4 5.4 0 0 0 4.1 4.1v3.3a8.6 8.6 0 0 1-4.1-1.1v7.2a6.6 6.6 0 1 1-6.6-6.6c.4 0 .8 0 1.2.1v3.4a3.2 3.2 0 1 0 2.1 3V2Z" /></svg>;
+  }
+  if (platform === "x") {
+    return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h4.7l5.2 6.9L19 3h2l-7.2 8.4L21.6 22h-4.7l-5.8-7.8L4.4 22h-2l7.8-9.2L3 3Zm3.6 2 11.3 15h1.8L8.4 5H6.6Z" /></svg>;
+  }
+  return <svg className="social-media-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.6 13.4a1 1 0 0 1 0-1.4l4-4a3 3 0 1 1 4.2 4.2l-2.3 2.3a3 3 0 0 1-4.2 0 1 1 0 0 1 1.4-1.4 1 1 0 0 0 1.4 0l2.3-2.3a1 1 0 1 0-1.4-1.4l-4 4a1 1 0 0 1-1.4 0Zm2.8-2.8a1 1 0 0 1 0 1.4l-4 4a1 1 0 1 0 1.4 1.4l2.3-2.3a1 1 0 0 1 1.4 1.4l-2.3 2.3A3 3 0 1 1 8 14.6l4-4a1 1 0 0 1 1.4 0Z" /></svg>;
+}
+
+function SocialMediaLinks({ links = [], variant = "footer" }) {
+  const activeLinks = links.filter((link) => link.enabled !== false && link.url);
+  if (!activeLinks.length) return null;
+
+  return (
+    <div className={`social-media-links social-media-links--${variant}`} aria-label="Social media links">
+      {activeLinks.map((link) => (
+        <a
+          href={link.url}
+          key={link.id || `${link.name}-${link.url}`}
+          target="_blank"
+          rel="noreferrer"
+          title={link.name}
+          aria-label={link.name}
+        >
+          <SocialMediaIcon name={link.name} />
+          {variant === "footer" && <span className="social-media-label">{link.name}</span>}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 function RecordsTable({ records, systems, limit, language = "en" }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
@@ -417,7 +479,25 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
             <tr key={record.id}>
               <td>{record.date}</td>
               <td><span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? (language === "ur" ? "عطیہ" : "Donation") : (language === "ur" ? "خرچ" : "Expense")}</span></td>
-              <td><strong>{record.person}</strong><small>{record.details || "Community record"}</small></td>
+              <td>
+                <div className="public-record-person">
+                  {record.type === "income" && (
+                    record.donorPhoto ? (
+                      <a href={record.donorPhoto} target="_blank" rel="noreferrer" title={language === "ur" ? "ڈونر کی تصویر دیکھیں" : "View donor photo"}>
+                        <img className="public-record-donor-photo" src={record.donorPhoto} alt={record.person || "Donor"} />
+                      </a>
+                    ) : (
+                      <span className="public-record-donor-photo public-record-donor-photo--placeholder" aria-hidden="true">
+                        {(record.person || "D").trim().slice(0, 1).toUpperCase()}
+                      </span>
+                    )
+                  )}
+                  <span className="public-record-person__copy">
+                    <strong>{record.person}</strong>
+                    <small>{record.details || (language === "ur" ? "عوامی ریکارڈ" : "Community record")}</small>
+                  </span>
+                </div>
+              </td>
               <td>{projectName(record.systemId)}</td>
               <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
               <td>{record.method}</td>
@@ -737,6 +817,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
                 : (ur ? "← واپس" : "← Back")}
             </button>
+            <SocialMediaLinks links={settings.socialLinks} variant="header" />
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
             <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
           </div>
@@ -873,6 +954,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <footer className="site-footer">
           <LogoMark compact />
           <div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div>
+          <SocialMediaLinks links={settings.socialLinks} />
           <nav className="footer-policy-links">
             <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
@@ -908,6 +990,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
+          <SocialMediaLinks links={settings.socialLinks} variant="header" />
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
           <button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
         </nav>
@@ -1077,7 +1160,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
           <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
         </nav>
-        {settings.socialLinks?.some((link) => link.enabled !== false && link.url) && <div className="footer-social-links">{settings.socialLinks.filter((link) => link.enabled !== false && link.url).map((link) => <a href={link.url} key={link.id || `${link.name}-${link.url}`} target="_blank" rel="noreferrer" title={link.name} aria-label={link.name}><span>{link.name === "X / Twitter" ? "X" : link.name.slice(0, 1).toUpperCase()}</span>{link.name}</a>)}</div>}
+        <SocialMediaLinks links={settings.socialLinks} />
         <small>© {new Date().getFullYear()} Clean &amp; Green Sangran</small>
       </footer>
       <nav className="mobile-app-nav" aria-label="Mobile app navigation">

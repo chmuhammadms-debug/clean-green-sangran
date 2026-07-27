@@ -46,6 +46,7 @@ export async function fetchDatabaseData() {
       details: record.purpose || "",
       slipName: record.receipt_name || "",
       slipData: record.receipt_url || "",
+      donorPhoto: record.donor_photo_url || "",
       paymentStatus: record.payment_status,
     })).filter((record) => record.systemId),
   };
@@ -55,7 +56,7 @@ export async function fetchPublicDatabaseData() {
   const [{ data: projects, error: projectError }, { data: records, error: recordError }] = await Promise.all([
     supabase.from("projects").select("id, slug, name, description, icon").eq("is_active", true).order("created_at"),
     supabase.from("transactions")
-      .select("id, project_id, transaction_type, donor_name, amount, payment_method, payment_status, purpose, transaction_date, receipt_name, receipt_url")
+      .select("*")
       .eq("is_public", true)
       .eq("payment_status", "verified")
       .order("transaction_date", { ascending: false }),
@@ -78,6 +79,7 @@ export async function fetchPublicDatabaseData() {
       details: record.purpose || "",
       slipName: record.receipt_name || "",
       slipData: record.receipt_url || "",
+      donorPhoto: record.donor_photo_url || "",
     })).filter((record) => record.systemId),
   };
 }
@@ -109,6 +111,7 @@ export async function syncDatabaseData(systems, transactions) {
     purpose: record.details || "",
     receipt_name: record.slipName || "",
     receipt_url: record.slipData || null,
+    donor_photo_url: record.type === "income" ? (record.donorPhoto || null) : null,
     is_public: true,
     transaction_date: record.date,
   })).filter((record) => record.project_id);

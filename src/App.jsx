@@ -31,6 +31,7 @@ import {
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
+import { uploadWebsiteImage } from "./mediaUpload";
 
 const defaultSystems = [
   {
@@ -111,6 +112,8 @@ function emptyForm() {
     details: "",
     slipName: "",
     slipData: "",
+    donorPhoto: "",
+    donorPhotoName: "",
   };
 }
 
@@ -288,7 +291,20 @@ function RecordsTable({
                 </strong>
               </td>
 
-              <td>{record.person}</td>
+              <td>
+                <div className="record-person-with-photo">
+                  {record.type === "income" && record.donorPhoto ? (
+                    <a href={record.donorPhoto} target="_blank" rel="noreferrer" title="Open donor photo">
+                      <img className="donor-avatar" src={record.donorPhoto} alt={`${record.person} donor`} />
+                    </a>
+                  ) : (
+                    <span className="donor-avatar donor-avatar--placeholder" aria-hidden="true">
+                      {record.type === "income" ? String(record.person || "?").slice(0, 1).toUpperCase() : "—"}
+                    </span>
+                  )}
+                  <span>{record.person}</span>
+                </div>
+              </td>
 
               <td>
                 Rs. {Number(record.amount).toLocaleString()}
@@ -398,6 +414,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     useState(null);
 
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [donorPhotoInputKey, setDonorPhotoInputKey] = useState(0);
+  const [uploadingDonorPhoto, setUploadingDonorPhoto] = useState(false);
   const [donorSearch, setDonorSearch] = useState("");
   const [dailyDate, setDailyDate] = useState(getToday());
   const [monthlyDate, setMonthlyDate] =
@@ -561,6 +579,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     setFileInputKey(
       (currentKey) => currentKey + 1
     );
+    setDonorPhotoInputKey(
+      (currentKey) => currentKey + 1
+    );
   }
 
   function openSystem(systemId) {
@@ -652,6 +673,40 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     );
   }
 
+  async function handleDonorPhotoChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDonorPhoto(true);
+    setDatabaseMessage("Uploading donor photo...");
+
+    try {
+      const uploaded = await uploadWebsiteImage(file, "donors");
+      setEntryForm((currentForm) => ({
+        ...currentForm,
+        donorPhoto: uploaded.url,
+        donorPhotoName: uploaded.name,
+      }));
+      setDatabaseMessage("Donor photo uploaded");
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Donor photo could not be uploaded");
+      setDatabaseMessage(`Donor photo upload failed: ${error.message}`);
+      event.target.value = "";
+    } finally {
+      setUploadingDonorPhoto(false);
+    }
+  }
+
+  function removeDonorPhoto() {
+    setEntryForm((currentForm) => ({
+      ...currentForm,
+      donorPhoto: "",
+      donorPhotoName: "",
+    }));
+    setDonorPhotoInputKey((currentKey) => currentKey + 1);
+  }
+
   function startEditing(record) {
     setSelectedSystemId(record.systemId);
     setActiveSection(record.type);
@@ -665,9 +720,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       details: record.details || "",
       slipName: record.slipName || "",
       slipData: record.slipData || "",
+      donorPhoto: record.donorPhoto || "",
+      donorPhotoName: record.donorPhotoName || "",
     });
 
     setFileInputKey(
+      (currentKey) => currentKey + 1
+    );
+    setDonorPhotoInputKey(
       (currentKey) => currentKey + 1
     );
 
@@ -704,6 +764,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       details: entryForm.details.trim(),
       slipName: entryForm.slipName,
       slipData: entryForm.slipData,
+      donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
+      donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
     };
 
     let nextTransactions;
@@ -1431,6 +1493,37 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     />
                   </div>
 
+                  {activeSection === "income" && (
+                    <div className="form-field donor-photo-upload">
+                      <label>Donor Photo (optional)</label>
+                      <small>Add a clear donor picture from your phone or computer gallery.</small>
+
+                      <input
+                        key={donorPhotoInputKey}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleDonorPhotoChange}
+                        disabled={uploadingDonorPhoto}
+                      />
+
+                      {uploadingDonorPhoto && (
+                        <p className="donor-photo-status">Uploading photo...</p>
+                      )}
+
+                      {entryForm.donorPhoto && (
+                        <div className="donor-photo-preview">
+                          <img src={entryForm.donorPhoto} alt="Selected donor" />
+                          <div>
+                            <b>{entryForm.donorPhotoName || "Donor photo"}</b>
+                            <button type="button" onClick={removeDonorPhoto}>
+                              Remove Photo
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="form-field">
                     <label>Amount</label>
 
@@ -1549,8 +1642,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   <button
                     className="primary-button"
                     type="submit"
+                    disabled={uploadingDonorPhoto}
                   >
-                    {editingRecordId
+                    {uploadingDonorPhoto
+                      ? "Uploading Donor Photo..."
+                      : editingRecordId
                       ? "Update Record"
                       : activeSection === "income"
                         ? "Save Donation"
