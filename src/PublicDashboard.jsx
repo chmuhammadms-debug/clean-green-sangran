@@ -735,6 +735,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
   };
   const imageFor = (system) => profileFor(system).coverImage
+    || system.coverImage
     || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
     || (isWelfareChild(system) ? projectImages.welfare : null)
     || welfareImage;
@@ -743,11 +744,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
       return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
+    if (Array.isArray(system.galleryUrls) && system.galleryUrls.length) {
+      return system.galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+    }
     return (isMosqueChild(system)
       ? projectGalleries.mosque
-      : isWelfareChild(system)
-        ? projectGalleries.welfare
-        : projectGalleries[system.id])
+      : projectGalleries[system.id])
       || [{ image: imageFor(system), title: systemName(system) }];
   };
   const faithSlidesFor = (system) => {
@@ -848,61 +850,88 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 getName={systemName}
                 getDescription={systemDescription}
               />
-            ) : isWelfareParent(selectedSystem) ? (
-              <WelfareManagementHub
-                systems={systems}
-                transactions={transactions}
-                onOpenSystem={setSelectedSystemId}
-                language={language}
-                getName={systemName}
-                getDescription={systemDescription}
-              />
             ) : <>
-            {isBloodBankProject(selectedSystem) ? <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} /> : <MoneyCards totals={selectedTotals} language={language} />}
-            {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
-            {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
-              <WelfareOperationsPublic
-                projectId={selectedSystem.id}
-                settings={settings}
-                language={language}
-              />
-            )}
-            <div className="project-gallery reveal">
-              <div className="section-heading section-heading--compact">
-                <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
-                <p>{photosFor(selectedSystem).length} community photos</p>
-              </div>
-              <div className="project-gallery__grid">
-                {photosFor(selectedSystem).map((photo, index) => (
-                  <figure
-                    key={`${selectedSystem.id}-photo-${index}`}
-                    role="button"
-                    tabIndex="0"
-                    aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${index + 1}`}
-                    onClick={() => setGalleryIndex(index)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
-                    }}
-                  >
-                    <img src={photo.image} alt={photo.title} />
-                    <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
-                    <span className="project-gallery__zoom" aria-hidden="true">＋</span>
-                  </figure>
-                ))}
-              </div>
-            </div>
-            {!isBloodBankProject(selectedSystem) && <div className="ledger-card reveal">
-              <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>Public financial records</h2></div><p>Attachments and administrative controls remain private.</p></div>
-              <div className="ledger-toolbar">
-                <div className="filter-tabs">
-                  {[["all", "All Records"], ["income", "Donations"], ["expense", "Expenses"]].map(([id, label]) => (
-                    <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
-                  ))}
+              {isWelfareParent(selectedSystem) ? (
+                <>
+                  <MoneyCards totals={selectedTotals} language={language} />
+                  <div className="welfare-central-fund-note">
+                    <b>{ur ? "ایک مرکزی فلاحی فنڈ" : "One central welfare fund"}</b>
+                    <p>{ur
+                      ? "تمام نو فلاحی منصوبوں کے عطیات اور اخراجات اسی مرکزی حساب میں شامل ہیں۔ ہر ذیلی منصوبے میں صرف اس کا تعارف اور الگ تصویری گیلری موجود ہے۔"
+                      : "Donations and expenses for all nine initiatives are kept in this central account. Every subproject has its own overview and separate photo gallery."}</p>
+                  </div>
+                  <WelfareManagementHub
+                    systems={systems}
+                    onOpenSystem={setSelectedSystemId}
+                    language={language}
+                    getName={systemName}
+                    getDescription={systemDescription}
+                    getImage={imageFor}
+                    getPhotoCount={(project) => photosFor(project).length}
+                  />
+                </>
+              ) : (
+                <>
+                  {isBloodBankProject(selectedSystem) ? (
+                    <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} />
+                  ) : !isWelfareChild(selectedSystem) ? (
+                    <MoneyCards totals={selectedTotals} language={language} />
+                  ) : (
+                    <div className="welfare-central-fund-note">
+                      <b>{ur ? "مرکزی فلاحی فنڈ سے منسلک" : "Connected to the central welfare fund"}</b>
+                      <p>{ur
+                        ? "اس منصوبے کے لیے الگ چندہ یا خرچ وصول نہیں کیا جاتا۔ تمام مالی ریکارڈ مرکزی فلاحی منصوبے میں دکھایا جاتا ہے۔"
+                        : "This initiative does not maintain a separate donation or expense account. Its financial records are shown in the central welfare project."}</p>
+                    </div>
+                  )}
+                  {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
+                  {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+                    <WelfareOperationsPublic
+                      projectId={selectedSystem.id}
+                      settings={settings}
+                      language={language}
+                    />
+                  )}
+                  <div className="project-gallery reveal">
+                      <div className="section-heading section-heading--compact">
+                        <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
+                        <p>{photosFor(selectedSystem).length} {ur ? "تصاویر" : "community photos"}</p>
+                      </div>
+                      <div className="project-gallery__grid">
+                        {photosFor(selectedSystem).map((photo, index) => (
+                          <figure
+                            key={`${selectedSystem.id}-photo-${index}`}
+                            role="button"
+                            tabIndex="0"
+                            aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${index + 1}`}
+                            onClick={() => setGalleryIndex(index)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
+                            }}
+                          >
+                            <img src={photo.image} alt={photo.title} />
+                            <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
+                            <span className="project-gallery__zoom" aria-hidden="true">＋</span>
+                          </figure>
+                        ))}
+                      </div>
+                  </div>
+                </>
+              )}
+              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && (
+                <div className="ledger-card reveal">
+                  <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
+                  <div className="ledger-toolbar">
+                    <div className="filter-tabs">
+                      {[["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]].map(([id, label]) => (
+                        <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
+                      ))}
+                    </div>
+                    <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
+                  </div>
+                  <RecordsTable records={filteredRecords} systems={systems} language={language} />
                 </div>
-                <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search public records" /></label>
-              </div>
-              <RecordsTable records={filteredRecords} systems={systems} language={language} />
-            </div>}
+              )}
             </>}
           </section>
         </main>

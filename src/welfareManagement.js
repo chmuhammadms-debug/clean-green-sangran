@@ -1,3 +1,13 @@
+import welfareGeneralCover from "./assets/projects/welfare/general.svg";
+import welfareFiltrationCover from "./assets/projects/welfare/filtration.svg";
+import welfareSportsCover from "./assets/projects/welfare/sports.svg";
+import welfareEducationCover from "./assets/projects/welfare/education.svg";
+import welfareHealthCover from "./assets/projects/welfare/health.svg";
+import welfareSanitationCover from "./assets/projects/welfare/sanitation.svg";
+import welfareInfrastructureCover from "./assets/projects/welfare/infrastructure.svg";
+import welfareVolunteersCover from "./assets/projects/welfare/volunteers.svg";
+import welfareEmergencyCover from "./assets/projects/welfare/emergency.svg";
+
 export const WELFARE_PARENT_ID = "welfare";
 
 export const defaultWelfareSystems = [
@@ -8,6 +18,8 @@ export const defaultWelfareSystems = [
     description: "Transparent support for deserving families, emergencies and shared community needs.",
     descriptionUr: "مستحق خاندانوں، ہنگامی ضروریات اور اجتماعی فلاح کے لیے شفاف معاونت۔",
     icon: "🤝",
+    coverImage: welfareGeneralCover,
+    galleryUrls: [welfareGeneralCover],
     isActive: true,
   },
   {
@@ -17,6 +29,8 @@ export const defaultWelfareSystems = [
     description: "A community project for safe, clean and accessible drinking water in Sangran.",
     descriptionUr: "سنگراں میں صاف، محفوظ اور آسانی سے دستیاب پینے کے پانی کا اجتماعی منصوبہ۔",
     icon: "🚰",
+    coverImage: welfareFiltrationCover,
+    galleryUrls: [welfareFiltrationCover],
     isActive: true,
   },
   {
@@ -26,6 +40,8 @@ export const defaultWelfareSystems = [
     description: "Healthy sports, youth engagement and positive community activities for every age group.",
     descriptionUr: "ہر عمر کے لیے صحت مند کھیل، نوجوانوں کی شمولیت اور مثبت اجتماعی سرگرمیاں۔",
     icon: "🏆",
+    coverImage: welfareSportsCover,
+    galleryUrls: [welfareSportsCover],
     isActive: true,
   },
   {
@@ -35,6 +51,8 @@ export const defaultWelfareSystems = [
     description: "School support, scholarships, learning resources and opportunities for deserving students.",
     descriptionUr: "مستحق طلبہ کے لیے تعلیمی معاونت، وظائف، کتب اور بہتر مواقع۔",
     icon: "📚",
+    coverImage: welfareEducationCover,
+    galleryUrls: [welfareEducationCover],
     isActive: true,
   },
   {
@@ -44,6 +62,8 @@ export const defaultWelfareSystems = [
     description: "Medical camps, medicines, screenings and dignified health assistance for the community.",
     descriptionUr: "طبی کیمپ، ادویات، معائنہ اور گاؤں کے لیے باعزت صحت معاونت۔",
     icon: "⚕️",
+    coverImage: welfareHealthCover,
+    galleryUrls: [welfareHealthCover],
     isActive: true,
   },
   {
@@ -53,6 +73,8 @@ export const defaultWelfareSystems = [
     description: "Clean streets, waste collection, dustbins and organised community cleanliness drives.",
     descriptionUr: "صاف گلیاں، کچرا جمع کرنے، ڈسٹ بن اور اجتماعی صفائی مہم کا منظم نظام۔",
     icon: "♻️",
+    coverImage: welfareSanitationCover,
+    galleryUrls: [welfareSanitationCover],
     isActive: true,
   },
   {
@@ -62,6 +84,8 @@ export const defaultWelfareSystems = [
     description: "Community records for streetlights, road repairs, lanes and drainage improvements.",
     descriptionUr: "سٹریٹ لائٹس، سڑک و گلی مرمت اور نکاسیٔ آب کی بہتری کا اجتماعی منصوبہ۔",
     icon: "💡",
+    coverImage: welfareInfrastructureCover,
+    galleryUrls: [welfareInfrastructureCover],
     isActive: true,
   },
   {
@@ -71,6 +95,8 @@ export const defaultWelfareSystems = [
     description: "A volunteer and skills network connecting young people with service, training and work opportunities.",
     descriptionUr: "نوجوانوں کو رضاکارانہ خدمت، تربیت، ہنر اور روزگار کے مواقع سے جوڑنے کا نظام۔",
     icon: "🙌",
+    coverImage: welfareVolunteersCover,
+    galleryUrls: [welfareVolunteersCover],
     isActive: true,
   },
   {
@@ -80,6 +106,8 @@ export const defaultWelfareSystems = [
     description: "Rapid, transparent assistance for emergencies, accidents, fires, floods and urgent family needs.",
     descriptionUr: "حادثات، آگ، سیلاب اور خاندانوں کی فوری ضرورت کے لیے تیز اور شفاف امداد۔",
     icon: "🛟",
+    coverImage: welfareEmergencyCover,
+    galleryUrls: [welfareEmergencyCover],
     isActive: true,
   },
 ];
@@ -96,9 +124,24 @@ export function isWelfareChild(systemOrId) {
 
 export function ensureWelfareSystems(systems = []) {
   const safeSystems = Array.isArray(systems) ? systems : [];
-  const existingIds = new Set(safeSystems.map((system) => String(system.id)));
+  const defaultsById = new Map(defaultWelfareSystems.map((system) => [system.id, system]));
+  const mergedSystems = safeSystems.map((system) => {
+    const defaults = defaultsById.get(String(system.id));
+    if (!defaults) return system;
+    return {
+      ...defaults,
+      ...system,
+      nameUr: system.nameUr || defaults.nameUr,
+      descriptionUr: system.descriptionUr || defaults.descriptionUr,
+      coverImage: system.coverImage || defaults.coverImage,
+      galleryUrls: Array.isArray(system.galleryUrls) && system.galleryUrls.length
+        ? system.galleryUrls
+        : defaults.galleryUrls,
+    };
+  });
+  const existingIds = new Set(mergedSystems.map((system) => String(system.id)));
   return [
-    ...safeSystems,
+    ...mergedSystems,
     ...defaultWelfareSystems.filter((system) => !existingIds.has(system.id)),
   ];
 }

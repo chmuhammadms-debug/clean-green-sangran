@@ -16,8 +16,12 @@ function buildItems(systems = [], settings = {}) {
       descriptionEn: profile.descriptionEn || system.description || "",
       descriptionUr: profile.descriptionUr || system.descriptionUr || "",
       icon: system.icon || "📁",
-      coverImage: profile.coverImage || "",
-      galleryText: Array.isArray(profile.galleryUrls) ? profile.galleryUrls.join("\n") : "",
+      coverImage: profile.coverImage || system.coverImage || "",
+      galleryText: Array.isArray(profile.galleryUrls) && profile.galleryUrls.length
+        ? profile.galleryUrls.join("\n")
+        : Array.isArray(system.galleryUrls)
+          ? system.galleryUrls.join("\n")
+          : "",
       isActive: system.isActive !== false,
     };
   });

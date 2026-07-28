@@ -1310,14 +1310,56 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 onOpenSystem={openSystem}
                 adminMode
               />
-            ) : isWelfareParent(selectedSystem) ? (
+            ) : isWelfareChild(selectedSystem) ? (
+              <>
+                <section className="panel welfare-child-admin" style={{ marginTop: "22px" }}>
+                  <div className="welfare-child-admin__cover">
+                    <img
+                      src={siteSettings.projectProfilesByProject?.[selectedSystem.id]?.coverImage || selectedSystem.coverImage}
+                      alt=""
+                    />
+                  </div>
+                  <span>SEPARATE PROJECT GALLERY</span>
+                  <h2>{selectedSystem.name}</h2>
+                  <p>
+                    This subproject does not keep a separate donation or expense account.
+                    Add every financial entry in the main Community Welfare project.
+                    Its name, icon, cover and gallery can be changed from Project Manager.
+                  </p>
+                  <button type="button" className="primary-button" onClick={() => setSelectedSystemId("welfare")}>
+                    Open Central Welfare Fund
+                  </button>
+                </section>
+                {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+                  <WelfareOperationsPanel
+                    projectId={selectedSystem.id}
+                    settings={siteSettings}
+                    onSave={onSaveSiteSettings}
+                    saving={savingSiteSettings}
+                  />
+                )}
+              </>
+            ) : <>
+            {isWelfareParent(selectedSystem) && (
               <WelfareManagementHub
                 systems={systems}
-                transactions={transactions}
                 onOpenSystem={openSystem}
+                getImage={(project) => (
+                  siteSettings.projectProfilesByProject?.[project.id]?.coverImage
+                  || project.coverImage
+                  || ""
+                )}
+                getPhotoCount={(project) => {
+                  const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
+                  const gallery = Array.isArray(savedGallery) && savedGallery.length
+                    ? savedGallery
+                    : project.galleryUrls;
+                  return Array.isArray(gallery) ? gallery.length : 0;
+                }}
                 adminMode
               />
-            ) : <><SummaryCards
+            )}
+            <SummaryCards
               totals={selectedTotals}
               labels={[
                 "Total Donations",
@@ -1327,15 +1369,6 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
             />
 
             {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
-            {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
-              <WelfareOperationsPanel
-                projectId={selectedSystem.id}
-                settings={siteSettings}
-                onSave={onSaveSiteSettings}
-                saving={savingSiteSettings}
-              />
-            )}
-
             <section
               className="panel"
               style={{ marginTop: "22px" }}

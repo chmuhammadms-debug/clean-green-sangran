@@ -83,6 +83,7 @@ function SportsIcon({ size, className }) {
 
 function WelfareCategoryIcon({ type, size, className }) {
   const colors = {
+    general: ["#dcfce7", "#166534"],
     education: ["#ede9fe", "#6d28d9"],
     health: ["#ffe4e6", "#be123c"],
     sanitation: ["#dcfce7", "#15803d"],
@@ -94,6 +95,7 @@ function WelfareCategoryIcon({ type, size, className }) {
   return (
     <svg className={className} width={size} height={size} viewBox="0 0 64 64" role="img" aria-label={type}>
       <rect x="7" y="7" width="50" height="50" rx="15" fill={background} />
+      {type === "general" && <><circle cx="24" cy="25" r="6" fill="none" stroke={stroke} strokeWidth="3.5" /><circle cx="40" cy="25" r="6" fill="none" stroke={stroke} strokeWidth="3.5" /><path d="M12 47c1-9 5-14 12-14 4 0 7 2 8 5 2-3 5-5 9-5 7 0 11 5 12 14M27 43h10" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /></>}
       {type === "education" && <><path d="M17 21h12c3 0 5 2 5 5v22c0-4-3-6-7-6H17V21Zm30 0H35v27c0-4 3-6 7-6h5V21Z" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" /><path d="M23 28h6M40 28h3" stroke={stroke} strokeWidth="3" strokeLinecap="round" /></>}
       {type === "health" && <><path d="M32 48S17 39 17 27c0-6 4-10 10-10 3 0 5 2 5 4 1-2 3-4 6-4 6 0 10 4 10 10 0 12-16 21-16 21Z" fill="none" stroke={stroke} strokeWidth="3.5" /><path d="M32 24v13M25.5 30.5h13" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" /></>}
       {type === "sanitation" && <><path d="M23 24h20l-2 24H25l-2-24Zm-3 0h26M28 19h10" fill="none" stroke={stroke} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M30 31v10M36 31v10M48 17v6M45 20h6" stroke={stroke} strokeWidth="2.5" strokeLinecap="round" /></>}
@@ -123,6 +125,22 @@ export default function ProjectIcon({ project, size = 32, className = "" }) {
     );
   }
 
+  const defaultWelfareIcons = {
+    "welfare-general": "🤝",
+    "welfare-filtration": "🚰",
+    "welfare-sports": "🏆",
+    "welfare-education": "📚",
+    "welfare-health": "⚕️",
+    "welfare-sanitation": "♻️",
+    "welfare-infrastructure": "💡",
+    "welfare-volunteers": "🙌",
+    "welfare-emergency": "🛟",
+  };
+  const projectId = String(project?.id || "");
+  if (defaultWelfareIcons[projectId] && project?.icon && project.icon !== defaultWelfareIcons[projectId]) {
+    return <span className={className} aria-hidden="true">{project.icon}</span>;
+  }
+
   if (String(project?.id || "") === "welfare-filtration") {
     return <WaterFiltrationIcon size={size} className={className} />;
   }
@@ -132,6 +150,7 @@ export default function ProjectIcon({ project, size = 32, className = "" }) {
   }
 
   const welfareIconType = {
+    "welfare-general": "general",
     "welfare-education": "education",
     "welfare-health": "health",
     "welfare-sanitation": "sanitation",
