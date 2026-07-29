@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#28303a"/><stop offset="1" stop-color="#586d80"/></linearGradient></defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <path d="M340 430h520L760 250H440Zm85-45h350m-300-88h250" fill="none" stroke="#f0f4f7" stroke-width="32" stroke-linecap="round"/>
+  <path d="M600 118v112m-36-75 36-37 36 37" fill="none" stroke="#b7f73b" stroke-width="22" stroke-linecap="round"/>
+  <text x="600" y="545" text-anchor="middle" font-family="Arial,sans-serif" font-size="58" font-weight="700" fill="white">INFRASTRUCTURE</text>
+  <text x="600" y="598" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" fill="#e4ecf2">Building a Better Village</text>
+</svg>

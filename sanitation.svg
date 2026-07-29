@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#183334"/><stop offset="1" stop-color="#2a8c78"/></linearGradient></defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <path d="M420 222h360l-38 260H458Zm80-72h200l30 55H470Z" fill="#ddfff4"/>
+  <path d="M535 276v150m65-150v150m65-150v150" stroke="#2a8c78" stroke-width="20"/>
+  <path d="M860 130v95m-48-48h96" stroke="#b7f73b" stroke-width="24" stroke-linecap="round"/>
+  <text x="600" y="570" text-anchor="middle" font-family="Arial,sans-serif" font-size="62" font-weight="700" fill="white">CLEAN &amp; SANITATION</text>
+  <text x="600" y="620" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" fill="#d9fff3">A Cleaner Sangran</text>
+</svg>
