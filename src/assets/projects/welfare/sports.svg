@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#182a18"/><stop offset="1" stop-color="#4b861c"/></linearGradient></defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <circle cx="600" cy="280" r="155" fill="#f7ffdf"/>
+  <path d="M600 125l73 53-28 86h-90l-28-86Zm-145 153 73-54 28 86-73 53Zm55 154 28-86h90l28 86-73 53Zm235-154-73-54-28 86 73 53Z" fill="#193b20"/>
+  <text x="600" y="555" text-anchor="middle" font-family="Arial,sans-serif" font-size="62" font-weight="700" fill="white">SPORTS &amp; YOUTH</text>
+  <text x="600" y="606" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" fill="#e8f7d4">Healthy Village Initiative</text>
+</svg>

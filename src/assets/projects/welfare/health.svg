@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#46161e"/><stop offset="1" stop-color="#a82139"/></linearGradient></defs>
+  <rect width="1200" height="675" fill="url(#g)"/>
+  <circle cx="600" cy="285" r="170" fill="#fff" opacity=".12"/>
+  <path d="M560 130h80v115h115v80H640v115h-80V325H445v-80h115Z" fill="#fff"/>
+  <path d="M440 472h95l32-74 52 114 37-75 24 35h80" fill="none" stroke="#ffced6" stroke-width="18" stroke-linejoin="round"/>
+  <text x="600" y="570" text-anchor="middle" font-family="Arial,sans-serif" font-size="62" font-weight="700" fill="white">HEALTH SUPPORT</text>
+  <text x="600" y="620" text-anchor="middle" font-family="Arial,sans-serif" font-size="27" fill="#ffe7eb">Care for Our Community</text>
+</svg>
