@@ -720,6 +720,37 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const donorCount = new Set(
     transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
   ).size;
+  const topDonor = useMemo(() => {
+    const donors = new Map();
+
+    transactions
+      .filter((record) => record.type === "income" && Number(record.amount) > 0 && String(record.person || "").trim())
+      .forEach((record) => {
+        const displayName = String(record.person).trim();
+        const key = displayName.toLocaleLowerCase();
+        const current = donors.get(key) || {
+          displayName,
+          total: 0,
+          donations: 0,
+          donorPhoto: "",
+          systemId: "",
+          latestDate: "",
+        };
+
+        current.total += Number(record.amount) || 0;
+        current.donations += 1;
+        if (record.donorPhoto) current.donorPhoto = record.donorPhoto;
+        if (!current.latestDate || String(record.date || "") >= current.latestDate) {
+          current.latestDate = String(record.date || "");
+          current.systemId = record.systemId || current.systemId;
+        }
+        donors.set(key, current);
+      });
+
+    return [...donors.values()].sort(
+      (a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate),
+    )[0] || null;
+  }, [transactions]);
 
   const profileFor = (system) => settings.projectProfilesByProject?.[system.id] || {};
   const systemName = (system) => {
@@ -734,6 +765,17 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       ? (profile.descriptionUr || system.descriptionUr || projectUrdu[system.id]?.description || system.description)
       : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
   };
+  const topDonorSystem = topDonor
+    ? systems.find((system) => system.id === topDonor.systemId)
+    : null;
+  const topDonorInitials = topDonor
+    ? topDonor.displayName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+    : "";
   const imageFor = (system) => profileFor(system).coverImage
     || system.coverImage
     || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
@@ -1083,6 +1125,45 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="content-section">
             <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
             <MoneyCards totals={totals} light language={language} />
+            {topDonor && (
+              <aside className="top-donor-spotlight reveal" dir={ur ? "rtl" : "ltr"}>
+                <div className="top-donor-spotlight__copy">
+                  <span className="top-donor-spotlight__eyebrow">
+                    {ur ? "خراجِ تحسین • نمایاں عطیہ دہندہ" : "COMMUNITY SPOTLIGHT • TOP DONOR"}
+                  </span>
+                  <h3>{topDonor.displayName}</h3>
+                  <p>
+                    {ur
+                      ? "خدمتِ سنگراں میں سب سے نمایاں مالی تعاون—ایک ایسی مثال جو دوسروں کو بھی بھلائی میں آگے بڑھنے کا حوصلہ دیتی ہے۔"
+                      : "Leading Sangran through generous support—an example that inspires others to step forward for the community."}
+                  </p>
+                  <div className="top-donor-spotlight__stats">
+                    <div>
+                      <span>{ur ? "کل تصدیق شدہ عطیہ" : "Verified contribution"}</span>
+                      <strong>Rs. {topDonor.total.toLocaleString()}</strong>
+                    </div>
+                    <div>
+                      <span>{ur ? "نمایاں منصوبہ" : "Featured project"}</span>
+                      <strong>
+                        {topDonorSystem
+                          ? systemName(topDonorSystem)
+                          : (ur ? "تمام عوامی منصوبے" : "Community projects")}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="top-donor-spotlight__portrait">
+                  {topDonor.donorPhoto ? (
+                    <img src={topDonor.donorPhoto} alt={topDonor.displayName} />
+                  ) : (
+                    <div className="top-donor-spotlight__fallback" aria-label={topDonor.displayName}>
+                      {topDonorInitials}
+                    </div>
+                  )}
+                  <span>{ur ? "سب سے بڑا عطیہ دہندہ" : "TOP DONOR"}</span>
+                </div>
+              </aside>
+            )}
             <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
           </div>
         </section>

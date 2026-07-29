@@ -238,6 +238,141 @@ button { cursor: pointer; }
 .money-card > strong { display: block; margin: 20px 0 8px; color: var(--forest); font-size: clamp(27px, 3vw, 40px); letter-spacing: -1.8px; }
 .money-grid--light .money-card > strong { color: white; }
 .money-card small { color: #8b9790; }
+.top-donor-spotlight {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  min-height: 285px;
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(214,173,85,.42);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 18% 15%, rgba(158,234,53,.13), transparent 18rem),
+    linear-gradient(115deg, rgba(255,255,255,.09), rgba(214,173,85,.12));
+  box-shadow: 0 24px 60px rgba(0,0,0,.18);
+}
+.top-donor-spotlight::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 5px;
+  content: "";
+  background: linear-gradient(var(--lime), #d6ad55);
+}
+.top-donor-spotlight[dir="rtl"]::before { right: 0; left: auto; }
+.top-donor-spotlight__copy {
+  position: relative;
+  z-index: 1;
+  align-self: center;
+  padding: 34px 38px;
+}
+.top-donor-spotlight[dir="rtl"] .top-donor-spotlight__copy { text-align: right; }
+.top-donor-spotlight__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #d6ad55;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.top-donor-spotlight__eyebrow::before {
+  width: 30px;
+  height: 2px;
+  content: "";
+  background: var(--lime);
+}
+.top-donor-spotlight__copy h3 {
+  margin: 13px 0 9px;
+  color: #fff;
+  font-size: clamp(31px, 4vw, 48px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+}
+.top-donor-spotlight__copy > p {
+  max-width: 650px;
+  margin: 0;
+  color: rgba(255,255,255,.72);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.top-donor-spotlight__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 690px;
+  margin-top: 24px;
+}
+.top-donor-spotlight__stats div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 13px;
+  background: rgba(2,25,13,.28);
+}
+.top-donor-spotlight__stats span {
+  display: block;
+  color: #9ab5a3;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.top-donor-spotlight__stats strong {
+  display: block;
+  margin-top: 7px;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.25;
+}
+.top-donor-spotlight__portrait {
+  position: relative;
+  min-height: 285px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #174f36, #082d1d);
+}
+.top-donor-spotlight__portrait::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(0deg, rgba(2,25,13,.82), transparent 56%);
+}
+.top-donor-spotlight__portrait img {
+  width: 100%;
+  height: 100%;
+  min-height: 285px;
+  object-fit: cover;
+}
+.top-donor-spotlight__portrait > span {
+  position: absolute;
+  z-index: 1;
+  right: 18px;
+  bottom: 17px;
+  left: 18px;
+  padding: 9px 12px;
+  color: #092716;
+  font-size: 10px;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: 1.5px;
+  background: var(--lime);
+  border-radius: 999px;
+}
+.top-donor-spotlight__fallback {
+  display: grid;
+  width: 100%;
+  min-height: 285px;
+  place-items: center;
+  color: rgba(255,255,255,.94);
+  font-size: 70px;
+  font-weight: 900;
+  letter-spacing: -4px;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(158,234,53,.35), transparent 32%),
+    linear-gradient(145deg, #174f36, #082d1d);
+}
 .impact-numbers { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 70px; border-top: 1px solid rgba(255,255,255,.14); }
 .impact-numbers div { padding: 35px 20px 0; border-right: 1px solid rgba(255,255,255,.14); }
 .impact-numbers div:first-child { padding-left: 0; }
@@ -855,6 +990,18 @@ body.gallery-open { overflow: hidden; }
   .money-card__top { font-size: 9px; letter-spacing: .25px; }
   .money-card > strong { margin: 11px 0 4px; font-size: 23px; letter-spacing: -1px; }
   .money-card small { font-size: 9px; }
+  .top-donor-spotlight { grid-template-columns: 1fr; min-height: 0; margin-top: 14px; border-radius: 18px; }
+  .top-donor-spotlight__portrait { grid-row: 1; min-height: 220px; }
+  .top-donor-spotlight__portrait img, .top-donor-spotlight__fallback { min-height: 220px; height: 220px; }
+  .top-donor-spotlight__fallback { font-size: 54px; }
+  .top-donor-spotlight__copy { padding: 21px 18px 19px; }
+  .top-donor-spotlight__eyebrow { font-size: 8px; letter-spacing: 1px; }
+  .top-donor-spotlight__copy h3 { margin-top: 10px; font-size: 28px; letter-spacing: -.8px; }
+  .top-donor-spotlight__copy > p { font-size: 12px; line-height: 1.55; }
+  .top-donor-spotlight__stats { gap: 7px; margin-top: 16px; }
+  .top-donor-spotlight__stats div { padding: 11px 10px; border-radius: 10px; }
+  .top-donor-spotlight__stats span { font-size: 7px; letter-spacing: .4px; }
+  .top-donor-spotlight__stats strong { margin-top: 5px; font-size: 13px; }
   .impact-numbers { gap: 0; margin-top: 22px; }
   .impact-numbers div { padding: 15px 6px; }
   .impact-numbers strong { font-size: 26px; }
