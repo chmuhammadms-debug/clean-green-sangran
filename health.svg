@@ -1,8 +1,99 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
-  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#4c0519"/><stop offset="1" stop-color="#e11d48"/></linearGradient></defs>
-  <rect width="1200" height="675" fill="url(#bg)"/>
-  <circle cx="190" cy="115" r="280" fill="#fecdd3" opacity=".15"/>
-  <path d="M600 566S268 383 268 176c0-111 83-183 181-183 73 0 124 40 151 96 27-56 78-96 151-96 98 0 181 72 181 183 0 207-332 390-332 390Z" fill="#fff1f2"/>
-  <path d="M600 180v242M479 301h242" stroke="#e11d48" stroke-width="68" stroke-linecap="round"/>
-  <path d="M0 560c233-65 430-37 600 17 189 60 377 66 600 2v96H0Z" fill="#881337" opacity=".85"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Community Health and Welfare</title>
+  <desc id="desc">A green community health cover with a medical shield, heart, leaves and village silhouettes.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071f18"/>
+      <stop offset="0.55" stop-color="#0b5436"/>
+      <stop offset="1" stop-color="#2f8f48"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9ff55"/>
+      <stop offset="1" stop-color="#6edc7b"/>
+    </linearGradient>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fafff6"/>
+      <stop offset="1" stop-color="#d8f4df"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#00150c" flood-opacity="0.42"/>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="55"/>
+    </filter>
+    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="2" fill="#ffffff" opacity="0.1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#background)"/>
+  <rect width="1600" height="900" fill="url(#dots)"/>
+  <circle cx="1280" cy="170" r="260" fill="#8cff50" opacity="0.13" filter="url(#softGlow)"/>
+  <circle cx="220" cy="730" r="230" fill="#d7ff4b" opacity="0.12" filter="url(#softGlow)"/>
+
+  <g opacity="0.18" fill="#d9ffd4">
+    <path d="M0 735 145 630l120 85 135-125 150 119 135-83 160 116 145-107 135 107 130-93 165 126v125H0Z"/>
+    <path d="M0 782 120 706l95 53 112-72 115 74 125-65 103 64 130-91 128 95 120-70 112 76 111-61 249 111v80H0Z"/>
+  </g>
+
+  <g transform="translate(105 112)">
+    <rect x="0" y="0" width="780" height="676" rx="54" fill="#063020" opacity="0.66" stroke="#a6f47d" stroke-opacity="0.32" stroke-width="3"/>
+    <rect x="40" y="40" width="700" height="596" rx="42" fill="#ffffff" opacity="0.035"/>
+
+    <text x="88" y="132" fill="#b9ff64" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="700" letter-spacing="7">
+      CLEAN &amp; GREEN SANGRAN
+    </text>
+    <rect x="88" y="166" width="108" height="7" rx="4" fill="#b9ff64"/>
+
+    <text x="88" y="280" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="75" font-weight="800">
+      Community Health
+    </text>
+    <text x="88" y="365" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="75" font-weight="800">
+      &amp; Welfare
+    </text>
+
+    <text x="88" y="443" fill="#d7eadf" font-family="Arial, Helvetica, sans-serif" font-size="28">
+      Care, dignity and support for every family.
+    </text>
+    <text x="88" y="512" fill="#c9ff55" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700">
+      صحت • خدمت • باہمی تعاون
+    </text>
+
+    <g transform="translate(88 558)">
+      <rect width="330" height="58" rx="29" fill="url(#glow)"/>
+      <text x="165" y="38" text-anchor="middle" fill="#073321" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="800">
+        ONE VILLAGE • ONE CARE
+      </text>
+    </g>
+  </g>
+
+  <g transform="translate(1025 126)" filter="url(#shadow)">
+    <circle cx="232" cy="300" r="270" fill="#baff5c" opacity="0.13"/>
+    <circle cx="232" cy="300" r="226" fill="#063d28" stroke="#baff5c" stroke-width="5"/>
+
+    <path d="M232 105c72 48 136 52 171 55v153c0 124-73 211-171 263-98-52-171-139-171-263V160c35-3 99-7 171-55Z"
+      fill="url(#shield)" stroke="#91df99" stroke-width="8"/>
+
+    <path d="M232 229c-35-58-125-37-125 36 0 74 125 151 125 151s125-77 125-151c0-73-90-94-125-36Z"
+      fill="#e43448"/>
+
+    <rect x="207" y="188" width="50" height="206" rx="14" fill="#ffffff"/>
+    <rect x="129" y="266" width="206" height="50" rx="14" fill="#ffffff"/>
+
+    <g fill="none" stroke="url(#glow)" stroke-width="18" stroke-linecap="round">
+      <path d="M65 517c70-32 112-23 154 23"/>
+      <path d="M399 517c-70-32-112-23-154 23"/>
+    </g>
+    <g fill="#baff5c">
+      <ellipse cx="84" cy="484" rx="31" ry="64" transform="rotate(-48 84 484)"/>
+      <ellipse cx="380" cy="484" rx="31" ry="64" transform="rotate(48 380 484)"/>
+    </g>
+  </g>
+
+  <g transform="translate(1128 755)" fill="#eaffdf">
+    <path d="M0 65h350v18H0z" opacity="0.55"/>
+    <path d="M36 65V12h58v53H36Zm80 0V28h47v37h-47Zm69 0V0h66v65h-66Zm91 0V20h45v45h-45Z" opacity="0.52"/>
+    <path d="M53 35h12v12H53zm22 0h12v12H75zm61 8h10v10h-10zm70-19h12v12h-12zm23 0h12v12h-12zm65 15h10v10h-10z" fill="#0c5939"/>
+  </g>
 </svg>
