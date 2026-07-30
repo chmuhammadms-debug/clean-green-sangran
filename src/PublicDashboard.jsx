@@ -434,19 +434,23 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
 
   return (
     <div className={`social-media-links social-media-links--${variant}`} aria-label="Social media links">
-      {activeLinks.map((link) => (
-        <a
-          href={link.url}
-          key={link.id || `${link.name}-${link.url}`}
-          target="_blank"
-          rel="noreferrer"
-          title={link.name}
-          aria-label={link.name}
-        >
-          <SocialMediaIcon name={link.name} />
-          {variant === "footer" && <span className="social-media-label">{link.name}</span>}
-        </a>
-      ))}
+      {activeLinks.map((link) => {
+        const platform = socialPlatform(`${link.name || ""} ${link.url || ""}`);
+        return (
+          <a
+            className={`social-media-link social-media-link--${platform}`}
+            href={link.url}
+            key={link.id || `${link.name}-${link.url}`}
+            target="_blank"
+            rel="noreferrer"
+            title={link.name}
+            aria-label={link.name}
+          >
+            <SocialMediaIcon name={`${link.name || ""} ${link.url || ""}`} />
+            {variant === "footer" && <span className="social-media-label">{link.name}</span>}
+          </a>
+        );
+      })}
     </div>
   );
 }

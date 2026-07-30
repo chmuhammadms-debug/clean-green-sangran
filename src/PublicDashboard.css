@@ -1314,9 +1314,11 @@ body.gallery-open { overflow: hidden; }
 }
 
 .social-media-links a {
-  color: inherit;
+  --social-brand: #23884d;
+  --social-brand-hover: #1a6e3d;
+  color: #fff;
   text-decoration: none;
-  transition: color .2s ease, background .2s ease, transform .2s ease;
+  transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
 }
 
 .social-media-icon {
@@ -1338,15 +1340,18 @@ body.gallery-open { overflow: hidden; }
   place-items: center;
   padding: 0;
   color: #fff;
-  border: 1px solid rgba(255,255,255,.2);
+  border: 1px solid color-mix(in srgb, var(--social-brand) 72%, white);
   border-radius: 50%;
-  background: rgba(255,255,255,.09);
+  background: var(--social-brand);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--social-brand) 30%, transparent);
 }
 
 .social-media-links--header a:hover {
-  color: #173321;
-  background: var(--lime);
-  transform: translateY(-2px);
+  color: #fff;
+  background: var(--social-brand-hover);
+  border-color: rgba(255,255,255,.75);
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--social-brand) 44%, transparent);
+  transform: translateY(-3px) scale(1.04);
 }
 
 .social-media-links--footer {
@@ -1359,21 +1364,66 @@ body.gallery-open { overflow: hidden; }
   align-items: center;
   gap: 7px;
   padding: 7px 11px;
-  color: #d7eadc;
-  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--social-brand) 72%, white);
   border-radius: 999px;
-  background: rgba(255,255,255,.06);
+  background: var(--social-brand);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--social-brand) 24%, transparent);
 }
 
 .social-media-links--footer a:hover {
-  color: #102d1d;
-  background: var(--lime);
-  transform: translateY(-2px);
+  color: #fff;
+  background: var(--social-brand-hover);
+  border-color: rgba(255,255,255,.72);
+  box-shadow: 0 9px 22px color-mix(in srgb, var(--social-brand) 38%, transparent);
+  transform: translateY(-3px);
 }
 
 .social-media-label {
   font-size: 11px;
   font-weight: 800;
+}
+
+/* Official social-media brand colours */
+.social-media-link--facebook {
+  --social-brand: #1877f2;
+  --social-brand-hover: #0f65d8;
+}
+
+.social-media-link--youtube {
+  --social-brand: #ff0000;
+  --social-brand-hover: #d90000;
+}
+
+.social-media-link--whatsapp {
+  --social-brand: #25d366;
+  --social-brand-hover: #1fb458;
+}
+
+.social-media-link--linkedin {
+  --social-brand: #0a66c2;
+  --social-brand-hover: #084f96;
+}
+
+.social-media-link--x {
+  --social-brand: #000;
+  --social-brand-hover: #202020;
+}
+
+.social-media-link--tiktok {
+  --social-brand: #111;
+  --social-brand-hover: #000;
+  text-shadow: -1px 0 #25f4ee, 1px 0 #fe2c55;
+}
+
+.social-media-link--instagram {
+  --social-brand: #d62976;
+  --social-brand-hover: #962fbf;
+  background: linear-gradient(135deg, #feda75 0%, #fa7e1e 24%, #d62976 49%, #962fbf 74%, #4f5bd5 100%);
+}
+
+.social-media-link--instagram:hover {
+  background: linear-gradient(135deg, #fa7e1e 0%, #d62976 38%, #962fbf 68%, #4f5bd5 100%);
 }
 
 @media (max-width: 900px) {
