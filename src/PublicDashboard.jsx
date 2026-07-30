@@ -595,6 +595,31 @@ function ProjectFaithSlider({ slides = [], language = "en", projectId = "" }) {
   );
 }
 
+const PAKISTAN_TIME_ZONE = "Asia/Karachi";
+
+function donationMonthKey(value = new Date()) {
+  if (typeof value === "string") {
+    const isoDate = value.trim().match(/^(\d{4})-(\d{2})-\d{2}/);
+    if (isoDate) return `${isoDate[1]}-${isoDate[2]}`;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: PAKISTAN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  return year && month ? `${year}-${month}` : "";
+}
+
+function currentDonationMonthKey() {
+  return donationMonthKey(new Date());
+}
+
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
   const slides = useMemo(() => {
@@ -640,11 +665,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const galleryTouchStart = useRef(null);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
+  const [donorMonthKey, setDonorMonthKey] = useState(currentDonationMonthKey);
   const changeLanguage = () => setLanguage((current) => {
     const next = current === "en" ? "ur" : "en";
     localStorage.setItem("cgs-language", next);
     return next;
   });
+
+  useEffect(() => {
+    const refreshMonth = () => setDonorMonthKey(currentDonationMonthKey());
+    refreshMonth();
+    const timer = window.setInterval(refreshMonth, 60 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -724,7 +757,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     const donors = new Map();
 
     transactions
-      .filter((record) => record.type === "income" && Number(record.amount) > 0 && String(record.person || "").trim())
+      .filter(
+        (record) =>
+          record.type === "income" &&
+          Number(record.amount) > 0 &&
+          String(record.person || "").trim() &&
+          donationMonthKey(record.date) === donorMonthKey,
+      )
       .forEach((record) => {
         const displayName = String(record.person).trim();
         const key = displayName.toLocaleLowerCase();
@@ -750,7 +789,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return [...donors.values()].sort(
       (a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate),
     )[0] || null;
-  }, [transactions]);
+  }, [transactions, donorMonthKey]);
+
+  const donorMonthLabel = useMemo(() => {
+    const [year, month] = donorMonthKey.split("-").map(Number);
+    const monthDate = new Date(Date.UTC(year, month - 1, 1));
+    if (Number.isNaN(monthDate.getTime())) return "";
+
+    return new Intl.DateTimeFormat(ur ? "ur-PK" : "en-US", {
+      timeZone: PAKISTAN_TIME_ZONE,
+      month: "long",
+      year: "numeric",
+    }).format(monthDate);
+  }, [donorMonthKey, ur]);
 
   const profileFor = (system) => settings.projectProfilesByProject?.[system.id] || {};
   const systemName = (system) => {
@@ -1129,17 +1180,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               <aside className="top-donor-spotlight reveal" dir={ur ? "rtl" : "ltr"}>
                 <div className="top-donor-spotlight__copy">
                   <span className="top-donor-spotlight__eyebrow">
-                    {ur ? "خراجِ تحسین • نمایاں عطیہ دہندہ" : "COMMUNITY SPOTLIGHT • TOP DONOR"}
+                    {ur
+                      ? `ماہ کا عطیہ دہندہ • ${donorMonthLabel}`
+                      : `DONOR OF THE MONTH • ${donorMonthLabel.toUpperCase()}`}
                   </span>
                   <h3>{topDonor.displayName}</h3>
                   <p>
                     {ur
-                      ? "خدمتِ سنگراں میں سب سے نمایاں مالی تعاون—ایک ایسی مثال جو دوسروں کو بھی بھلائی میں آگے بڑھنے کا حوصلہ دیتی ہے۔"
-                      : "Leading Sangran through generous support—an example that inspires others to step forward for the community."}
+                      ? `${donorMonthLabel} میں سب سے زیادہ مجموعی عطیہ—خدمتِ سنگراں کی ایک قابلِ قدر مثال۔`
+                      : `The highest combined contribution in ${donorMonthLabel}—a valued example of service to Sangran.`}
                   </p>
                   <div className="top-donor-spotlight__stats">
                     <div>
-                      <span>{ur ? "کل تصدیق شدہ عطیہ" : "Verified contribution"}</span>
+                      <span>{ur ? "اس ماہ کا تصدیق شدہ عطیہ" : "Verified contribution this month"}</span>
                       <strong>Rs. {topDonor.total.toLocaleString()}</strong>
                     </div>
                     <div>
@@ -1160,7 +1213,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       {topDonorInitials}
                     </div>
                   )}
-                  <span>{ur ? "سب سے بڑا عطیہ دہندہ" : "TOP DONOR"}</span>
+                  <span>{ur ? "ماہ کا عطیہ دہندہ" : "DONOR OF THE MONTH"}</span>
                 </div>
               </aside>
             )}
