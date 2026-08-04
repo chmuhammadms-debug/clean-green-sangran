@@ -1307,6 +1307,8 @@ body.gallery-open { overflow: hidden; }
 
 /* Real social-media icons in the public header and footer */
 .social-media-links {
+  --social-brand: #23884d;
+  --social-brand-hover: #1a6e3d;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1314,8 +1316,6 @@ body.gallery-open { overflow: hidden; }
 }
 
 .social-media-links a {
-  --social-brand: #23884d;
-  --social-brand-hover: #1a6e3d;
   color: #fff;
   text-decoration: none;
   transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
