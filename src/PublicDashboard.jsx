@@ -390,14 +390,14 @@ function MoneyCards({ totals, light = false, language = "en" }) {
 }
 
 function socialPlatform(name = "") {
-  const value = String(name).toLowerCase();
-  if (value.includes("facebook")) return "facebook";
-  if (value.includes("instagram")) return "instagram";
-  if (value.includes("youtube")) return "youtube";
-  if (value.includes("whatsapp")) return "whatsapp";
+  const value = String(name).trim().toLowerCase();
+  if (value.includes("facebook") || value.includes("fb.com") || value.includes("fb.me")) return "facebook";
+  if (value.includes("instagram") || value.includes("instagr.am")) return "instagram";
+  if (value.includes("youtube") || value.includes("youtu.be")) return "youtube";
+  if (value.includes("whatsapp") || value.includes("wa.me")) return "whatsapp";
   if (value.includes("tiktok")) return "tiktok";
-  if (value.includes("linkedin")) return "linkedin";
-  if (value.includes("twitter") || value.trim() === "x") return "x";
+  if (value.includes("linkedin") || value.includes("lnkd.in")) return "linkedin";
+  if (value.includes("twitter") || value.includes("x.com") || value === "x") return "x";
   return "link";
 }
 
