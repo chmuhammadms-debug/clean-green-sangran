@@ -55,3 +55,27 @@
   .project-media-upload,.project-media-remove { width: 100%; }
   .project-editor__preview { width: 100%; height: 180px; }
 }
+
+/* Project progress and master plan editor */
+.project-progress-editor { display: grid; gap: 14px; padding: 16px; border: 1px solid #cfe2d3; border-radius: 14px; background: linear-gradient(145deg, #f2faef, #fff); }
+.project-progress-editor__heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.project-progress-editor__heading > div { display: grid; gap: 3px; }
+.project-progress-editor__heading span { color: #65a30d; font-size: 9px; font-weight: 900; letter-spacing: 1.4px; }
+.project-progress-editor__heading strong { color: #14532d; font-size: 15px; }
+.project-progress-editor__heading > b { display: grid; width: 52px; height: 52px; place-items: center; flex: 0 0 auto; border-radius: 50%; color: #fff; background: #166534; font-size: 14px; }
+.project-progress-editor__bar { height: 9px; overflow: hidden; border-radius: 999px; background: #dce9df; }
+.project-progress-editor__bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #84cc16, #166534); transition: width .25s ease; }
+.project-progress-editor__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.project-progress-editor__grid label { display: grid; gap: 6px; color: #334155; font-size: 12px; font-weight: 750; }
+.project-progress-editor__grid input,
+.project-progress-editor__grid select,
+.project-progress-editor__grid textarea { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #cbd8cf; border-radius: 9px; background: #fff; font: inherit; }
+.project-progress-editor__grid textarea { resize: vertical; line-height: 1.7; }
+.project-progress-editor__wide { grid-column: 1 / -1; }
+
+@media (max-width: 720px) {
+  .project-progress-editor__grid { grid-template-columns: 1fr; }
+  .project-progress-editor__wide { grid-column: auto; }
+  .project-progress-editor__heading { align-items: flex-start; }
+}
+
