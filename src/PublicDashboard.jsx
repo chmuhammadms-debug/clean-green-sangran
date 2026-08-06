@@ -1232,6 +1232,41 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       </div>
 
       <main>
+        <section className="projects-section content-section" id="projects">
+          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
+          <div className="project-grid">
+            {topLevelSystems(systems).map((system, index) => {
+              const projectTotals = totalsFor(
+                isMosqueParent(system)
+                  ? mosqueParentRecords(transactions)
+                  : isWelfareParent(system)
+                    ? welfareParentRecords(transactions)
+                  : transactions.filter((record) => record.systemId === system.id)
+              );
+              return (
+                <article
+                  className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
+                  key={system.id}
+                  onClick={() => setSelectedSystemId(system.id)}
+                >
+                  <img src={imageFor(system)} alt={system.name} />
+                  <div className="project-card__shade" />
+                  <span className="project-card__number">0{index + 1}</span>
+                  <div className="project-card__content">
+                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
+                    <h3>{systemName(system)}</h3>
+                    <p>{systemDescription(system)}</p>
+                    {!isBloodBankProject(system) && (
+                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
+                    )}
+                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
         <section className="mission-section content-section" id="mission">
           <div className="mission-copy reveal">
             <span className="section-kicker">OUR SHARED MISSION • ہمارا مشترکہ عزم</span>
@@ -1366,41 +1401,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </section>
 
         <VillageMapSection locations={settings.mapLocations || []} language={language} />
-
-        <section className="projects-section content-section" id="projects">
-          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
-          <div className="project-grid">
-            {topLevelSystems(systems).map((system, index) => {
-              const projectTotals = totalsFor(
-                isMosqueParent(system)
-                  ? mosqueParentRecords(transactions)
-                  : isWelfareParent(system)
-                    ? welfareParentRecords(transactions)
-                  : transactions.filter((record) => record.systemId === system.id)
-              );
-              return (
-                <article
-                  className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
-                  key={system.id}
-                  onClick={() => setSelectedSystemId(system.id)}
-                >
-                  <img src={imageFor(system)} alt={system.name} />
-                  <div className="project-card__shade" />
-                  <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content">
-                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
-                    <h3>{systemName(system)}</h3>
-                    <p>{systemDescription(system)}</p>
-                    {!isBloodBankProject(system) && (
-                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
-                    )}
-                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
 
         <section className="visual-reel-section">
           <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
