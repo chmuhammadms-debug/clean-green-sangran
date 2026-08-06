@@ -14,6 +14,7 @@ import MosqueManagementHub from "./MosqueManagementHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
+import VillageMapSection from "./VillageMapSection";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
@@ -1180,6 +1181,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
           <button onClick={() => scrollTo("master-plan")}>{ur ? "ماسٹر پلان" : "Master Plan"}</button>
+          <button onClick={() => scrollTo("village-map")}>{ur ? "گاؤں کا نقشہ" : "Village Map"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
@@ -1360,6 +1362,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             </div>
           </div>
         </section>
+
+        <VillageMapSection locations={settings.mapLocations || []} language={language} />
 
         <section className="projects-section content-section" id="projects">
           <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>

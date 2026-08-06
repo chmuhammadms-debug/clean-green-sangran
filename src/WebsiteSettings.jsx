@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./WebsiteSettings.css";
 import { DEFAULT_SITE_SETTINGS, mergeSiteSettings } from "./siteSettings";
 import { uploadWebsiteImages } from "./mediaUpload";
+import VillageMapSettings from "./VillageMapSettings";
 
 const colorFields = [
   ["forest", "Dark green"], ["forest2", "Secondary green"],
@@ -195,6 +196,10 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
             {!(draft.homeReelSlides || []).length && <p className="home-media-empty">ابھی اصل built-in تصویری ریل چل رہی ہے۔ نئی تصاویر اپلوڈ کرکے اپنی ریل بنائیں۔</p>}
           </div>
         </section>
+        <VillageMapSettings
+          locations={draft.mapLocations || []}
+          onChange={(mapLocations) => update("mapLocations", mapLocations)}
+        />
         <div className="settings-text-grid">
           <label className="settings-field"><span>Intro title</span><input dir="rtl" value={draft.introTitle} onChange={(e) => update("introTitle", e.target.value)} /></label>
           <label className="settings-field"><span>Intro subtitle</span><input dir="rtl" value={draft.introSubtitle} onChange={(e) => update("introSubtitle", e.target.value)} /></label>

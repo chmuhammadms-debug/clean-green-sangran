@@ -148,6 +148,7 @@ export const DEFAULT_SITE_SETTINGS = {
   homeReelSlides: [],
   socialLinks: [],
   paymentMethods: [],
+  mapLocations: [],
   bloodBankManagementPhone: "03269042000",
   projectFaithSlidesByProject: DEFAULT_PROJECT_FAITH_SLIDES,
 };
@@ -181,6 +182,7 @@ export function mergeSiteSettings(value = {}) {
     },
     socialLinks: Array.isArray(value.socialLinks) ? value.socialLinks : DEFAULT_SITE_SETTINGS.socialLinks,
     paymentMethods: Array.isArray(value.paymentMethods) ? value.paymentMethods : DEFAULT_SITE_SETTINGS.paymentMethods,
+    mapLocations: Array.isArray(value.mapLocations) ? value.mapLocations : DEFAULT_SITE_SETTINGS.mapLocations,
     homeHeroSlides: Array.isArray(value.homeHeroSlides) ? value.homeHeroSlides : DEFAULT_SITE_SETTINGS.homeHeroSlides,
     homeReelSlides: Array.isArray(value.homeReelSlides) ? value.homeReelSlides : DEFAULT_SITE_SETTINGS.homeReelSlides,
     projectProfilesByProject: value.projectProfilesByProject && typeof value.projectProfilesByProject === "object"

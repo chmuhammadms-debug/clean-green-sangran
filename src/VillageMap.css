@@ -1,0 +1,87 @@
+.village-map-section { padding: 88px 0; background: #eef4ea; color: #122019; }
+.village-map-heading { margin-bottom: 28px; }
+.village-map-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+.village-map-filters button { border: 1px solid #c8d8c8; background: #fff; color: #23452e; border-radius: 999px; padding: 9px 14px; font: inherit; font-size: .83rem; font-weight: 800; cursor: pointer; }
+.village-map-filters button.active { background: #0c4728; border-color: #0c4728; color: #fff; }
+.village-map-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, .72fr); gap: 18px; align-items: stretch; }
+.village-map-canvas { position: relative; overflow: hidden; min-height: 520px; border-radius: 26px; background: #dbe7d7; border: 1px solid #c6d7c4; box-shadow: 0 20px 50px rgba(7, 47, 27, .12); }
+.village-leaflet-map { width: 100%; height: 520px; z-index: 1; }
+.village-map-empty { position: absolute; z-index: 500; inset: auto 22px 22px; max-width: 390px; padding: 18px 20px; border-radius: 18px; color: #fff; background: rgba(7, 47, 27, .92); box-shadow: 0 14px 30px rgba(7, 47, 27, .2); }
+.village-map-empty span { font-size: 1.55rem; }
+.village-map-empty strong, .village-map-empty p { display: block; }
+.village-map-empty p { margin: 5px 0 0; opacity: .82; line-height: 1.55; font-size: .86rem; }
+.village-map-list { display: flex; flex-direction: column; gap: 9px; max-height: 520px; overflow: auto; padding-right: 3px; }
+.village-map-card { display: grid; grid-template-columns: 58px 1fr auto; align-items: center; gap: 12px; width: 100%; min-height: 78px; padding: 9px 12px 9px 9px; text-align: start; border: 1px solid #d2dfcf; border-radius: 17px; background: #fff; color: #122019; cursor: pointer; transition: .2s ease; }
+.village-map-card:hover, .village-map-card.active { transform: translateY(-1px); border-color: #4cc46f; box-shadow: 0 10px 24px rgba(7, 47, 27, .09); }
+.village-map-card img, .village-map-card__icon { width: 58px; height: 58px; border-radius: 13px; object-fit: cover; }
+.village-map-card__icon { display: grid; place-items: center; color: #fff; font-size: 1.55rem; }
+.village-map-card__copy { min-width: 0; }
+.village-map-card__copy small, .village-map-card__copy strong, .village-map-card__copy em { display: block; }
+.village-map-card__copy small { color: #718075; font-size: .69rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.village-map-card__copy strong { margin: 3px 0; overflow: hidden; text-overflow: ellipsis; color: #0b3d23; font-size: .95rem; white-space: nowrap; }
+.village-map-card__copy em { width: max-content; border-radius: 999px; padding: 2px 7px; background: #e8f6e9; color: #287546; font-size: .68rem; font-style: normal; font-weight: 800; }
+.village-map-card__arrow { color: #4b7f5d; font-weight: 900; }
+.village-map-guide { display: grid; gap: 10px; align-content: start; padding: 22px; border-radius: 20px; background: #082f1c; color: #fff; }
+.village-map-guide b { margin-bottom: 4px; color: #b6e650; font-size: 1.05rem; }
+.village-map-guide span { padding-bottom: 9px; border-bottom: 1px solid rgba(255,255,255,.1); }
+.village-map-list__empty { margin: 0; padding: 20px; border-radius: 16px; background: #fff; color: #647268; }
+.village-map-popup { font-family: inherit; }
+.village-map-popup img { display: block; width: calc(100% + 40px); height: 125px; margin: -14px -20px 12px; object-fit: cover; }
+.village-map-popup span { color: #55705e; font-size: .75rem; font-weight: 800; }
+.village-map-popup h3 { margin: 4px 0 5px; color: #0b3d23; font-size: 1.05rem; }
+.village-map-popup p { margin: 0 0 9px; color: #4b5e50; line-height: 1.45; }
+.village-map-popup b { display: inline-block; margin-bottom: 8px; border-radius: 999px; padding: 3px 8px; background: #e7f6e9; color: #287546; font-size: .7rem; }
+.village-map-popup a { display: block; color: #0b6b3a; font-weight: 900; text-decoration: none; }
+
+.map-admin-settings { margin-top: 28px; padding: 24px; border: 1px solid #d9e3d8; border-radius: 18px; background: #f7faf6; }
+.map-admin-settings__heading { margin-bottom: 18px; }
+.map-admin-settings__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; padding: 14px 16px; border-radius: 13px; background: #e9f5e8; }
+.map-admin-settings__toolbar div { display: grid; gap: 2px; }
+.map-admin-settings__toolbar small { color: #637467; }
+.map-admin-settings__toolbar button, .map-admin-gps, .map-admin-upload span { border: 0; border-radius: 9px; padding: 9px 12px; background: #0c6b3a; color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.map-admin-list { display: grid; gap: 14px; }
+.map-admin-card { padding: 17px; border: 1px solid #d7e2d5; border-radius: 15px; background: #fff; }
+.map-admin-card__top { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 13px; }
+.map-admin-card__top label { color: #31543d; font-size: .82rem; font-weight: 800; }
+.map-admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.map-admin-grid label { display: grid; gap: 5px; color: #405648; font-size: .78rem; font-weight: 800; }
+.map-admin-grid input, .map-admin-grid select, .map-admin-grid textarea { width: 100%; box-sizing: border-box; border: 1px solid #ccd8cc; border-radius: 9px; padding: 9px 10px; background: #fff; color: #17251c; font: inherit; }
+.map-admin-wide { grid-column: 1 / -1; }
+.map-admin-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.map-admin-actions a { border-radius: 9px; padding: 9px 12px; background: #eaf1fb; color: #225fa9; font-size: .78rem; font-weight: 800; text-decoration: none; }
+.map-admin-upload { position: relative; overflow: hidden; }
+.map-admin-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.map-admin-upload span { display: inline-block; background: #2563eb; font-size: .78rem; }
+.map-admin-gps { font-size: .78rem; }
+.map-admin-remove { margin-inline-start: auto; border: 1px solid #efcaca; border-radius: 9px; padding: 8px 11px; background: #fff4f4; color: #b42323; font: inherit; font-size: .78rem; font-weight: 800; cursor: pointer; }
+.map-admin-preview { display: block; width: 150px; height: 95px; margin-top: 12px; border-radius: 10px; object-fit: cover; }
+.map-admin-empty { display: grid; place-items: center; gap: 4px; padding: 28px 16px; border: 1px dashed #bdd0bd; border-radius: 14px; color: #536b59; text-align: center; }
+.map-admin-empty span { font-size: 2rem; }
+.map-admin-empty p { margin: 0; font-size: .82rem; }
+.map-admin-message { margin: 12px 0 0; border-radius: 10px; padding: 10px 12px; background: #e9f5e8; color: #22613a; font-weight: 800; }
+
+@media (max-width: 900px) {
+  .village-map-section { padding: 64px 0; }
+  .village-map-layout { grid-template-columns: 1fr; }
+  .village-map-canvas, .village-leaflet-map { min-height: 430px; height: 430px; }
+  .village-map-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; overflow: visible; }
+  .village-map-guide { grid-column: 1 / -1; }
+}
+
+@media (max-width: 640px) {
+  .village-map-section { padding: 52px 0 76px; }
+  .village-map-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; scrollbar-width: none; }
+  .village-map-filters button { flex: 0 0 auto; }
+  .village-map-canvas, .village-leaflet-map { min-height: 360px; height: 360px; border-radius: 18px; }
+  .village-map-empty { inset: auto 12px 12px; padding: 13px 14px; }
+  .village-map-list { grid-template-columns: 1fr; }
+  .village-map-card { min-height: 70px; grid-template-columns: 50px 1fr auto; }
+  .village-map-card img, .village-map-card__icon { width: 50px; height: 50px; }
+  .map-admin-settings { padding: 16px 12px; }
+  .map-admin-settings__toolbar { align-items: stretch; flex-direction: column; }
+  .map-admin-grid { grid-template-columns: 1fr; }
+  .map-admin-wide { grid-column: auto; }
+  .map-admin-actions { align-items: stretch; flex-direction: column; }
+  .map-admin-actions > *, .map-admin-upload span { width: 100%; box-sizing: border-box; text-align: center; }
+  .map-admin-remove { margin-inline-start: 0; }
+}
