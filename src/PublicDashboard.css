@@ -1437,3 +1437,74 @@ body.gallery-open { overflow: hidden; }
     display: none;
   }
 }
+
+/* Master plan + project progress system */
+.master-plan-section {
+  padding: 112px 0;
+  color: #edf8ef;
+  background:
+    radial-gradient(circle at 10% 20%, rgba(158,234,53,.15), transparent 28rem),
+    radial-gradient(circle at 92% 72%, rgba(21,148,71,.22), transparent 32rem),
+    linear-gradient(125deg, #032819, #075934 58%, #04351f);
+}
+.master-plan-section .section-heading { margin-bottom: 30px; }
+.master-plan-section .section-heading h2 { color: #fff; }
+.master-plan-section .section-heading > p { color: #bed4c5; }
+.master-plan-summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); margin-bottom: 24px; overflow: hidden; border: 1px solid rgba(158,234,53,.25); border-radius: 20px; background: rgba(255,255,255,.06); }
+.master-plan-summary > div { padding: 20px; text-align: center; border-right: 1px solid rgba(255,255,255,.1); }
+.master-plan-summary > div:last-child { border-right: 0; }
+.master-plan-summary strong { display: block; color: var(--lime); font-size: 30px; }
+.master-plan-summary span { display: block; margin-top: 5px; color: #c7d9cc; font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.master-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+.master-plan-card { min-width: 0; padding: 25px; border: 1px solid rgba(255,255,255,.13); border-radius: 22px; background: rgba(255,255,255,.075); box-shadow: 0 22px 55px rgba(0,0,0,.12); backdrop-filter: blur(10px); }
+.master-plan-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.master-plan-card__icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; color: #163720; background: var(--lime); }
+.master-plan-card__status, .project-progress-badge { padding: 7px 10px; border-radius: 999px; font-size: 9px; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; }
+.master-plan-card__status--proposed, .project-progress-badge--proposed { color: #fff3c4; background: rgba(202,149,41,.24); border: 1px solid rgba(240,194,86,.4); }
+.master-plan-card__status--in-progress, .project-progress-badge--in-progress { color: #eaffd1; background: rgba(126,214,42,.2); border: 1px solid rgba(158,234,53,.45); }
+.master-plan-card__status--completed, .project-progress-badge--completed { color: #d5f8ff; background: rgba(45,173,196,.2); border: 1px solid rgba(94,213,232,.4); }
+.master-plan-card h3 { margin: 18px 0 8px; color: #fff; font-size: 24px; }
+.master-plan-card > p { min-height: 48px; margin: 0; color: #bfd1c4; font-size: 13px; line-height: 1.65; }
+.master-plan-card__progress { margin-top: 20px; }
+.master-plan-card__progress > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #d5e5da; font-size: 11px; }
+.master-plan-card__progress b { color: var(--lime); font-size: 14px; }
+.master-plan-card__bar, .project-progress-overview__bar { height: 10px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.13); }
+.master-plan-card__bar > span, .project-progress-overview__bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lime), #39b765); transition: width .3s ease; }
+.master-plan-card__finance { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 7px; margin-top: 18px; }
+.master-plan-card__finance div { min-width: 0; padding: 10px 8px; border-radius: 10px; background: rgba(0,0,0,.15); }
+.master-plan-card__finance small, .master-plan-card__dates small { display: block; color: #9fbaa9; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.master-plan-card__finance strong { display: block; margin-top: 5px; color: #fff; font-size: 11px; overflow-wrap: anywhere; }
+.master-plan-card__service-note { margin-top: 18px; padding: 12px; color: #d8ebdd; border: 1px dashed rgba(158,234,53,.3); border-radius: 10px; background: rgba(0,0,0,.12); font-size: 11px; }
+.master-plan-card__dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.master-plan-card__dates > span { padding: 10px; border-radius: 10px; background: rgba(255,255,255,.06); }
+.master-plan-card__dates b { display: block; margin-top: 3px; color: #eef7f0; font-size: 11px; }
+.master-plan-card > button { width: 100%; margin-top: 16px; padding: 11px 14px; color: #12321f; border: 0; border-radius: 10px; background: var(--lime); font-size: 11px; font-weight: 900; }
+
+.project-progress-overview { margin-bottom: 24px; padding: 24px; border: 1px solid rgba(9,107,59,.14); border-radius: 20px; background: linear-gradient(145deg, #fbfff8, #e5f4df); box-shadow: 0 16px 42px rgba(6,61,37,.08); }
+.project-progress-overview__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.project-progress-overview__header h2 { margin: 7px 0 0; color: var(--forest); font-size: 24px; }
+.project-progress-overview__bar { margin-top: 18px; background: #cfdfd3; }
+.project-progress-overview__meta { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+.project-progress-overview__meta > div { min-width: 0; padding: 13px; border: 1px solid rgba(9,107,59,.1); border-radius: 12px; background: rgba(255,255,255,.72); }
+.project-progress-overview__meta small { display: block; color: #6d8274; font-size: 9px; font-weight: 850; text-transform: uppercase; }
+.project-progress-overview__meta strong { display: block; margin-top: 5px; color: #173c29; font-size: 13px; overflow-wrap: anywhere; }
+.project-progress-overview__plan { margin-top: 14px; padding: 15px 17px; border-left: 4px solid var(--leaf); border-radius: 11px; background: #fff; }
+.project-progress-overview[dir="rtl"] .project-progress-overview__plan { border-right: 4px solid var(--leaf); border-left: 0; }
+.project-progress-overview__plan b { color: var(--forest); font-size: 12px; }
+.project-progress-overview__plan p { margin: 6px 0 0; color: #52675a; font-size: 13px; line-height: 1.7; }
+
+@media (max-width: 760px) {
+  .master-plan-section { padding: 58px 0; }
+  .master-plan-summary { grid-template-columns: repeat(2,1fr); }
+  .master-plan-summary > div:nth-child(2) { border-right: 0; }
+  .master-plan-summary > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.1); }
+  .master-plan-grid { grid-template-columns: 1fr; }
+  .master-plan-card { padding: 18px; border-radius: 17px; }
+  .master-plan-card h3 { font-size: 21px; }
+  .master-plan-card > p { min-height: 0; }
+  .master-plan-card__finance { grid-template-columns: repeat(2,1fr); }
+  .project-progress-overview { padding: 17px; border-radius: 16px; }
+  .project-progress-overview__header { align-items: flex-start; flex-direction: column; }
+  .project-progress-overview__meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
