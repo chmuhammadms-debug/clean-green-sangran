@@ -23,6 +23,15 @@ function buildItems(systems = [], settings = {}) {
           ? system.galleryUrls.join("\n")
           : "",
       isActive: system.isActive !== false,
+      status: profile.status || "proposed",
+      budget: profile.budget ?? "",
+      completionPercent: Number.isFinite(Number(profile.completionPercent))
+        ? Math.max(0, Math.min(100, Number(profile.completionPercent)))
+        : 0,
+      startDate: profile.startDate || "",
+      expectedCompletionDate: profile.expectedCompletionDate || "",
+      planEn: profile.planEn || "",
+      planUr: profile.planUr || "",
     };
   });
 }
@@ -100,6 +109,13 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
       coverImage: "",
       galleryText: "",
       isActive: true,
+      status: "proposed",
+      budget: "",
+      completionPercent: 0,
+      startDate: "",
+      expectedCompletionDate: "",
+      planEn: "",
+      planUr: "",
     }]);
     window.setTimeout(() => document.getElementById(`project-editor-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
   };
@@ -132,6 +148,13 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         descriptionUr: item.descriptionUr.trim(),
         coverImage: item.coverImage.trim(),
         galleryUrls: item.galleryText.split(/\r?\n/).map((url) => url.trim()).filter(Boolean),
+        status: item.status || "proposed",
+        budget: Math.max(0, Number(item.budget) || 0),
+        completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
+        startDate: item.startDate || "",
+        expectedCompletionDate: item.expectedCompletionDate || "",
+        planEn: item.planEn.trim(),
+        planUr: item.planUr.trim(),
       },
     }), {});
 
@@ -168,6 +191,24 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 <label><span>اردو نام</span><input dir="rtl" value={item.nameUr} onChange={(event) => updateItem(item.id, "nameUr", event.target.value)} /></label>
                 <label><span>English description</span><textarea rows="3" value={item.descriptionEn} onChange={(event) => updateItem(item.id, "descriptionEn", event.target.value)} /></label>
                 <label><span>اردو تعارف</span><textarea dir="rtl" rows="3" value={item.descriptionUr} onChange={(event) => updateItem(item.id, "descriptionUr", event.target.value)} /></label>
+
+                <div className="project-editor__wide project-progress-editor">
+                  <div className="project-progress-editor__heading">
+                    <div><span>PROJECT PROGRESS & MASTER PLAN</span><strong>منصوبے کی پیش رفت اور ماسٹر پلان</strong></div>
+                    <b>{Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%</b>
+                  </div>
+                  <div className="project-progress-editor__bar"><span style={{ width: `${Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%` }} /></div>
+                  <div className="project-progress-editor__grid">
+                    <label><span>Status / حالت</span><select value={item.status} onChange={(event) => updateItem(item.id, "status", event.target.value)}><option value="proposed">Proposed</option><option value="in-progress">In Progress</option><option value="completed">Completed</option></select></label>
+                    <label><span>Total Budget (Rs.) / بجٹ</span><input type="number" min="0" step="1" value={item.budget} onChange={(event) => updateItem(item.id, "budget", event.target.value)} placeholder="0" /></label>
+                    <label><span>Completion % / تکمیل</span><input type="number" min="0" max="100" step="1" value={item.completionPercent} onChange={(event) => updateItem(item.id, "completionPercent", event.target.value)} /></label>
+                    <label><span>Start Date / آغاز</span><input type="date" value={item.startDate} onChange={(event) => updateItem(item.id, "startDate", event.target.value)} /></label>
+                    <label><span>Expected Completion / متوقع تکمیل</span><input type="date" value={item.expectedCompletionDate} onChange={(event) => updateItem(item.id, "expectedCompletionDate", event.target.value)} /></label>
+                    <label className="project-progress-editor__wide"><span>Master Plan / Future Goal (English)</span><textarea rows="3" value={item.planEn} onChange={(event) => updateItem(item.id, "planEn", event.target.value)} placeholder="What will this project achieve next?" /></label>
+                    <label className="project-progress-editor__wide"><span>ماسٹر پلان / مستقبل کا ہدف (اردو)</span><textarea dir="rtl" rows="3" value={item.planUr} onChange={(event) => updateItem(item.id, "planUr", event.target.value)} placeholder="اس منصوبے کا اگلا ہدف کیا ہے؟" /></label>
+                  </div>
+                </div>
+
                 <div className="project-editor__wide project-media-control">
                   <div className="project-media-control__heading"><span>Project cover image</span><small>موبائل یا کمپیوٹر گیلری سے تصویر منتخب کریں</small></div>
                   <div className="project-media-control__actions">
