@@ -8,7 +8,7 @@ import {
 } from "./notificationService";
 import "./SuggestionNotifications.css";
 
-const ICONS = { suggestion: "✦", donation: "Rs", expense: "↘", blood_request: "🩸", blood_donor: "+", project: "▦" };
+const ICONS = { suggestion: "✦", complaint: "!", donation: "Rs", expense: "↘", blood_request: "🩸", blood_donor: "+", project: "▦" };
 
 function timeLabel(value) {
   if (!value) return "";

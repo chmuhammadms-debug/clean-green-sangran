@@ -9,6 +9,7 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
+import ComplaintPortal from "./ComplaintPortal";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
 import WelfareManagementHub from "./WelfareManagementHub";
@@ -1162,6 +1163,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </button>
         </footer>
         <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+        <ComplaintPortal language={language} />
         <SuggestionBox language={language} />
       </div>
     );
@@ -1478,6 +1480,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
       <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+      <ComplaintPortal language={language} />
       <SuggestionBox language={language} />
     </div>
   );

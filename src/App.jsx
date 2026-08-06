@@ -9,6 +9,7 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
+import ComplaintAdmin from "./ComplaintAdmin";
 import MosqueManagementHub from "./MosqueManagementHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
@@ -593,6 +594,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
   function openAdminNotification(item) {
     const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
+    if (notificationType.includes("complaint")) {
+      setSelectedSystemId(null);
+      window.setTimeout(() => document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      return;
+    }
     if (notificationType.includes("blood")) {
       const bloodSystem = systems.find((system) => isBloodBankProject(system));
       if (bloodSystem) openSystem(bloodSystem.id);
@@ -1844,6 +1850,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 "Combined Current Balance",
               ]}
             />
+
+            <ComplaintAdmin />
 
             <ProjectManager
               systems={systems}

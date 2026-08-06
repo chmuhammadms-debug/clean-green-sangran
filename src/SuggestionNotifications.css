@@ -52,6 +52,7 @@
 .notification-item--unread { background: rgba(163,242,60,.1); border-color: rgba(163,242,60,.32); }
 .notification-item__icon { display: grid; place-items: center; width: 42px; height: 42px; color: #092415; font-weight: 900; background: #a3f23c; border-radius: 12px; }
 .notification-item__icon--blood_request { color: white; background: #bf2947; }
+.notification-item__icon--complaint { color: white; background: #c2412d; }
 .notification-item__icon--expense { color: white; background: #9a5a2c; }
 .notification-item > div:nth-child(2) > span { color: #a3f23c; font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .notification-item h3 { margin: 3px 0 4px; color: white; font-size: 15px; }
