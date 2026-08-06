@@ -1508,3 +1508,19 @@ body.gallery-open { overflow: hidden; }
   .project-progress-overview__meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
+/* Mobile homepage focus: keep the opening village photography clear and surface projects first. */
+@media (max-width: 600px) {
+  .hero-content {
+    display: none;
+  }
+
+  .hero-shade {
+    background:
+      linear-gradient(180deg, rgba(2,22,12,.22) 0%, rgba(2,22,12,.04) 42%, rgba(2,22,12,.12) 68%, rgba(2,22,12,.48) 100%);
+  }
+
+  .public-site > main > .projects-section {
+    padding-top: 30px;
+    padding-bottom: 44px;
+  }
+}
