@@ -1,0 +1,53 @@
+.mosque-projects { margin-top: 24px; padding: clamp(18px, 3vw, 30px); border: 1px solid rgba(22, 101, 52, .18); border-radius: 26px; background: linear-gradient(145deg, #f8fff4, #edf8ed); color: #153d27; }
+.mosque-projects__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.mosque-projects__heading > div:first-child { max-width: 760px; }
+.mosque-projects__heading span { color: #4d7c0f; font-size: 11px; font-weight: 900; letter-spacing: .13em; }
+.mosque-projects__heading h2 { margin: 7px 0; font-size: clamp(25px, 3vw, 38px); }
+.mosque-projects__heading p { margin: 0; color: #577061; line-height: 1.75; }
+.mosque-projects__heading-actions { display: grid; flex: 0 0 auto; gap: 9px; }
+.mosque-projects__heading-actions > button { padding: 11px 14px; border: 0; border-radius: 12px; background: #166534; color: white; font-weight: 850; cursor: pointer; }
+.mosque-projects__count { display: grid; min-width: 92px; padding: 11px; border-radius: 17px; background: #123b25; color: white; text-align: center; }
+.mosque-projects__count strong { font-size: 27px; }
+.mosque-projects__count small { color: #bef264; font-size: 10px; font-weight: 900; letter-spacing: .1em; }
+.mosque-projects__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 22px; }
+.mosque-project-card { display: flex; min-width: 0; padding: 20px; border: 1px solid rgba(22, 101, 52, .14); border-radius: 20px; background: rgba(255, 255, 255, .95); box-shadow: 0 14px 34px rgba(18, 59, 37, .07); flex-direction: column; }
+.mosque-project-card__top { display: grid; grid-template-columns: auto auto 1fr; align-items: center; gap: 10px; }
+.mosque-project-card__number { color: #84cc16; font-weight: 900; letter-spacing: .12em; }
+.mosque-project-card__status { justify-self: end; padding: 7px 9px; border-radius: 999px; color: #166534; background: #e5f6df; font-size: 10px; }
+.mosque-project-card__status.status-completed { color: white; background: #166534; }
+.mosque-project-card__status.status-in-progress,.mosque-project-card__status.status-fundraising { color: #7c4800; background: #fef3c7; }
+.mosque-project-card__status.status-on-hold { color: #991b1b; background: #fee2e2; }
+.mosque-project-card h3 { margin: 14px 0 7px; font-size: clamp(19px, 2.2vw, 25px); }
+.mosque-project-card > p { min-height: 50px; margin: 0; color: #63766a; line-height: 1.6; }
+.mosque-project-card__progress { height: 8px; overflow: hidden; margin-top: 17px; border-radius: 999px; background: #dfeade; }
+.mosque-project-card__progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #84cc16, #166534); }
+.mosque-project-card__progress-label { display: flex; justify-content: space-between; margin-top: 6px; color: #607267; font-size: 11px; }
+.mosque-project-card__figures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin: 15px 0; }
+.mosque-project-card__figures span { padding: 9px 10px; border-radius: 11px; background: #f1f8ee; }
+.mosque-project-card__figures small,.mosque-project-card__figures b { display: block; }
+.mosque-project-card__figures small { margin-bottom: 3px; color: #6b7d70; font-size: 10px; }
+.mosque-project-card__figures b { font-size: 13px; }
+.mosque-project-card > button { width: 100%; margin-top: auto; padding: 12px 14px; border: 0; border-radius: 12px; background: #166534; color: white; font-weight: 850; cursor: pointer; }
+.mosque-project-card > button span { float: right; }
+[dir="rtl"] .mosque-project-card > button span { float: left; }
+.mosque-project-form { margin-top: 20px; padding: 18px; border: 1px solid #bbdfc4; border-radius: 18px; background: white; box-shadow: 0 12px 30px rgba(18, 59, 37, .07); }
+.mosque-project-form__title { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 15px; }
+.mosque-project-form__title span { color: #65a30d; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.mosque-project-form__title h3 { margin: 4px 0 0; }
+.mosque-project-form__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.mosque-project-form__grid label { display: grid; gap: 6px; color: #334155; font-size: 12px; font-weight: 750; }
+.mosque-project-form__grid input,.mosque-project-form__grid textarea,.mosque-project-form__grid select { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid #cbd8cf; border-radius: 9px; background: white; font: inherit; }
+.mosque-project-form__grid textarea { resize: vertical; line-height: 1.6; }
+.mosque-project-form__save { margin-top: 14px; padding: 12px 17px; border: 0; border-radius: 11px; background: #166534; color: white; font-weight: 850; cursor: pointer; }
+.mosque-project-form__save:disabled { opacity: .5; cursor: default; }
+.mosque-projects__message { margin: 14px 0 0; padding: 10px 13px; border-radius: 10px; color: #166534; background: #dcfce7; font-weight: 750; }
+
+@media (max-width: 720px) {
+  .mosque-projects { padding: 15px; border-radius: 20px; }
+  .mosque-projects__heading { flex-direction: column; }
+  .mosque-projects__heading-actions { width: 100%; grid-template-columns: 78px 1fr; }
+  .mosque-projects__count { min-width: 0; }
+  .mosque-projects__grid,.mosque-project-form__grid { grid-template-columns: 1fr; }
+  .mosque-project-card { padding: 16px; }
+  .mosque-project-card > p { min-height: 0; }
+}
