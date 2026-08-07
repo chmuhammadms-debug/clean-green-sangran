@@ -3,7 +3,7 @@ import ProjectIcon from "./ProjectIcon";
 import { recordsForProject, workItemsFor } from "./workItems";
 import "./WorkItemsHub.css";
 
-const emptyWork = { name: "", description: "" };
+const emptyWork = { name: "", description: "", budget: "" };
 
 function totalsFor(records) {
   const donations = records
@@ -90,6 +90,17 @@ export default function WorkItemsHub({
               placeholder="اس کام کی مکمل تفصیل لکھیں"
             />
           </label>
+          <label>
+            <span>کام کا بجٹ / Work Budget (Rs.)</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={form.budget}
+              onChange={(event) => setForm((current) => ({ ...current, budget: event.target.value }))}
+              placeholder="0"
+            />
+          </label>
           <button type="submit" disabled={saving}>
             {saving ? "Saving..." : "Save New Work"}
           </button>
@@ -101,6 +112,7 @@ export default function WorkItemsHub({
       <div className="work-items__grid">
         {works.map((work, index) => {
           const totals = totalsFor(recordsForProject(transactions, systems, work.id, profiles));
+          const budget = Math.max(0, Number(profiles?.[work.id]?.budget) || 0);
           return (
             <article className="work-item-card" key={work.id}>
               <div className="work-item-card__top">
@@ -110,6 +122,7 @@ export default function WorkItemsHub({
               <h3>{getName(work)}</h3>
               <p>{getDescription(work) || (ur ? "اس کام کی تفصیل ابھی شامل نہیں کی گئی۔" : "No work details added yet.")}</p>
               <div className="work-item-card__stats">
+                <span><small>{ur ? "بجٹ" : "Budget"}</small><b>Rs. {budget.toLocaleString()}</b></span>
                 <span><small>{ur ? "جمع رقم" : "Received"}</small><b>Rs. {totals.donations.toLocaleString()}</b></span>
                 <span><small>{ur ? "خرچ" : "Spent"}</small><b>Rs. {totals.expenses.toLocaleString()}</b></span>
                 <span><small>{ur ? "بقایا" : "Balance"}</small><b>Rs. {totals.balance.toLocaleString()}</b></span>

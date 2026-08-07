@@ -96,9 +96,12 @@ function ensurePublicSystems(systems = []) {
   );
 }
 
-const fallbackTransactions = [
-  { id: "cemetery-first-record", systemId: "cemetery", type: "income", person: "Ghulam Mustafa", amount: 15000, date: "2026-07-08", method: "Bank", details: "Cemetery Fund" },
-];
+const legacyTransactionIds = new Set(["cemetery-first-record"]);
+const fallbackTransactions = [];
+
+function withoutLegacyTransactions(records = []) {
+  return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
+}
 
 const projectUrdu = {
   cemetery: { name: "قبرستان مینجمنٹ", description: "قبرستان کی دیکھ بھال، اخراجات اور شفاف مالی ریکارڈ۔" },
@@ -717,7 +720,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     "--cream": settings.colors.cream, "--ink": settings.colors.ink,
   };
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
-  const [transactions, setTransactions] = useState(() => loadArray("sangrahnTransactions", fallbackTransactions));
+  const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
@@ -753,7 +756,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         const data = await fetchPublicDatabaseData();
         if (!active) return;
         if (data.systems.length) setSystems(ensurePublicSystems(data.systems));
-        setTransactions(data.transactions);
+        setTransactions(withoutLegacyTransactions(data.transactions));
       } catch (error) {
         console.error("Public database load failed", error);
       }

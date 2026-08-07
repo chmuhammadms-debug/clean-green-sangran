@@ -69,7 +69,7 @@ export async function fetchPublicDatabaseData() {
       id: project.slug, name: project.name, description: project.description || "", icon: project.icon || "📁",
     })),
     transactions: (records || []).map((record) => ({
-      id: record.id,
+      id: record.app_id || record.id,
       systemId: slugById.get(record.project_id),
       type: record.transaction_type === "donation" ? "income" : "expense",
       person: record.donor_name,

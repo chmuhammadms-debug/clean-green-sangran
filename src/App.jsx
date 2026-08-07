@@ -88,20 +88,12 @@ function normalizeSystems(systems = []) {
   );
 }
 
-const defaultTransactions = [
-  {
-    id: "cemetery-first-record",
-    systemId: "cemetery",
-    type: "income",
-    person: "Ghulam Mustafa",
-    amount: 15000,
-    date: "2026-07-08",
-    method: "Bank",
-    details: "Cemetery Fund",
-    slipName: "",
-    slipData: "",
-  },
-];
+const defaultTransactions = [];
+const legacyTransactionIds = new Set(["cemetery-first-record"]);
+
+function withoutLegacyTransactions(records = []) {
+  return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
+}
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -149,20 +141,9 @@ function loadTransactions() {
       localStorage.getItem("sangrahnTransactions")
     );
 
-    if (!Array.isArray(saved)) {
-      return defaultTransactions;
-    }
+    if (!Array.isArray(saved)) return defaultTransactions;
 
-    return saved.map((record) => {
-      if (record.id === "cemetery-first-record") {
-        return {
-          ...record,
-          person: "Ghulam Mustafa",
-          method: "Bank",
-          details: "Cemetery Fund",
-        };
-      }
-
+    return withoutLegacyTransactions(saved).map((record) => {
       const methodTranslations = {
         نقد: "Cash",
         بینک: "Bank",
@@ -454,18 +435,19 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       const databaseData = await fetchDatabaseData();
       const localSystems = loadSystems();
       const localTransactions = loadTransactions();
+      const databaseTransactions = withoutLegacyTransactions(databaseData.transactions);
       const databaseSlugs = new Set(databaseData.systems.map((system) => String(system.id)));
       const mergedSystems = normalizeSystems([
         ...databaseData.systems,
         ...localSystems.filter((system) => !databaseSlugs.has(String(system.id))),
       ]);
-      if (databaseData.transactions.length === 0 && localTransactions.length > 0) {
+      if (databaseTransactions.length === 0 && localTransactions.length > 0) {
         setSystems(mergedSystems.length ? mergedSystems : localSystems);
         setTransactions(localTransactions);
         setDatabaseMessage("Local records are being migrated to Supabase...");
       } else {
         setSystems(databaseData.systems.length ? mergedSystems : normalizeSystems(localSystems));
-        setTransactions(databaseData.transactions);
+        setTransactions(databaseTransactions);
         setDatabaseMessage("Database connected");
       }
       setDatabaseReady(true);
@@ -525,6 +507,22 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const selectedTotals = totalsFor(
     selectedTransactions
   );
+  const selectedWorkBudget = selectedWorkParentId
+    ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
+    : 0;
+
+  const financeSections = selectedWorkParentId
+    ? [
+        ["income", "Add Donation"],
+        ["expense", "Add Expense"],
+        ["ledger", "Ledger / Report"],
+      ]
+    : [
+        ["income", "Donations"],
+        ["expense", "Expenses"],
+        ["daily", "Daily Report"],
+        ["monthly", "Monthly Report"],
+      ];
 
   const allTotals = totalsFor(transactions);
 
@@ -613,6 +611,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     const name = work.name.trim();
     if (!name) throw new Error("Work name is required.");
     const description = work.description.trim();
+    const budget = Math.max(0, Number(work.budget) || 0);
     const id = createWorkItemId(parentProjectId);
     const nextWork = {
       id,
@@ -637,7 +636,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
           coverImage: "",
           galleryUrls: [],
           status: "in-progress",
-          budget: 0,
+          budget,
           completionPercent: 0,
           startDate: "",
           expectedCompletionDate: "",
@@ -1441,14 +1440,23 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 adminMode
               />
             )}
-            <SummaryCards
-              totals={selectedTotals}
-              labels={[
-                "Total Donations",
-                "Total Expenses",
-                "Current Balance",
-              ]}
-            />
+            {selectedWorkParentId ? (
+              <div className="summary-grid">
+                <div className="summary-card"><p>Work Budget</p><h2>Rs. {selectedWorkBudget.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Donations</p><h2>Rs. {selectedTotals.income.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Expenses</p><h2>Rs. {selectedTotals.expenses.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Balance</p><h2>Rs. {selectedTotals.balance.toLocaleString()}</h2></div>
+              </div>
+            ) : (
+              <SummaryCards
+                totals={selectedTotals}
+                labels={[
+                  "Total Donations",
+                  "Total Expenses",
+                  "Current Balance",
+                ]}
+              />
+            )}
 
             {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
             <section
@@ -1463,12 +1471,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   gap: "12px",
                 }}
               >
-                {[
-                  ["income", "Donations"],
-                  ["expense", "Expenses"],
-                  ["daily", "Daily Report"],
-                  ["monthly", "Monthly Report"],
-                ].map(([id, label]) => (
+                {financeSections.map(([id, label]) => (
                   <button
                     key={id}
                     type="button"
@@ -1515,7 +1518,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                         event.target.value
                       )
                     }
-                    placeholder="For example: Ghulam Mustafa"
+                    placeholder="For example: Donor Name"
                   />
                 </div>
 
@@ -1830,45 +1833,53 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   <h3>
                     {activeSection === "daily"
                       ? "Daily Report"
-                      : "Monthly Report"}
+                      : activeSection === "monthly"
+                        ? "Monthly Report"
+                        : "Complete Ledger / Report"}
                   </h3>
 
-                  <div
-                    className="form-field"
-                    style={{ maxWidth: "350px" }}
-                  >
-                    <label>
-                      {activeSection === "daily"
-                        ? "Select report date"
-                        : "Select report month"}
-                    </label>
+                  {(activeSection === "daily" || activeSection === "monthly") && (
+                    <div
+                      className="form-field"
+                      style={{ maxWidth: "350px" }}
+                    >
+                      <label>
+                        {activeSection === "daily"
+                          ? "Select report date"
+                          : "Select report month"}
+                      </label>
 
-                    {activeSection === "daily" ? (
-                      <input
-                        type="date"
-                        value={dailyDate}
-                        onChange={(event) =>
-                          setDailyDate(
-                            event.target.value
-                          )
-                        }
-                      />
-                    ) : (
-                      <input
-                        type="month"
-                        value={monthlyDate}
-                        onChange={(event) =>
-                          setMonthlyDate(
-                            event.target.value
-                          )
-                        }
-                      />
-                    )}
-                  </div>
+                      {activeSection === "daily" ? (
+                        <input
+                          type="date"
+                          value={dailyDate}
+                          onChange={(event) =>
+                            setDailyDate(
+                              event.target.value
+                            )
+                          }
+                        />
+                      ) : (
+                        <input
+                          type="month"
+                          value={monthlyDate}
+                          onChange={(event) =>
+                            setMonthlyDate(
+                              event.target.value
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
 
                   <SummaryCards
                     totals={reportTotals}
-                    labels={[
+                    labels={activeSection === "ledger" ? [
+                      "Total Work Donations",
+                      "Total Work Expenses",
+                      "Work Balance",
+                    ] : [
                       "Income During This Period",
                       "Expenses During This Period",
                       "Balance During This Period",
@@ -1881,14 +1892,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   style={{ marginTop: "22px" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <h3>Report Details</h3>
+                    <h3>{activeSection === "ledger" ? "Complete Work Ledger" : "Report Details"}</h3>
                     <button
                       className="primary-button"
                       type="button"
                       style={{ width: "auto", padding: "10px 18px" }}
                       onClick={() => printCombinedReport(
                         reportRecords,
-                        `${selectedSystem?.name || "Project"} - ${activeSection === "daily" ? `Daily Report (${dailyDate})` : `Monthly Report (${monthlyDate})`}`
+                        `${selectedSystem?.name || "Project"} - ${activeSection === "daily" ? `Daily Report (${dailyDate})` : activeSection === "monthly" ? `Monthly Report (${monthlyDate})` : "Complete Ledger / Report"}`
                       )}
                     >
                       Print Report / Save PDF
