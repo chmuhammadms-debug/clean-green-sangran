@@ -9,25 +9,17 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
-import ComplaintPortal from "./ComplaintPortal";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
-import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
-import VillageMapSection from "./VillageMapSection";
-import {
-  isWorkItem,
-  recordsForProject,
-  workParentId,
-} from "./workItems";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
-  mosqueChildSystems,
+  mosqueParentRecords,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -35,7 +27,7 @@ import {
   ensureWelfareSystems,
   isWelfareChild,
   isWelfareParent,
-  welfareChildSystems,
+  welfareParentRecords,
 } from "./welfareManagement";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
@@ -96,12 +88,9 @@ function ensurePublicSystems(systems = []) {
   );
 }
 
-const legacyTransactionIds = new Set(["cemetery-first-record"]);
-const fallbackTransactions = [];
-
-function withoutLegacyTransactions(records = []) {
-  return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
-}
+const fallbackTransactions = [
+  { id: "cemetery-first-record", systemId: "cemetery", type: "income", person: "Ghulam Mustafa", amount: 15000, date: "2026-07-08", method: "Bank", details: "Cemetery Fund" },
+];
 
 const projectUrdu = {
   cemetery: { name: "قبرستان مینجمنٹ", description: "قبرستان کی دیکھ بھال، اخراجات اور شفاف مالی ریکارڈ۔" },
@@ -400,70 +389,15 @@ function MoneyCards({ totals, light = false, language = "en" }) {
   );
 }
 
-function projectProgressStatus(profile = {}) {
-  const saved = String(profile.status || "").toLowerCase().replace("_", "-");
-  if (["proposed", "in-progress", "completed"].includes(saved)) return saved;
-  const completion = Number(profile.completionPercent) || 0;
-  if (completion >= 100) return "completed";
-  if (completion > 0) return "in-progress";
-  return "proposed";
-}
-
-function projectCompletion(profile = {}) {
-  const status = projectProgressStatus(profile);
-  if (status === "completed") return 100;
-  return Math.max(0, Math.min(100, Number(profile.completionPercent) || 0));
-}
-
-function projectStatusLabel(status, ur) {
-  if (status === "completed") return ur ? "مکمل" : "Completed";
-  if (status === "in-progress") return ur ? "کام جاری ہے" : "In Progress";
-  return ur ? "تجویز کردہ" : "Proposed";
-}
-
-function ProjectProgressOverview({ profile = {}, language = "en", showBudget = true }) {
-  const ur = language === "ur";
-  const status = projectProgressStatus(profile);
-  const completion = projectCompletion(profile);
-  const budget = Math.max(0, Number(profile.budget) || 0);
-  const plan = ur
-    ? (profile.planUr || profile.planEn || "")
-    : (profile.planEn || profile.planUr || "");
-
-  return (
-    <section className="project-progress-overview reveal" dir={ur ? "rtl" : "ltr"}>
-      <div className="project-progress-overview__header">
-        <div>
-          <span className="section-kicker">{ur ? "منصوبے کی پیش رفت" : "PROJECT PROGRESS"}</span>
-          <h2>{ur ? "منصوبے کی موجودہ حالت" : "Current project status"}</h2>
-        </div>
-        <span className={"project-progress-badge project-progress-badge--" + status}>
-          {projectStatusLabel(status, ur)}
-        </span>
-      </div>
-      <div className="project-progress-overview__bar">
-        <span style={{ width: completion + "%" }} />
-      </div>
-      <div className="project-progress-overview__meta">
-        <div><small>{ur ? "تکمیل" : "Completion"}</small><strong>{completion}%</strong></div>
-        {showBudget && <div><small>{ur ? "کل بجٹ" : "Total Budget"}</small><strong>{budget ? `Rs. ${budget.toLocaleString()}` : (ur ? "ابھی درج نہیں" : "Not set")}</strong></div>}
-        <div><small>{ur ? "آغاز" : "Start Date"}</small><strong>{profile.startDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
-        <div><small>{ur ? "متوقع تکمیل" : "Expected Completion"}</small><strong>{profile.expectedCompletionDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
-      </div>
-      {plan && <div className="project-progress-overview__plan"><b>{ur ? "ماسٹر پلان / اگلا ہدف" : "Master Plan / Next Goal"}</b><p>{plan}</p></div>}
-    </section>
-  );
-}
-
 function socialPlatform(name = "") {
-  const value = String(name).trim().toLowerCase();
-  if (value.includes("facebook") || value.includes("fb.com") || value.includes("fb.me")) return "facebook";
-  if (value.includes("instagram") || value.includes("instagr.am")) return "instagram";
-  if (value.includes("youtube") || value.includes("youtu.be")) return "youtube";
-  if (value.includes("whatsapp") || value.includes("wa.me")) return "whatsapp";
+  const value = String(name).toLowerCase();
+  if (value.includes("facebook")) return "facebook";
+  if (value.includes("instagram")) return "instagram";
+  if (value.includes("youtube")) return "youtube";
+  if (value.includes("whatsapp")) return "whatsapp";
   if (value.includes("tiktok")) return "tiktok";
-  if (value.includes("linkedin") || value.includes("lnkd.in")) return "linkedin";
-  if (value.includes("twitter") || value.includes("x.com") || value === "x") return "x";
+  if (value.includes("linkedin")) return "linkedin";
+  if (value.includes("twitter") || value.trim() === "x") return "x";
   return "link";
 }
 
@@ -720,7 +654,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     "--cream": settings.colors.cream, "--ink": settings.colors.ink,
   };
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
-  const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
+  const [transactions, setTransactions] = useState(() => loadArray("sangrahnTransactions", fallbackTransactions));
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
@@ -756,7 +690,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         const data = await fetchPublicDatabaseData();
         if (!active) return;
         if (data.systems.length) setSystems(ensurePublicSystems(data.systems));
-        setTransactions(withoutLegacyTransactions(data.transactions));
+        setTransactions(data.transactions);
       } catch (error) {
         console.error("Public database load failed", error);
       }
@@ -809,23 +743,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const totals = useMemo(() => totalsFor(transactions), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
-  const projectProfiles = settings.projectProfilesByProject || {};
-  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
-  const relatedChildIdsFor = (systemOrId) => (
-    isMosqueParent(systemOrId)
-      ? mosqueChildSystems(systems).map((system) => system.id)
-      : isWelfareParent(systemOrId)
-        ? welfareChildSystems(systems).map((system) => system.id)
-        : []
-  );
-  const publicRecordsFor = (systemOrId) => recordsForProject(
-    transactions,
-    systems,
-    typeof systemOrId === "object" ? systemOrId?.id : systemOrId,
-    projectProfiles,
-    relatedChildIdsFor(systemOrId)
-  );
-  const selectedAllRecords = publicRecordsFor(selectedSystemId);
+  const selectedAllRecords = isMosqueParent(selectedSystemId)
+    ? mosqueParentRecords(transactions)
+    : isWelfareParent(selectedSystemId)
+      ? welfareParentRecords(transactions)
+      : transactions.filter((record) => record.systemId === selectedSystemId);
   const selectedTotals = totalsFor(selectedAllRecords);
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
@@ -835,7 +757,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const donorCount = new Set(
     transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
   ).size;
-  const topDonor = useMemo(() => {
+  const topDonors = useMemo(() => {
     const donors = new Map();
 
     transactions
@@ -868,10 +790,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         donors.set(key, current);
       });
 
-    return [...donors.values()].sort(
-      (a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate),
-    )[0] || null;
+    return [...donors.values()]
+      .sort((a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate))
+      .slice(0, 5);
   }, [transactions, donorMonthKey]);
+  const topDonor = topDonors[0] || null;
 
   const donorMonthLabel = useMemo(() => {
     const [year, month] = donorMonthKey.split("-").map(Number);
@@ -909,17 +832,17 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       .join("")
       .toUpperCase()
     : "";
-  const imageFor = (system) => {
-    const ownImage = profileFor(system).coverImage || system.coverImage;
-    if (ownImage) return ownImage;
-    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
-    const source = parent || system;
-    return profileFor(source).coverImage
-      || source.coverImage
-      || (isMosqueChild(source) ? projectImages.mosque : projectImages[source.id])
-      || (isWelfareChild(source) ? projectImages.welfare : null)
-      || welfareImage;
-  };
+  const donorInitials = (donor) => donor.displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+  const imageFor = (system) => profileFor(system).coverImage
+    || system.coverImage
+    || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
+    || (isWelfareChild(system) ? projectImages.welfare : null)
+    || welfareImage;
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
@@ -938,17 +861,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
       return slidesByProject[system.id] || [];
     }
-    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
-    const source = parent || system;
-    if (parent && Object.prototype.hasOwnProperty.call(slidesByProject, source.id)) {
-      return slidesByProject[source.id] || [];
-    }
-    if (isMosqueChild(source)) return slidesByProject.mosque || [];
-    if (isWelfareChild(source)) return slidesByProject.welfare || [];
-    return isBloodBankProject(source) ? (slidesByProject.blood || []) : [];
+    if (isMosqueChild(system)) return slidesByProject.mosque || [];
+    if (isWelfareChild(system)) return slidesByProject.welfare || [];
+    return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
   };
   const selectedParentId = selectedSystem
-    ? (selectedWorkParentId || (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null))
+    ? (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null)
     : null;
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
@@ -999,9 +917,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </button>
           <div className="nav-actions project-nav-actions">
             <button className="project-top-back" onClick={() => setSelectedSystemId(selectedParentId)}>
-              {selectedWorkParentId
-                ? (ur ? "← منصوبے کے کام" : "← Project Works")
-                : isMosqueChild(selectedSystem)
+              {isMosqueChild(selectedSystem)
                 ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
                 : isWelfareChild(selectedSystem)
                   ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
@@ -1029,16 +945,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            <ProjectProgressOverview
-              profile={profileFor(selectedSystem)}
-              language={language}
-              showBudget={!isBloodBankProject(selectedSystem)}
-            />
             {isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
-                profiles={projectProfiles}
                 onOpenSystem={setSelectedSystemId}
                 language={language}
                 getName={systemName}
@@ -1112,21 +1022,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   </div>
                 </>
               )}
-              {!isBloodBankProject(selectedSystem)
-                && !isWelfareChild(selectedSystem)
-                && !isMosqueParent(selectedSystem)
-                && !isWorkItem(selectedSystem, projectProfiles) && (
-                <WorkItemsHub
-                  project={selectedSystem}
-                  systems={systems}
-                  transactions={transactions}
-                  profiles={projectProfiles}
-                  onOpenSystem={setSelectedSystemId}
-                  language={language}
-                  getName={systemName}
-                  getDescription={systemDescription}
-                />
-              )}
               {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && (
                 <div className="ledger-card reveal">
                   <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
@@ -1198,9 +1093,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
           </nav>
           <button onClick={() => setSelectedSystemId(selectedParentId)}>
-            {selectedWorkParentId
-              ? (ur ? "منصوبے کے کاموں پر واپس جائیں ↑" : "Back to Project Works ↑")
-              : isMosqueChild(selectedSystem)
+            {isMosqueChild(selectedSystem)
               ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
               : isWelfareChild(selectedSystem)
                 ? (ur ? "فلاحی منصوبوں پر واپس جائیں ↑" : "Back to Welfare Management ↑")
@@ -1208,7 +1101,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </button>
         </footer>
         <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
-        <ComplaintPortal language={language} />
         <SuggestionBox language={language} />
       </div>
     );
@@ -1227,7 +1119,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <nav className={menuOpen ? "nav-links nav-links--open" : "nav-links"}>
           <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
-          <button onClick={() => scrollTo("village-map")}>{ur ? "گاؤں کا نقشہ" : "Village Map"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
@@ -1240,7 +1131,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
       <section className="hero" id="home">
         {slides.map((slide, index) => (
-          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }}><img className="hero-slide__fit" src={slide.image} alt="" aria-hidden="true" /></div>
+          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }} />
         ))}
         <div className="hero-shade" />
         <div className={`hero-content ${ur ? "hero-content--urdu" : ""}`}>
@@ -1276,11 +1167,109 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       </div>
 
       <main>
+        <section className="mission-section content-section" id="mission">
+          <div className="mission-copy reveal">
+            <span className="section-kicker">OUR SHARED MISSION • ہمارا مشترکہ عزم</span>
+            <div className="mission-urdu" dir="rtl" lang="ur">
+              <h2>اپنی مدد آپ، اجتماعی تعاون اور خدمتِ خلق</h2>
+              <p>اپنے گاؤں سنگراں کو صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنانا ہمارا مشترکہ عزم ہے۔</p>
+            </div>
+            <div className="mission-english">
+              <h3>Self-help, collective cooperation, and service to humanity.</h3>
+              <p>Our shared commitment is to make Sangran the region’s most distinctive, green, organised, and exemplary village through cleanliness, tree plantation, beautification, discipline, and mutual cooperation.</p>
+            </div>
+            <div className="mission-points"><span><b>01</b>Community-led decisions</span><span><b>02</b>Transparent financial records</span><span><b>03</b>Long-term local impact</span></div>
+          </div>
+          <div className="mission-visual reveal"><img src={plantationImage} alt="Community plantation work" /><div className="mission-badge"><strong>100%</strong><span>Community<br />Transparency</span></div></div>
+        </section>
+
+        <section className="impact-section" id="transparency">
+          <div className="content-section">
+            <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
+            <MoneyCards totals={totals} light language={language} />
+            {topDonor && (
+              <div className="top-donors-month reveal" dir={ur ? "rtl" : "ltr"}>
+                <div className="top-donors-month__heading">
+                  <span>{ur ? "اس ماہ کے سرفہرست 5 عطیہ دہندگان" : "TOP 5 DONORS OF THE MONTH"}</span>
+                  <small>{donorMonthLabel}</small>
+                </div>
+                <aside className="top-donor-spotlight">
+                  <div className="top-donor-spotlight__copy">
+                    <span className="top-donor-spotlight__eyebrow">
+                      {ur
+                        ? `نمبر 1 عطیہ دہندہ • ${donorMonthLabel}`
+                        : `#1 DONOR • ${donorMonthLabel.toUpperCase()}`}
+                    </span>
+                    <h3>{topDonor.displayName}</h3>
+                    <p>
+                      {ur
+                        ? `${donorMonthLabel} میں سب سے زیادہ مجموعی عطیہ—خدمتِ سنگراں کی ایک قابلِ قدر مثال۔`
+                        : `The highest combined contribution in ${donorMonthLabel}—a valued example of service to Sangran.`}
+                    </p>
+                    <div className="top-donor-spotlight__stats">
+                      <div>
+                        <span>{ur ? "اس ماہ کا تصدیق شدہ عطیہ" : "Verified contribution this month"}</span>
+                        <strong>Rs. {topDonor.total.toLocaleString()}</strong>
+                      </div>
+                      <div>
+                        <span>{ur ? "نمایاں منصوبہ" : "Featured project"}</span>
+                        <strong>
+                          {topDonorSystem
+                            ? systemName(topDonorSystem)
+                            : (ur ? "تمام عوامی منصوبے" : "Community projects")}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="top-donor-spotlight__portrait">
+                    {topDonor.donorPhoto ? (
+                      <img src={topDonor.donorPhoto} alt={topDonor.displayName} />
+                    ) : (
+                      <div className="top-donor-spotlight__fallback" aria-label={topDonor.displayName}>
+                        {topDonorInitials}
+                      </div>
+                    )}
+                    <span>{ur ? "نمبر 1 • ماہ کا عطیہ دہندہ" : "#1 • DONOR OF THE MONTH"}</span>
+                  </div>
+                </aside>
+
+                {topDonors.length > 1 && (
+                  <div className="top-donors-month__runner-ups">
+                    {topDonors.slice(1).map((donor, index) => (
+                      <article className="top-donor-mini" key={donor.displayName.toLocaleLowerCase()}>
+                        <b className="top-donor-mini__rank">#{index + 2}</b>
+                        <div className="top-donor-mini__portrait">
+                          {donor.donorPhoto ? (
+                            <img src={donor.donorPhoto} alt={donor.displayName} />
+                          ) : (
+                            <span aria-label={donor.displayName}>{donorInitials(donor)}</span>
+                          )}
+                        </div>
+                        <div className="top-donor-mini__copy">
+                          <strong>{donor.displayName}</strong>
+                          <small>Rs. {donor.total.toLocaleString()}</small>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
+          </div>
+        </section>
+
         <section className="projects-section content-section" id="projects">
           <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
           <div className="project-grid">
             {topLevelSystems(systems).map((system, index) => {
-              const projectTotals = totalsFor(publicRecordsFor(system));
+              const projectTotals = totalsFor(
+                isMosqueParent(system)
+                  ? mosqueParentRecords(transactions)
+                  : isWelfareParent(system)
+                    ? welfareParentRecords(transactions)
+                  : transactions.filter((record) => record.systemId === system.id)
+              );
               return (
                 <article
                   className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
@@ -1304,73 +1293,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             })}
           </div>
         </section>
-
-        <section className="mission-section content-section" id="mission">
-          <div className="mission-copy reveal">
-            <span className="section-kicker">OUR SHARED MISSION • ہمارا مشترکہ عزم</span>
-            <div className="mission-urdu" dir="rtl" lang="ur">
-              <h2>اپنی مدد آپ، اجتماعی تعاون اور خدمتِ خلق</h2>
-              <p>اپنے گاؤں سنگراں کو صفائی، شجرکاری، خوبصورتی، نظم و ضبط اور باہمی تعاون کے ذریعے علاقے کا سب سے منفرد، سرسبز اور مثالی گاؤں بنانا ہمارا مشترکہ عزم ہے۔</p>
-            </div>
-            <div className="mission-english">
-              <h3>Self-help, collective cooperation, and service to humanity.</h3>
-              <p>Our shared commitment is to make Sangran the region’s most distinctive, green, organised, and exemplary village through cleanliness, tree plantation, beautification, discipline, and mutual cooperation.</p>
-            </div>
-            <div className="mission-points"><span><b>01</b>Community-led decisions</span><span><b>02</b>Transparent financial records</span><span><b>03</b>Long-term local impact</span></div>
-          </div>
-          <div className="mission-visual reveal"><img src={plantationImage} alt="Community plantation work" /><div className="mission-badge"><strong>100%</strong><span>Community<br />Transparency</span></div></div>
-        </section>
-
-        <section className="impact-section" id="transparency">
-          <div className="content-section">
-            <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
-            <MoneyCards totals={totals} light language={language} />
-            {topDonor && (
-              <aside className="top-donor-spotlight reveal" dir={ur ? "rtl" : "ltr"}>
-                <div className="top-donor-spotlight__copy">
-                  <span className="top-donor-spotlight__eyebrow">
-                    {ur
-                      ? `ماہ کا عطیہ دہندہ • ${donorMonthLabel}`
-                      : `DONOR OF THE MONTH • ${donorMonthLabel.toUpperCase()}`}
-                  </span>
-                  <h3>{topDonor.displayName}</h3>
-                  <p>
-                    {ur
-                      ? `${donorMonthLabel} میں سب سے زیادہ مجموعی عطیہ—خدمتِ سنگراں کی ایک قابلِ قدر مثال۔`
-                      : `The highest combined contribution in ${donorMonthLabel}—a valued example of service to Sangran.`}
-                  </p>
-                  <div className="top-donor-spotlight__stats">
-                    <div>
-                      <span>{ur ? "اس ماہ کا تصدیق شدہ عطیہ" : "Verified contribution this month"}</span>
-                      <strong>Rs. {topDonor.total.toLocaleString()}</strong>
-                    </div>
-                    <div>
-                      <span>{ur ? "نمایاں منصوبہ" : "Featured project"}</span>
-                      <strong>
-                        {topDonorSystem
-                          ? systemName(topDonorSystem)
-                          : (ur ? "تمام عوامی منصوبے" : "Community projects")}
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-                <div className="top-donor-spotlight__portrait">
-                  {topDonor.donorPhoto ? (
-                    <img src={topDonor.donorPhoto} alt={topDonor.displayName} />
-                  ) : (
-                    <div className="top-donor-spotlight__fallback" aria-label={topDonor.displayName}>
-                      {topDonorInitials}
-                    </div>
-                  )}
-                  <span>{ur ? "ماہ کا عطیہ دہندہ" : "DONOR OF THE MONTH"}</span>
-                </div>
-              </aside>
-            )}
-            <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
-          </div>
-        </section>
-
-        <VillageMapSection locations={settings.mapLocations || []} language={language} />
 
         <section className="visual-reel-section">
           <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
@@ -1450,7 +1372,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
       <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
-      <ComplaintPortal language={language} />
       <SuggestionBox language={language} />
     </div>
   );
