@@ -151,7 +151,6 @@ button { cursor: pointer; }
 
 .hero { position: relative; min-height: 760px; height: 100vh; color: white; background: #061f12; }
 .hero-slide { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.1s ease, transform 6s ease; }
-.hero-slide__fit { display: none; }
 .hero-slide--active { opacity: 1; transform: scale(1); }
 .hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(2,22,12,.9) 0%, rgba(2,22,12,.62) 42%, rgba(2,22,12,.12) 76%), linear-gradient(0deg, rgba(2,22,12,.62), transparent 45%); }
 .hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; width: min(1200px, calc(100% - 48px)); height: 100%; margin: auto; padding-top: 60px; }
@@ -178,6 +177,7 @@ button { cursor: pointer; }
 .project-status-ticker__item span { color: #c9dfcf; font-size: 11px; font-weight: 900; letter-spacing: 1.4px; }
 .project-status-ticker__reel { width: 100%; margin-top: 9px; overflow: hidden; white-space: nowrap; }
 .project-status-ticker__moving { display: inline-flex; align-items: center; gap: 14px; min-width: max-content; animation: projectReel 10s linear infinite; }
+.project-status-ticker__moving[dir="rtl"] { animation-direction: reverse; }
 .project-status-ticker__item strong { color: #fff; font-size: 17px; line-height: 1.5; }
 .project-status-ticker__item small { color: rgba(255,255,255,.68); font-size: 12px; }
 .project-status-ticker__item--live span { color: #b8f36b; }
@@ -196,7 +196,8 @@ button { cursor: pointer; }
 .records-modal__body { max-height: calc(90vh - 116px); overflow: auto; padding: 12px 22px 24px; }
 
 .impact-ticker { padding: 17px 0; color: #d7f8df; background: var(--forest); overflow: hidden; }
-.impact-ticker__track { display: flex; width: max-content; animation: ticker 48s linear infinite; }
+.impact-ticker__track { display: flex; width: max-content; animation: tickerEnglish 48s linear infinite; }
+.impact-ticker--urdu .impact-ticker__track { animation-name: tickerUrdu; }
 .impact-ticker--english .impact-ticker__track { animation-name: tickerEnglish; }
 .impact-ticker span { display: flex; align-items: center; gap: 34px; padding-right: 34px; font-family: "Manrope", sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
 .impact-ticker b { color: var(--lime); }
@@ -672,7 +673,7 @@ body.gallery-open { overflow: hidden; }
 @keyframes slideProgress { from { width: 0; } to { width: 100%; } }
 /* Move the announcement strip from left to right while each Urdu message
    keeps its own RTL reading direction. */
-@keyframes ticker {
+@keyframes tickerUrdu {
   from { transform: translateX(-50%); }
   to { transform: translateX(0); }
 }
@@ -1308,8 +1309,6 @@ body.gallery-open { overflow: hidden; }
 
 /* Real social-media icons in the public header and footer */
 .social-media-links {
-  --social-brand: #23884d;
-  --social-brand-hover: #1a6e3d;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1317,6 +1316,8 @@ body.gallery-open { overflow: hidden; }
 }
 
 .social-media-links a {
+  --social-brand: #23884d;
+  --social-brand-hover: #1a6e3d;
   color: #fff;
   text-decoration: none;
   transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s ease;
@@ -1436,153 +1437,5 @@ body.gallery-open { overflow: hidden; }
 
   .project-nav-actions .social-media-links--header {
     display: none;
-  }
-}
-
-/* Master plan + project progress system */
-.master-plan-section {
-  padding: 112px 0;
-  color: #edf8ef;
-  background:
-    radial-gradient(circle at 10% 20%, rgba(158,234,53,.15), transparent 28rem),
-    radial-gradient(circle at 92% 72%, rgba(21,148,71,.22), transparent 32rem),
-    linear-gradient(125deg, #032819, #075934 58%, #04351f);
-}
-.master-plan-section .section-heading { margin-bottom: 30px; }
-.master-plan-section .section-heading h2 { color: #fff; }
-.master-plan-section .section-heading > p { color: #bed4c5; }
-.master-plan-summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); margin-bottom: 24px; overflow: hidden; border: 1px solid rgba(158,234,53,.25); border-radius: 20px; background: rgba(255,255,255,.06); }
-.master-plan-summary > div { padding: 20px; text-align: center; border-right: 1px solid rgba(255,255,255,.1); }
-.master-plan-summary > div:last-child { border-right: 0; }
-.master-plan-summary strong { display: block; color: var(--lime); font-size: 30px; }
-.master-plan-summary span { display: block; margin-top: 5px; color: #c7d9cc; font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
-.master-plan-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
-.master-plan-card { min-width: 0; padding: 25px; border: 1px solid rgba(255,255,255,.13); border-radius: 22px; background: rgba(255,255,255,.075); box-shadow: 0 22px 55px rgba(0,0,0,.12); backdrop-filter: blur(10px); }
-.master-plan-card__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.master-plan-card__icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; color: #163720; background: var(--lime); }
-.master-plan-card__status, .project-progress-badge { padding: 7px 10px; border-radius: 999px; font-size: 9px; font-weight: 900; letter-spacing: .7px; text-transform: uppercase; }
-.master-plan-card__status--proposed, .project-progress-badge--proposed { color: #fff3c4; background: rgba(202,149,41,.24); border: 1px solid rgba(240,194,86,.4); }
-.master-plan-card__status--in-progress, .project-progress-badge--in-progress { color: #eaffd1; background: rgba(126,214,42,.2); border: 1px solid rgba(158,234,53,.45); }
-.master-plan-card__status--completed, .project-progress-badge--completed { color: #d5f8ff; background: rgba(45,173,196,.2); border: 1px solid rgba(94,213,232,.4); }
-.master-plan-card h3 { margin: 18px 0 8px; color: #fff; font-size: 24px; }
-.master-plan-card > p { min-height: 48px; margin: 0; color: #bfd1c4; font-size: 13px; line-height: 1.65; }
-.master-plan-card__progress { margin-top: 20px; }
-.master-plan-card__progress > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: #d5e5da; font-size: 11px; }
-.master-plan-card__progress b { color: var(--lime); font-size: 14px; }
-.master-plan-card__bar, .project-progress-overview__bar { height: 10px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.13); }
-.master-plan-card__bar > span, .project-progress-overview__bar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--lime), #39b765); transition: width .3s ease; }
-.master-plan-card__finance { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 7px; margin-top: 18px; }
-.master-plan-card__finance div { min-width: 0; padding: 10px 8px; border-radius: 10px; background: rgba(0,0,0,.15); }
-.master-plan-card__finance small, .master-plan-card__dates small { display: block; color: #9fbaa9; font-size: 8px; font-weight: 800; text-transform: uppercase; }
-.master-plan-card__finance strong { display: block; margin-top: 5px; color: #fff; font-size: 11px; overflow-wrap: anywhere; }
-.master-plan-card__service-note { margin-top: 18px; padding: 12px; color: #d8ebdd; border: 1px dashed rgba(158,234,53,.3); border-radius: 10px; background: rgba(0,0,0,.12); font-size: 11px; }
-.master-plan-card__dates { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-.master-plan-card__dates > span { padding: 10px; border-radius: 10px; background: rgba(255,255,255,.06); }
-.master-plan-card__dates b { display: block; margin-top: 3px; color: #eef7f0; font-size: 11px; }
-.master-plan-card > button { width: 100%; margin-top: 16px; padding: 11px 14px; color: #12321f; border: 0; border-radius: 10px; background: var(--lime); font-size: 11px; font-weight: 900; }
-
-.project-progress-overview { margin-bottom: 24px; padding: 24px; border: 1px solid rgba(9,107,59,.14); border-radius: 20px; background: linear-gradient(145deg, #fbfff8, #e5f4df); box-shadow: 0 16px 42px rgba(6,61,37,.08); }
-.project-progress-overview__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
-.project-progress-overview__header h2 { margin: 7px 0 0; color: var(--forest); font-size: 24px; }
-.project-progress-overview__bar { margin-top: 18px; background: #cfdfd3; }
-.project-progress-overview__meta { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
-.project-progress-overview__meta > div { min-width: 0; padding: 13px; border: 1px solid rgba(9,107,59,.1); border-radius: 12px; background: rgba(255,255,255,.72); }
-.project-progress-overview__meta small { display: block; color: #6d8274; font-size: 9px; font-weight: 850; text-transform: uppercase; }
-.project-progress-overview__meta strong { display: block; margin-top: 5px; color: #173c29; font-size: 13px; overflow-wrap: anywhere; }
-.project-progress-overview__plan { margin-top: 14px; padding: 15px 17px; border-left: 4px solid var(--leaf); border-radius: 11px; background: #fff; }
-.project-progress-overview[dir="rtl"] .project-progress-overview__plan { border-right: 4px solid var(--leaf); border-left: 0; }
-.project-progress-overview__plan b { color: var(--forest); font-size: 12px; }
-.project-progress-overview__plan p { margin: 6px 0 0; color: #52675a; font-size: 13px; line-height: 1.7; }
-
-@media (max-width: 760px) {
-  .master-plan-section { padding: 58px 0; }
-  .master-plan-summary { grid-template-columns: repeat(2,1fr); }
-  .master-plan-summary > div:nth-child(2) { border-right: 0; }
-  .master-plan-summary > div:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.1); }
-  .master-plan-grid { grid-template-columns: 1fr; }
-  .master-plan-card { padding: 18px; border-radius: 17px; }
-  .master-plan-card h3 { font-size: 21px; }
-  .master-plan-card > p { min-height: 0; }
-  .master-plan-card__finance { grid-template-columns: repeat(2,1fr); }
-  .project-progress-overview { padding: 17px; border-radius: 16px; }
-  .project-progress-overview__header { align-items: flex-start; flex-direction: column; }
-  .project-progress-overview__meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
-}
-
-/* Mobile homepage focus: show the full village photo cleanly, then the project status area. */
-@media (max-width: 600px) {
-  .hero {
-    height: auto;
-    min-height: 0;
-    padding: calc(76px + 56.25vw + 14px) 14px 38px;
-    background: #052b18;
-  }
-
-  .hero-content {
-    display: none;
-  }
-
-  .hero-shade {
-    display: none;
-  }
-
-  .hero-slide {
-    top: 76px;
-    right: 0;
-    bottom: auto;
-    left: 0;
-    height: 56.25vw;
-    overflow: hidden;
-    background-color: #061f12;
-    background-image: none !important;
-    transform: none;
-    transition: opacity 1.1s ease;
-  }
-
-  .hero-slide--active {
-    transform: none;
-  }
-
-  .hero-slide::before {
-    display: none;
-    content: none;
-  }
-
-  .hero-slide__fit {
-    position: absolute;
-    z-index: 1;
-    inset: 0;
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: center;
-    filter: none;
-  }
-
-  .project-status-ticker {
-    position: relative;
-    top: auto;
-    right: auto;
-    bottom: auto;
-    left: auto;
-    width: 100%;
-    grid-template-columns: 1fr 1fr;
-    gap: 7px;
-    transform: none;
-  }
-
-  .hero-progress {
-    right: 14px;
-    bottom: 14px;
-  }
-
-  .hero-scroll {
-    display: none;
-  }
-
-  .public-site > main > .projects-section {
-    padding-top: 30px;
-    padding-bottom: 44px;
   }
 }
