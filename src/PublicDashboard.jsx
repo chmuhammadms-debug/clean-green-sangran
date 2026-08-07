@@ -915,13 +915,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     if (isWelfareChild(system)) return slidesByProject.welfare || [];
     return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
   };
-  const masterPlanProjects = topLevelSystems(systems).filter((system) => system.isActive !== false);
-  const masterPlanCounts = masterPlanProjects.reduce((counts, system) => {
-    const status = projectProgressStatus(profileFor(system));
-    counts[status] += 1;
-    return counts;
-  }, { proposed: 0, "in-progress": 0, completed: 0 });
-
   const selectedParentId = selectedSystem
     ? (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null)
     : null;
@@ -1182,7 +1175,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <nav className={menuOpen ? "nav-links nav-links--open" : "nav-links"}>
           <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
-          <button onClick={() => scrollTo("master-plan")}>{ur ? "ماسٹر پلان" : "Master Plan"}</button>
           <button onClick={() => scrollTo("village-map")}>{ur ? "گاؤں کا نقشہ" : "Village Map"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
@@ -1329,74 +1321,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               </aside>
             )}
             <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
-          </div>
-        </section>
-
-        <section className="master-plan-section" id="master-plan">
-          <div className="content-section">
-            <div className="section-heading section-heading--light reveal">
-              <div>
-                <span className="section-kicker">{ur ? "سنگراں کا مستقبل" : "SANGRAN MASTER PLAN"}</span>
-                <h2>{ur ? "منصوبہ، پیش رفت اور اگلا ہدف" : <>Plan. Progress.<br />Visible results.</>}</h2>
-              </div>
-              <p>{ur ? "ہر عوامی منصوبے کی موجودہ حالت، بجٹ، ٹائم لائن اور مستقبل کا ہدف ایک جگہ۔" : "One view of every community project's status, budget, timeline and next goal."}</p>
-            </div>
-
-            <div className="master-plan-summary reveal">
-              <div><strong>{masterPlanCounts["in-progress"]}</strong><span>{ur ? "جاری منصوبے" : "In Progress"}</span></div>
-              <div><strong>{masterPlanCounts.proposed}</strong><span>{ur ? "تجویز کردہ" : "Proposed"}</span></div>
-              <div><strong>{masterPlanCounts.completed}</strong><span>{ur ? "مکمل" : "Completed"}</span></div>
-              <div><strong>{masterPlanProjects.length}</strong><span>{ur ? "کل منصوبے" : "Total Projects"}</span></div>
-            </div>
-
-            <div className="master-plan-grid">
-              {masterPlanProjects.map((system) => {
-                const profile = profileFor(system);
-                const status = projectProgressStatus(profile);
-                const completion = projectCompletion(profile);
-                const projectRecords = isMosqueParent(system)
-                  ? mosqueParentRecords(transactions)
-                  : isWelfareParent(system)
-                    ? welfareParentRecords(transactions)
-                    : transactions.filter((record) => record.systemId === system.id);
-                const projectTotals = totalsFor(projectRecords);
-                const budget = Math.max(0, Number(profile.budget) || 0);
-                const plan = ur
-                  ? (profile.planUr || profile.planEn || systemDescription(system))
-                  : (profile.planEn || profile.planUr || systemDescription(system));
-                const financialProject = !isBloodBankProject(system);
-
-                return (
-                  <article className="master-plan-card reveal" key={"master-plan-" + system.id}>
-                    <div className="master-plan-card__top">
-                      <span className="master-plan-card__icon"><ProjectIcon project={system} size={28} /></span>
-                      <span className={"master-plan-card__status master-plan-card__status--" + status}>{projectStatusLabel(status, ur)}</span>
-                    </div>
-                    <h3>{systemName(system)}</h3>
-                    <p>{plan}</p>
-                    <div className="master-plan-card__progress">
-                      <div><span>{ur ? "تکمیل" : "Completion"}</span><b>{completion}%</b></div>
-                      <div className="master-plan-card__bar"><span style={{ width: completion + "%" }} /></div>
-                    </div>
-                    {financialProject ? (
-                      <div className="master-plan-card__finance">
-                        <div><small>{ur ? "بجٹ" : "Budget"}</small><strong>{budget ? `Rs. ${budget.toLocaleString()}` : "—"}</strong></div>
-                        <div><small>{ur ? "جمع شدہ" : "Collected"}</small><strong>Rs. {projectTotals.income.toLocaleString()}</strong></div>
-                        <div><small>{ur ? "خرچ" : "Spent"}</small><strong>Rs. {projectTotals.expenses.toLocaleString()}</strong></div>
-                        <div><small>{ur ? "بیلنس" : "Balance"}</small><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
-                      </div>
-                    ) : (
-                      <div className="master-plan-card__service-note">{ur ? "کمیونٹی سروس — مالی عطیات سے الگ" : "Community service — separate from financial donations"}</div>
-                    )}
-                    <div className="master-plan-card__dates">
-                      <span><small>{ur ? "آغاز" : "Start"}</small><b>{profile.startDate || "—"}</b></span>
-                      <span><small>{ur ? "متوقع تکمیل" : "Expected"}</small><b>{profile.expectedCompletionDate || "—"}</b></span>
-                    </div>
-                    <button type="button" onClick={() => setSelectedSystemId(system.id)}>{ur ? "تفصیل اور ریکارڈ دیکھیں" : "View details & record"} →</button>
-                  </article>
-                );
-              })}
-            </div>
           </div>
         </section>
 
