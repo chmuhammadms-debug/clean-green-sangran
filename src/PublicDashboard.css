@@ -151,6 +151,7 @@ button { cursor: pointer; }
 
 .hero { position: relative; min-height: 760px; height: 100vh; color: white; background: #061f12; }
 .hero-slide { position: absolute; inset: 0; background-position: center; background-size: cover; opacity: 0; transform: scale(1.06); transition: opacity 1.1s ease, transform 6s ease; }
+.hero-slide__fit { display: none; }
 .hero-slide--active { opacity: 1; transform: scale(1); }
 .hero-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(2,22,12,.9) 0%, rgba(2,22,12,.62) 42%, rgba(2,22,12,.12) 76%), linear-gradient(0deg, rgba(2,22,12,.62), transparent 45%); }
 .hero-content { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; width: min(1200px, calc(100% - 48px)); height: 100%; margin: auto; padding-top: 60px; }
@@ -1517,6 +1518,31 @@ body.gallery-open { overflow: hidden; }
   .hero-shade {
     background:
       linear-gradient(180deg, rgba(2,22,12,.22) 0%, rgba(2,22,12,.04) 42%, rgba(2,22,12,.12) 68%, rgba(2,22,12,.48) 100%);
+  }
+
+  .hero-slide {
+    overflow: hidden;
+  }
+
+  .hero-slide::before {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,22,12,.28);
+    backdrop-filter: blur(11px);
+    content: "";
+  }
+
+  .hero-slide__fit {
+    position: absolute;
+    z-index: 1;
+    top: 76px;
+    left: 0;
+    display: block;
+    width: 100%;
+    height: calc(100% - 202px);
+    object-fit: contain;
+    object-position: center;
+    filter: drop-shadow(0 14px 28px rgba(0,0,0,.24));
   }
 
   .public-site > main > .projects-section {
