@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import "./ProjectManager.css";
 import ProjectIcon from "./ProjectIcon";
 import { uploadWebsiteImage, uploadWebsiteImages } from "./mediaUpload";
-import { isMosqueChild } from "./mosqueManagement";
+import {
+  isMosqueChild,
+  isMosqueProject,
+  mosqueProjectParentId,
+} from "./mosqueManagement";
 import { isWelfareChild } from "./welfareManagement";
 
 function buildItems(systems = [], settings = {}) {
@@ -11,6 +15,7 @@ function buildItems(systems = [], settings = {}) {
     const profile = profiles[system.id] || {};
     return {
       id: system.id,
+      parentMosqueId: profile.parentMosqueId || mosqueProjectParentId(system, profiles) || "",
       nameEn: profile.nameEn || system.name || "",
       nameUr: profile.nameUr || system.nameUr || "",
       descriptionEn: profile.descriptionEn || system.description || "",
@@ -23,8 +28,8 @@ function buildItems(systems = [], settings = {}) {
           ? system.galleryUrls.join("\n")
           : "",
       isActive: system.isActive !== false,
-      status: profile.status || "proposed",
-      budget: profile.budget ?? "",
+      status: profile.status || system.status || "proposed",
+      budget: profile.budget ?? system.budget ?? "",
       completionPercent: Number.isFinite(Number(profile.completionPercent))
         ? Math.max(0, Math.min(100, Number(profile.completionPercent)))
         : 0,
@@ -101,6 +106,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     const id = `project-${Date.now()}`;
     setItems((current) => [...current, {
       id,
+      parentMosqueId: "",
       nameEn: "New Community Project",
       nameUr: "نیا عوامی منصوبہ",
       descriptionEn: "Transparent community project records.",
@@ -134,6 +140,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     const cleanItems = items.filter((item) => item.nameEn.trim());
     const nextSystems = cleanItems.map((item) => ({
       id: item.id,
+      parentMosqueId: item.parentMosqueId || undefined,
       name: item.nameEn.trim(),
       description: item.descriptionEn.trim() || "Community management system",
       icon: item.icon.trim() || "📁",
@@ -148,6 +155,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         descriptionUr: item.descriptionUr.trim(),
         coverImage: item.coverImage.trim(),
         galleryUrls: item.galleryText.split(/\r?\n/).map((url) => url.trim()).filter(Boolean),
+        parentMosqueId: item.parentMosqueId || "",
         status: item.status || "proposed",
         budget: Math.max(0, Number(item.budget) || 0),
         completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
@@ -180,13 +188,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
           {items.map((item, index) => (
             <article className="project-editor" id={`project-editor-${item.id}`} key={item.id}>
               <div className="project-editor__top">
-                <div className="project-editor__identity"><ProjectIcon project={item} size={34} /><div><small>{isMosqueChild(item) ? "MOSQUE ACCOUNT" : isWelfareChild(item) ? "WELFARE PROJECT" : `PROJECT ${index + 1}`}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
+                <div className="project-editor__identity"><ProjectIcon project={item} size={34} /><div><small>{isMosqueProject(item) ? "MOSQUE WORK PROJECT" : isMosqueChild(item) ? "MOSQUE ACCOUNT" : isWelfareChild(item) ? "WELFARE PROJECT" : `PROJECT ${index + 1}`}</small><strong>{item.nameEn || "Untitled Project"}</strong></div></div>
                 <label className="project-editor__visibility"><input type="checkbox" checked={item.isActive !== false} onChange={(event) => updateItem(item.id, "isActive", event.target.checked)} /><b>{item.isActive !== false ? "Public" : "Hidden"}</b></label>
               </div>
 
               <div className="project-editor__grid">
                 <label><span>Icon</span><input value={item.icon} onChange={(event) => updateItem(item.id, "icon", event.target.value)} placeholder="🌿" /></label>
                 <label><span>Project ID</span><input value={item.id} disabled /></label>
+                {item.parentMosqueId && <label><span>Parent mosque account</span><input value={item.parentMosqueId} disabled /></label>}
                 <label><span>English name</span><input value={item.nameEn} onChange={(event) => updateItem(item.id, "nameEn", event.target.value)} /></label>
                 <label><span>اردو نام</span><input dir="rtl" value={item.nameUr} onChange={(event) => updateItem(item.id, "nameUr", event.target.value)} /></label>
                 <label><span>English description</span><textarea rows="3" value={item.descriptionEn} onChange={(event) => updateItem(item.id, "descriptionEn", event.target.value)} /></label>
@@ -199,7 +208,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                   </div>
                   <div className="project-progress-editor__bar"><span style={{ width: `${Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%` }} /></div>
                   <div className="project-progress-editor__grid">
-                    <label><span>Status / حالت</span><select value={item.status} onChange={(event) => updateItem(item.id, "status", event.target.value)}><option value="proposed">Proposed</option><option value="in-progress">In Progress</option><option value="completed">Completed</option></select></label>
+                    <label><span>Status / حالت</span><select value={item.status} onChange={(event) => updateItem(item.id, "status", event.target.value)}><option value="proposed">Proposed</option><option value="approved">Approved</option><option value="fundraising">Fundraising</option><option value="in-progress">In Progress</option><option value="completed">Completed</option><option value="on-hold">On Hold</option></select></label>
                     <label><span>Total Budget (Rs.) / بجٹ</span><input type="number" min="0" step="1" value={item.budget} onChange={(event) => updateItem(item.id, "budget", event.target.value)} placeholder="0" /></label>
                     <label><span>Completion % / تکمیل</span><input type="number" min="0" max="100" step="1" value={item.completionPercent} onChange={(event) => updateItem(item.id, "completionPercent", event.target.value)} /></label>
                     <label><span>Start Date / آغاز</span><input type="date" value={item.startDate} onChange={(event) => updateItem(item.id, "startDate", event.target.value)} /></label>
