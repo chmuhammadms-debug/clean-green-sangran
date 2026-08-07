@@ -12,20 +12,22 @@ import SuggestionBox from "./SuggestionBox";
 import ComplaintPortal from "./ComplaintPortal";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
-import MosqueProjectsHub from "./MosqueProjectsHub";
+import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import VillageMapSection from "./VillageMapSection";
 import {
+  isWorkItem,
+  recordsForProject,
+  workParentId,
+} from "./workItems";
+import {
   defaultMosqueSystems,
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
-  isMosqueProject,
-  mosqueAccountRecords,
-  mosqueParentRecords,
-  mosqueProjectParentId,
+  mosqueChildSystems,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -33,7 +35,7 @@ import {
   ensureWelfareSystems,
   isWelfareChild,
   isWelfareParent,
-  welfareParentRecords,
+  welfareChildSystems,
 } from "./welfareManagement";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
@@ -805,13 +807,22 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const totals = useMemo(() => totalsFor(transactions), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
   const projectProfiles = settings.projectProfilesByProject || {};
-  const selectedAllRecords = isMosqueParent(selectedSystemId)
-    ? mosqueParentRecords(transactions)
-    : isMosqueChild(selectedSystemId)
-      ? mosqueAccountRecords(transactions, systems, selectedSystemId, projectProfiles)
-    : isWelfareParent(selectedSystemId)
-      ? welfareParentRecords(transactions)
-      : transactions.filter((record) => record.systemId === selectedSystemId);
+  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
+  const relatedChildIdsFor = (systemOrId) => (
+    isMosqueParent(systemOrId)
+      ? mosqueChildSystems(systems).map((system) => system.id)
+      : isWelfareParent(systemOrId)
+        ? welfareChildSystems(systems).map((system) => system.id)
+        : []
+  );
+  const publicRecordsFor = (systemOrId) => recordsForProject(
+    transactions,
+    systems,
+    typeof systemOrId === "object" ? systemOrId?.id : systemOrId,
+    projectProfiles,
+    relatedChildIdsFor(systemOrId)
+  );
+  const selectedAllRecords = publicRecordsFor(selectedSystemId);
   const selectedTotals = totalsFor(selectedAllRecords);
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
@@ -895,11 +906,17 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       .join("")
       .toUpperCase()
     : "";
-  const imageFor = (system) => profileFor(system).coverImage
-    || system.coverImage
-    || (isMosqueChild(system) || isMosqueProject(system, projectProfiles) ? projectImages.mosque : projectImages[system.id])
-    || (isWelfareChild(system) ? projectImages.welfare : null)
-    || welfareImage;
+  const imageFor = (system) => {
+    const ownImage = profileFor(system).coverImage || system.coverImage;
+    if (ownImage) return ownImage;
+    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
+    const source = parent || system;
+    return profileFor(source).coverImage
+      || source.coverImage
+      || (isMosqueChild(source) ? projectImages.mosque : projectImages[source.id])
+      || (isWelfareChild(source) ? projectImages.welfare : null)
+      || welfareImage;
+  };
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
@@ -908,7 +925,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     if (Array.isArray(system.galleryUrls) && system.galleryUrls.length) {
       return system.galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
-    return (isMosqueChild(system) || isMosqueProject(system, projectProfiles)
+    return (isMosqueChild(system)
       ? projectGalleries.mosque
       : projectGalleries[system.id])
       || [{ image: imageFor(system), title: systemName(system) }];
@@ -918,13 +935,17 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
       return slidesByProject[system.id] || [];
     }
-    if (isMosqueChild(system) || isMosqueProject(system, projectProfiles)) return slidesByProject.mosque || [];
-    if (isWelfareChild(system)) return slidesByProject.welfare || [];
-    return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
+    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
+    const source = parent || system;
+    if (parent && Object.prototype.hasOwnProperty.call(slidesByProject, source.id)) {
+      return slidesByProject[source.id] || [];
+    }
+    if (isMosqueChild(source)) return slidesByProject.mosque || [];
+    if (isWelfareChild(source)) return slidesByProject.welfare || [];
+    return isBloodBankProject(source) ? (slidesByProject.blood || []) : [];
   };
-  const selectedMosqueProjectParentId = mosqueProjectParentId(selectedSystem, projectProfiles);
   const selectedParentId = selectedSystem
-    ? (selectedMosqueProjectParentId || (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null))
+    ? (selectedWorkParentId || (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null))
     : null;
   const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
   const moveGallery = (direction) => setGalleryIndex((current) => {
@@ -975,10 +996,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </button>
           <div className="nav-actions project-nav-actions">
             <button className="project-top-back" onClick={() => setSelectedSystemId(selectedParentId)}>
-              {selectedMosqueProjectParentId
-                ? (ur ? "← مسجد کے منصوبے" : "← Mosque Projects")
+              {selectedWorkParentId
+                ? (ur ? "← منصوبے کے کام" : "← Project Works")
                 : isMosqueChild(selectedSystem)
-                  ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
+                ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
                 : isWelfareChild(selectedSystem)
                   ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
                 : (ur ? "← واپس" : "← Back")}
@@ -1045,21 +1066,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   {isBloodBankProject(selectedSystem) ? (
                     <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} />
                   ) : !isWelfareChild(selectedSystem) ? (
-                    <>
-                      <MoneyCards totals={selectedTotals} language={language} />
-                      {isMosqueChild(selectedSystem) && (
-                        <MosqueProjectsHub
-                          mosque={selectedSystem}
-                          systems={systems}
-                          transactions={transactions}
-                          profiles={projectProfiles}
-                          onOpenSystem={setSelectedSystemId}
-                          language={language}
-                          getName={systemName}
-                          getDescription={systemDescription}
-                        />
-                      )}
-                    </>
+                    <MoneyCards totals={selectedTotals} language={language} />
                   ) : (
                     <div className="welfare-central-fund-note">
                       <b>{ur ? "مرکزی فلاحی فنڈ سے منسلک" : "Connected to the central welfare fund"}</b>
@@ -1101,6 +1108,21 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       </div>
                   </div>
                 </>
+              )}
+              {!isBloodBankProject(selectedSystem)
+                && !isWelfareChild(selectedSystem)
+                && !isMosqueParent(selectedSystem)
+                && !isWorkItem(selectedSystem, projectProfiles) && (
+                <WorkItemsHub
+                  project={selectedSystem}
+                  systems={systems}
+                  transactions={transactions}
+                  profiles={projectProfiles}
+                  onOpenSystem={setSelectedSystemId}
+                  language={language}
+                  getName={systemName}
+                  getDescription={systemDescription}
+                />
               )}
               {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && (
                 <div className="ledger-card reveal">
@@ -1173,10 +1195,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
           </nav>
           <button onClick={() => setSelectedSystemId(selectedParentId)}>
-            {selectedMosqueProjectParentId
-              ? (ur ? "مسجد کے منصوبوں پر واپس جائیں ↑" : "Back to Mosque Projects ↑")
+            {selectedWorkParentId
+              ? (ur ? "منصوبے کے کاموں پر واپس جائیں ↑" : "Back to Project Works ↑")
               : isMosqueChild(selectedSystem)
-                ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
+              ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
               : isWelfareChild(selectedSystem)
                 ? (ur ? "فلاحی منصوبوں پر واپس جائیں ↑" : "Back to Welfare Management ↑")
               : (ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑")}
@@ -1255,13 +1277,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
           <div className="project-grid">
             {topLevelSystems(systems).map((system, index) => {
-              const projectTotals = totalsFor(
-                isMosqueParent(system)
-                  ? mosqueParentRecords(transactions)
-                  : isWelfareParent(system)
-                    ? welfareParentRecords(transactions)
-                  : transactions.filter((record) => record.systemId === system.id)
-              );
+              const projectTotals = totalsFor(publicRecordsFor(system));
               return (
                 <article
                   className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
