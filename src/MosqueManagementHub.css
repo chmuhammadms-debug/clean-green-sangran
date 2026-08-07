@@ -67,9 +67,6 @@
 .mosque-account-card__number { color: #84cc16; font-weight: 900; letter-spacing: .14em; }
 .mosque-account-card h3 { margin: 13px 0 7px; font-size: clamp(20px, 2.5vw, 28px); }
 .mosque-account-card > p { min-height: 48px; margin: 0; color: #647568; line-height: 1.55; }
-.mosque-account-card__projects { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding: 9px 11px; border: 1px dashed #bbdfc4; border-radius: 11px; color: #4d7c0f; background: #f7fff2; }
-.mosque-account-card__projects span { font-size: 10px; font-weight: 900; letter-spacing: .09em; }
-.mosque-account-card__projects b { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; color: white; background: #166534; font-size: 12px; }
 
 .mosque-account-card__stats {
   display: grid;
