@@ -11,15 +11,19 @@ import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import ComplaintAdmin from "./ComplaintAdmin";
 import MosqueManagementHub from "./MosqueManagementHub";
+import MosqueProjectsHub from "./MosqueProjectsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import {
   defaultMosqueSystems,
+  createMosqueProjectId,
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
+  mosqueAccountRecords,
   mosqueParentRecords,
+  mosqueProjectParentId,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -497,9 +501,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const selectedSystem = systems.find(
     (system) => system.id === selectedSystemId
   );
+  const projectProfiles = siteSettings.projectProfilesByProject || {};
+  const selectedMosqueProjectParentId = mosqueProjectParentId(selectedSystem, projectProfiles);
 
   const selectedTransactions = (isMosqueParent(selectedSystemId)
     ? mosqueParentRecords(transactions)
+    : isMosqueChild(selectedSystemId)
+      ? mosqueAccountRecords(transactions, systems, selectedSystemId, projectProfiles)
     : isWelfareParent(selectedSystemId)
       ? welfareParentRecords(transactions)
       : transactions.filter((record) => record.systemId === selectedSystemId))
@@ -590,6 +598,50 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     setActiveSection("income");
     setDonorSearch("");
     resetForm();
+  }
+
+  async function createMosqueProject(parentMosqueId, project) {
+    const id = createMosqueProjectId(parentMosqueId);
+    const name = project.nameEn.trim() || "New Mosque Project";
+    const nameUr = project.nameUr.trim() || "مسجد کا نیا پروجیکٹ";
+    const description = project.descriptionEn.trim() || "Separate mosque development project records.";
+    const descriptionUr = project.descriptionUr.trim() || "مسجد کے ترقیاتی کام کا الگ اور شفاف ریکارڈ۔";
+    const nextProject = {
+      id,
+      parentMosqueId,
+      name,
+      nameUr,
+      description,
+      descriptionUr,
+      icon: project.icon.trim() || "🛠️",
+      isActive: true,
+    };
+    const nextSettings = {
+      ...siteSettings,
+      projectProfilesByProject: {
+        ...projectProfiles,
+        [id]: {
+          parentMosqueId,
+          nameEn: name,
+          nameUr,
+          descriptionEn: description,
+          descriptionUr,
+          coverImage: "",
+          galleryUrls: [],
+          status: project.status || "proposed",
+          budget: Math.max(0, Number(project.budget) || 0),
+          completionPercent: Math.max(0, Math.min(100, Number(project.completionPercent) || 0)),
+          startDate: project.startDate || "",
+          expectedCompletionDate: project.expectedCompletionDate || "",
+          planEn: "",
+          planUr: "",
+        },
+      },
+    };
+
+    await onSaveSiteSettings(nextSettings);
+    setSystems((current) => normalizeSystems([...current, nextProject]));
+    openSystem(id);
   }
 
   function openAdminNotification(item) {
@@ -1277,7 +1329,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               className="logout-button"
               onClick={() =>
                 setSelectedSystemId(
-                  isMosqueChild(selectedSystem)
+                  selectedMosqueProjectParentId
+                    ? selectedMosqueProjectParentId
+                    : isMosqueChild(selectedSystem)
                     ? "mosque"
                     : isWelfareChild(selectedSystem)
                       ? "welfare"
@@ -1290,7 +1344,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 background: "#166534",
               }}
             >
-              {isMosqueChild(selectedSystem)
+              {selectedMosqueProjectParentId
+                ? "← Mosque Projects"
+                : isMosqueChild(selectedSystem)
                 ? "← Mosque Management"
                 : isWelfareChild(selectedSystem)
                   ? "← Welfare Management"
@@ -1313,6 +1369,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
+                profiles={projectProfiles}
                 onOpenSystem={openSystem}
                 adminMode
               />
@@ -1362,6 +1419,19 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     : project.galleryUrls;
                   return Array.isArray(gallery) ? gallery.length : 0;
                 }}
+                adminMode
+              />
+            )}
+            {isMosqueChild(selectedSystem) && (
+              <MosqueProjectsHub
+                mosque={selectedSystem}
+                systems={systems}
+                transactions={transactions}
+                profiles={projectProfiles}
+                onOpenSystem={openSystem}
+                onCreateProject={createMosqueProject}
+                getName={(project) => projectProfiles[project.id]?.nameEn || project.name}
+                getDescription={(project) => projectProfiles[project.id]?.descriptionEn || project.description}
                 adminMode
               />
             )}
