@@ -1509,40 +1509,76 @@ body.gallery-open { overflow: hidden; }
   .project-progress-overview__meta { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 
-/* Mobile homepage focus: keep the opening village photography clear and surface projects first. */
+/* Mobile homepage focus: show the full village photo cleanly, then the project status area. */
 @media (max-width: 600px) {
+  .hero {
+    height: auto;
+    min-height: 0;
+    padding: calc(76px + 56.25vw + 14px) 14px 38px;
+    background: #052b18;
+  }
+
   .hero-content {
     display: none;
   }
 
   .hero-shade {
-    background:
-      linear-gradient(180deg, rgba(2,22,12,.22) 0%, rgba(2,22,12,.04) 42%, rgba(2,22,12,.12) 68%, rgba(2,22,12,.48) 100%);
+    display: none;
   }
 
   .hero-slide {
+    top: 76px;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: 56.25vw;
     overflow: hidden;
+    background-color: #061f12;
+    background-image: none !important;
+    transform: none;
+    transition: opacity 1.1s ease;
+  }
+
+  .hero-slide--active {
+    transform: none;
   }
 
   .hero-slide::before {
-    position: absolute;
-    inset: 0;
-    background: rgba(2,22,12,.28);
-    backdrop-filter: blur(11px);
-    content: "";
+    display: none;
+    content: none;
   }
 
   .hero-slide__fit {
     position: absolute;
     z-index: 1;
-    top: 76px;
-    left: 0;
+    inset: 0;
     display: block;
     width: 100%;
-    height: calc(100% - 202px);
+    height: 100%;
     object-fit: contain;
     object-position: center;
-    filter: drop-shadow(0 14px 28px rgba(0,0,0,.24));
+    filter: none;
+  }
+
+  .project-status-ticker {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    transform: none;
+  }
+
+  .hero-progress {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .hero-scroll {
+    display: none;
   }
 
   .public-site > main > .projects-section {
