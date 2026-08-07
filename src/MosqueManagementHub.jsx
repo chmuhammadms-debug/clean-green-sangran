@@ -1,9 +1,6 @@
 import ProjectIcon from "./ProjectIcon";
-import {
-  mosqueAccountRecords,
-  mosqueChildSystems,
-  mosqueProjectsFor,
-} from "./mosqueManagement";
+import { mosqueChildSystems } from "./mosqueManagement";
+import { recordsForProject } from "./workItems";
 import "./MosqueManagementHub.css";
 
 function totalsFor(records) {
@@ -36,22 +33,21 @@ export default function MosqueManagementHub({
           <span>{ur ? "چار مساجد، چار الگ شفاف حساب" : "FOUR MOSQUES • FOUR SEPARATE ACCOUNTS"}</span>
           <h2>{ur ? "اپنی مسجد منتخب کریں" : "Select a mosque account"}</h2>
           <p>{ur
-            ? "ہر مسجد کا الگ حساب ہوگا، اور اس کے اندر مینار، ٹائلز، سولر، واش روم اور دوسرے کام الگ منصوبوں میں محفوظ ہوں گے۔"
-            : "Each mosque has its own account, with minaret, tiles, solar, washroom and other work kept as separate projects."}</p>
+            ? "ہر مسجد کے عطیات، اخراجات، رسیدیں، ڈونر ریکارڈ اور رپورٹس مکمل طور پر الگ محفوظ ہوں گی۔"
+            : "Each mosque has its own donations, expenses, receipts, donor history and reports."}</p>
         </div>
         <div className="mosque-hub__count"><strong>{mosques.length}</strong><small>{ur ? "مساجد" : "MOSQUES"}</small></div>
       </div>
 
       {adminMode && (
         <div className="mosque-hub__admin-note">
-          <b>Admin control:</b> مسجد کھولیں، پھر + نیا پروجیکٹ سے اس مسجد کا کوئی بھی نیا کام شامل کریں۔ ہر کام کی تفصیل اور مالی ریکارڈ الگ ہوگا۔
+          <b>Admin control:</b> مسجد کھولیں اور ضرورت کے مطابق <strong>+ نیا کام</strong> بنائیں۔ ہر کام کا حساب الگ ہوگا۔
         </div>
       )}
 
       <div className="mosque-hub__grid">
         {mosques.map((mosque, index) => {
-          const totals = totalsFor(mosqueAccountRecords(transactions, systems, mosque.id, profiles));
-          const projects = mosqueProjectsFor(systems, mosque.id, profiles);
+          const totals = totalsFor(recordsForProject(transactions, systems, mosque.id, profiles));
           return (
             <article className="mosque-account-card" key={mosque.id}>
               <div className="mosque-account-card__top">
@@ -60,10 +56,6 @@ export default function MosqueManagementHub({
               </div>
               <h3>{getName(mosque)}</h3>
               <p>{getDescription(mosque)}</p>
-              <div className="mosque-account-card__projects">
-                <span>{ur ? "الگ ترقیاتی منصوبے" : "SEPARATE WORK PROJECTS"}</span>
-                <b>{projects.length}</b>
-              </div>
               <div className="mosque-account-card__stats">
                 <span><small>{ur ? "عطیات" : "Donations"}</small><b>Rs. {totals.donations.toLocaleString()}</b></span>
                 <span><small>{ur ? "اخراجات" : "Expenses"}</small><b>Rs. {totals.expenses.toLocaleString()}</b></span>
