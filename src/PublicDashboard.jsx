@@ -1196,7 +1196,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
       <section className="hero" id="home">
         {slides.map((slide, index) => (
-          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }} />
+          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }}><img className="hero-slide__fit" src={slide.image} alt="" aria-hidden="true" /></div>
         ))}
         <div className="hero-shade" />
         <div className={`hero-content ${ur ? "hero-content--urdu" : ""}`}>
