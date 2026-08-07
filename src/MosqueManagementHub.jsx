@@ -1,5 +1,6 @@
 import ProjectIcon from "./ProjectIcon";
 import { mosqueChildSystems } from "./mosqueManagement";
+import { recordsForProject } from "./workItems";
 import "./MosqueManagementHub.css";
 
 function totalsFor(records) {
@@ -15,6 +16,7 @@ function totalsFor(records) {
 export default function MosqueManagementHub({
   systems,
   transactions,
+  profiles = {},
   onOpenSystem,
   language = "en",
   getName = (system) => system.name,
@@ -39,13 +41,13 @@ export default function MosqueManagementHub({
 
       {adminMode && (
         <div className="mosque-hub__admin-note">
-          <b>Admin control:</b> Project Manager میں ہر مسجد کا English/Urdu نام، تعارف، آئیکن، کور اور گیلری تبدیل کی جاسکتی ہے۔
+          <b>Admin control:</b> مسجد کھولیں اور ضرورت کے مطابق <strong>+ نیا کام</strong> بنائیں۔ ہر کام کا حساب الگ ہوگا۔
         </div>
       )}
 
       <div className="mosque-hub__grid">
         {mosques.map((mosque, index) => {
-          const totals = totalsFor(transactions.filter((record) => record.systemId === mosque.id));
+          const totals = totalsFor(recordsForProject(transactions, systems, mosque.id, profiles));
           return (
             <article className="mosque-account-card" key={mosque.id}>
               <div className="mosque-account-card__top">

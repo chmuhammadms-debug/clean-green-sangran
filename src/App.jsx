@@ -11,6 +11,7 @@ import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import ComplaintAdmin from "./ComplaintAdmin";
 import MosqueManagementHub from "./MosqueManagementHub";
+import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
@@ -19,7 +20,7 @@ import {
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
-  mosqueParentRecords,
+  mosqueChildSystems,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -27,12 +28,18 @@ import {
   ensureWelfareSystems,
   isWelfareChild,
   isWelfareParent,
-  welfareParentRecords,
+  welfareChildSystems,
 } from "./welfareManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
 import { fetchDatabaseData, syncDatabaseData } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
+import {
+  createWorkItemId,
+  isWorkItem,
+  recordsForProject,
+  workParentId,
+} from "./workItems";
 
 const defaultSystems = [
   {
@@ -497,13 +504,23 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const selectedSystem = systems.find(
     (system) => system.id === selectedSystemId
   );
+  const projectProfiles = siteSettings.projectProfilesByProject || {};
+  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
+  const relatedChildIdsFor = (systemOrId) => (
+    isMosqueParent(systemOrId)
+      ? mosqueChildSystems(systems).map((system) => system.id)
+      : isWelfareParent(systemOrId)
+        ? welfareChildSystems(systems).map((system) => system.id)
+        : []
+  );
 
-  const selectedTransactions = (isMosqueParent(selectedSystemId)
-    ? mosqueParentRecords(transactions)
-    : isWelfareParent(selectedSystemId)
-      ? welfareParentRecords(transactions)
-      : transactions.filter((record) => record.systemId === selectedSystemId))
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const selectedTransactions = recordsForProject(
+    transactions,
+    systems,
+    selectedSystemId,
+    projectProfiles,
+    relatedChildIdsFor(selectedSystemId)
+  ).sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
     selectedTransactions
@@ -590,6 +607,49 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     setActiveSection("income");
     setDonorSearch("");
     resetForm();
+  }
+
+  async function createWork(parentProjectId, work) {
+    const name = work.name.trim();
+    if (!name) throw new Error("Work name is required.");
+    const description = work.description.trim();
+    const id = createWorkItemId(parentProjectId);
+    const nextWork = {
+      id,
+      parentProjectId,
+      name,
+      nameUr: name,
+      description,
+      descriptionUr: description,
+      icon: "🛠️",
+      isActive: true,
+    };
+    const nextSettings = {
+      ...siteSettings,
+      projectProfilesByProject: {
+        ...projectProfiles,
+        [id]: {
+          parentProjectId,
+          nameEn: name,
+          nameUr: name,
+          descriptionEn: description,
+          descriptionUr: description,
+          coverImage: "",
+          galleryUrls: [],
+          status: "in-progress",
+          budget: 0,
+          completionPercent: 0,
+          startDate: "",
+          expectedCompletionDate: "",
+          planEn: "",
+          planUr: "",
+        },
+      },
+    };
+
+    await onSaveSiteSettings(nextSettings);
+    setSystems((current) => normalizeSystems([...current, nextWork]));
+    openSystem(id);
   }
 
   function openAdminNotification(item) {
@@ -1277,11 +1337,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               className="logout-button"
               onClick={() =>
                 setSelectedSystemId(
-                  isMosqueChild(selectedSystem)
-                    ? "mosque"
-                    : isWelfareChild(selectedSystem)
-                      ? "welfare"
-                      : null
+                  selectedWorkParentId
+                    ? selectedWorkParentId
+                    : isMosqueChild(selectedSystem)
+                      ? "mosque"
+                      : isWelfareChild(selectedSystem)
+                        ? "welfare"
+                        : null
                 )
               }
               style={{
@@ -1290,11 +1352,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 background: "#166534",
               }}
             >
-              {isMosqueChild(selectedSystem)
-                ? "← Mosque Management"
-                : isWelfareChild(selectedSystem)
-                  ? "← Welfare Management"
-                  : "← Central Dashboard"}
+              {selectedWorkParentId
+                ? "← Project Works"
+                : isMosqueChild(selectedSystem)
+                  ? "← Mosque Management"
+                  : isWelfareChild(selectedSystem)
+                    ? "← Welfare Management"
+                    : "← Central Dashboard"}
             </button>
 
             <h1 className="page-heading">
@@ -1313,6 +1377,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
+                profiles={projectProfiles}
                 onOpenSystem={openSystem}
                 adminMode
               />
@@ -1362,6 +1427,17 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                     : project.galleryUrls;
                   return Array.isArray(gallery) ? gallery.length : 0;
                 }}
+                adminMode
+              />
+            )}
+            {!isWorkItem(selectedSystem, projectProfiles) && (
+              <WorkItemsHub
+                project={selectedSystem}
+                systems={systems}
+                transactions={transactions}
+                profiles={projectProfiles}
+                onOpenSystem={openSystem}
+                onCreateWork={createWork}
                 adminMode
               />
             )}
@@ -1886,16 +1962,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
             <div className="summary-grid">
               {topLevelSystems(systems).map((system) => {
-                const systemTotals = totalsFor(
-                  isMosqueParent(system)
-                    ? mosqueParentRecords(transactions)
-                    : isWelfareParent(system)
-                      ? welfareParentRecords(transactions)
-                    : transactions.filter(
-                        (record) =>
-                          record.systemId === system.id
-                      )
-                );
+                const systemTotals = totalsFor(recordsForProject(
+                  transactions,
+                  systems,
+                  system.id,
+                  projectProfiles,
+                  relatedChildIdsFor(system)
+                ));
 
                 return (
                   <button

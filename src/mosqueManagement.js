@@ -46,7 +46,8 @@ export function isMosqueParent(systemOrId) {
 
 export function isMosqueChild(systemOrId) {
   const id = typeof systemOrId === "object" ? systemOrId?.id : systemOrId;
-  return String(id || "").startsWith(`${MOSQUE_PARENT_ID}-`);
+  const value = String(id || "");
+  return value.startsWith(`${MOSQUE_PARENT_ID}-`) && !value.startsWith("mosque-work-");
 }
 
 export function ensureMosqueSystems(systems = []) {
@@ -59,9 +60,13 @@ export function ensureMosqueSystems(systems = []) {
 }
 
 export function topLevelSystems(systems = []) {
-  return systems.filter((system) => (
-    !isMosqueChild(system) && !String(system?.id || "").startsWith("welfare-")
-  ));
+  return systems.filter((system) => {
+    const id = String(system?.id || "");
+    return !isMosqueChild(system)
+      && !id.startsWith("welfare-")
+      && !id.startsWith("work-")
+      && !id.startsWith("mosque-work-");
+  });
 }
 
 export function mosqueChildSystems(systems = []) {

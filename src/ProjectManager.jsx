@@ -4,10 +4,11 @@ import ProjectIcon from "./ProjectIcon";
 import { uploadWebsiteImage, uploadWebsiteImages } from "./mediaUpload";
 import { isMosqueChild } from "./mosqueManagement";
 import { isWelfareChild } from "./welfareManagement";
+import { isWorkItem } from "./workItems";
 
 function buildItems(systems = [], settings = {}) {
   const profiles = settings.projectProfilesByProject || {};
-  return systems.map((system) => {
+  return systems.filter((system) => !isWorkItem(system, profiles)).map((system) => {
     const profile = profiles[system.id] || {};
     return {
       id: system.id,
@@ -132,13 +133,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     event.preventDefault();
     setMessage("");
     const cleanItems = items.filter((item) => item.nameEn.trim());
-    const nextSystems = cleanItems.map((item) => ({
+    const workSystems = systems.filter((system) => isWorkItem(system, settings.projectProfilesByProject || {}));
+    const nextSystems = [...cleanItems.map((item) => ({
       id: item.id,
       name: item.nameEn.trim(),
       description: item.descriptionEn.trim() || "Community management system",
       icon: item.icon.trim() || "📁",
       isActive: item.isActive !== false,
-    }));
+    })), ...workSystems];
     const projectProfilesByProject = cleanItems.reduce((profiles, item) => ({
       ...profiles,
       [item.id]: {
@@ -156,7 +158,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         planEn: item.planEn.trim(),
         planUr: item.planUr.trim(),
       },
-    }), {});
+    }), { ...(settings.projectProfilesByProject || {}) });
 
     try {
       setSystems(nextSystems);
@@ -173,7 +175,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         <div><span>ADMIN PROJECT CONTROL</span><h2>Project Manager</h2></div>
         <button type="button" onClick={addProject}>+ نیا منصوبہ</button>
       </div>
-      <p className="project-manager__intro">یہاں سے ہر منصوبے کا اردو/انگریزی تعارف، آئیکن، کور تصویر، گیلری اور Public حالت تبدیل کریں۔ مسجد اور فلاحی منصوبوں کے تمام ذیلی اکاؤنٹس بھی الگ تبدیل کیے جاسکتے ہیں۔</p>
+      <p className="project-manager__intro">یہاں بڑے منصوبوں کی تفصیل تبدیل کریں۔ کسی منصوبے کے اندر نیا کام بنانے اور اس کا الگ حساب رکھنے کے لیے وہ منصوبہ کھول کر “+ نیا کام” استعمال کریں۔</p>
 
       <form onSubmit={saveProjects}>
         <div className="project-manager__list">
