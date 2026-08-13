@@ -35,7 +35,7 @@
 
 .work-items__add,
 .work-items__form button,
-.work-item-card > button {
+.work-item-card__actions button {
   border: 0;
   border-radius: 10px;
   color: #fff;
@@ -148,9 +148,24 @@
   font-size: 12px;
 }
 
-.work-item-card > button {
+.work-item-card__actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.work-item-card__actions button {
   width: 100%;
   padding: 10px 12px;
+}
+
+.work-item-card__actions .work-item-card__delete {
+  background: #b91c1c;
+}
+
+.work-item-card__actions button:disabled {
+  opacity: .65;
+  cursor: wait;
 }
 
 .work-items__empty {
