@@ -14,8 +14,10 @@ function CentralTools({
   setSystems,
   setTransactions,
   onOpenSystem,
+  onDeleteSystem,
 }) {
   const [search, setSearch] = useState("");
+  const [deletingSystemId, setDeletingSystemId] = useState("");
   const restoreInputRef = useRef(null);
 
   const searchedName = search.trim().toLowerCase();
@@ -166,33 +168,44 @@ function CentralTools({
     alert("System updated successfully");
   }
 
-  function deleteCustomSystem(system) {
+  async function deleteCustomSystem(system) {
     const relatedRecords = transactions.filter(
       (record) => record.systemId === system.id
     );
 
+    if (relatedRecords.length) {
+      alert(
+        `This project has ${relatedRecords.length} financial record(s), so it cannot be deleted yet. Delete or move those records first.`
+      );
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Delete "${system.name}" and its ${relatedRecords.length} record(s)? This action cannot be undone.`
+      `Permanently delete the empty project "${system.name}"? This action cannot be undone.`
     );
 
     if (!confirmed) {
       return;
     }
 
-    setSystems((currentSystems) =>
-      currentSystems.filter(
-        (currentSystem) =>
-          currentSystem.id !== system.id
-      )
-    );
-
-    setTransactions((currentRecords) =>
-      currentRecords.filter(
-        (record) => record.systemId !== system.id
-      )
-    );
-
-    alert("System deleted successfully");
+    setDeletingSystemId(String(system.id));
+    try {
+      if (onDeleteSystem) {
+        await onDeleteSystem(system);
+      } else {
+        setSystems((currentSystems) => currentSystems.filter(
+          (currentSystem) => currentSystem.id !== system.id
+        ));
+        setTransactions((currentRecords) => currentRecords.filter(
+          (record) => record.systemId !== system.id
+        ));
+      }
+      alert("System permanently deleted from the database");
+    } catch (error) {
+      alert(`System could not be deleted: ${error.message}`);
+    } finally {
+      setDeletingSystemId("");
+    }
   }
 
   return (
@@ -518,6 +531,7 @@ function CentralTools({
 
                     <button
                       type="button"
+                      disabled={deletingSystemId === String(system.id)}
                       onClick={() =>
                         deleteCustomSystem(system)
                       }
@@ -531,7 +545,7 @@ function CentralTools({
                         cursor: "pointer",
                       }}
                     >
-                      Delete
+                      {deletingSystemId === String(system.id) ? "Deleting..." : "Delete"}
                     </button>
                   </div>
                 )}
