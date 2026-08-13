@@ -105,6 +105,34 @@ export async function fetchPublicDatabaseData() {
   };
 }
 
+export async function deleteDatabaseProject(projectSlug) {
+  const slug = String(projectSlug || "").trim();
+  if (!slug) throw new Error("Project ID is required.");
+
+  const { data: project, error: lookupError } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  if (!project) return;
+
+  const { count: transactionCount, error: transactionError } = await supabase
+    .from("transactions")
+    .select("id", { count: "exact", head: true })
+    .eq("project_id", project.id);
+  if (transactionError) throw transactionError;
+  if (transactionCount) {
+    throw new Error(`This project has ${transactionCount} financial record(s). Delete or move those records before deleting the project.`);
+  }
+
+  const { error: projectError } = await supabase
+    .from("projects")
+    .delete()
+    .eq("id", project.id);
+  if (projectError) throw projectError;
+}
+
 export async function syncDatabaseData(systems, transactions) {
   const projectRows = systems.map((system) => ({
     slug: String(system.id),
