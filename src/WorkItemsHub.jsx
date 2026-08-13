@@ -22,6 +22,7 @@ export default function WorkItemsHub({
   profiles = {},
   onOpenSystem,
   onCreateWork,
+  onDeleteWork,
   language = "en",
   getName = (system) => system.name,
   getDescription = (system) => system.description,
@@ -32,6 +33,7 @@ export default function WorkItemsHub({
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyWork);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
   const [message, setMessage] = useState("");
 
   if (!adminMode && !works.length) return null;
@@ -50,6 +52,36 @@ export default function WorkItemsHub({
       setMessage(`کام محفوظ نہیں ہوسکا: ${error.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const removeWork = async (work) => {
+    if (!onDeleteWork) return;
+    const relatedRecords = transactions.filter(
+      (record) => String(record.systemId) === String(work.id)
+    );
+
+    if (relatedRecords.length) {
+      setMessage(ur
+        ? `اس کام میں ${relatedRecords.length} مالی ریکارڈ موجود ہیں۔ حساب محفوظ رکھنے کے لیے پہلے وہ ریکارڈ حذف یا منتقل کریں۔`
+        : `This work has ${relatedRecords.length} financial record(s). Delete or move those records first so the accounts remain safe.`);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Permanently delete the empty work "${getName(work)}"?\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(String(work.id));
+    setMessage("");
+    try {
+      await onDeleteWork(work);
+      setMessage(ur ? "کام مستقل طور پر حذف ہوگیا ہے۔" : "Work permanently deleted.");
+    } catch (error) {
+      setMessage(`${ur ? "کام حذف نہیں ہوسکا" : "Work could not be deleted"}: ${error.message}`);
+    } finally {
+      setDeletingId("");
     }
   };
 
@@ -127,11 +159,25 @@ export default function WorkItemsHub({
                 <span><small>{ur ? "خرچ" : "Spent"}</small><b>Rs. {totals.expenses.toLocaleString()}</b></span>
                 <span><small>{ur ? "بقایا" : "Balance"}</small><b>Rs. {totals.balance.toLocaleString()}</b></span>
               </div>
-              <button type="button" onClick={() => onOpenSystem(work.id)}>
-                {adminMode
-                  ? (ur ? "کام کا حساب کھولیں" : "Open work ledger")
-                  : (ur ? "کام کا ریکارڈ دیکھیں" : "View work record")}
-              </button>
+              <div className="work-item-card__actions">
+                <button type="button" onClick={() => onOpenSystem(work.id)}>
+                  {adminMode
+                    ? (ur ? "کام کا حساب کھولیں" : "Open work ledger")
+                    : (ur ? "کام کا ریکارڈ دیکھیں" : "View work record")}
+                </button>
+                {adminMode && onDeleteWork && (
+                  <button
+                    type="button"
+                    className="work-item-card__delete"
+                    disabled={deletingId === String(work.id)}
+                    onClick={() => removeWork(work)}
+                  >
+                    {deletingId === String(work.id)
+                      ? (ur ? "حذف ہو رہا ہے…" : "Deleting…")
+                      : (ur ? "کام حذف کریں" : "Delete Work")}
+                  </button>
+                )}
+              </div>
             </article>
           );
         })}
