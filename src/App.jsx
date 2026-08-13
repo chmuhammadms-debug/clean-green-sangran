@@ -381,7 +381,7 @@ function RecordsTable({
   );
 }
 
-function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
+function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthenticatedChange }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -409,6 +409,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const [dailyDate, setDailyDate] = useState(getToday());
   const [monthlyDate, setMonthlyDate] =
     useState(getCurrentMonth());
+
+  useEffect(() => {
+    onAuthenticatedChange?.(loggedIn);
+  }, [loggedIn, onAuthenticatedChange]);
 
   useEffect(() => {
     localStorage.setItem(
