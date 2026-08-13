@@ -129,6 +129,8 @@ function LaunchGate({ onAdminLogin }) {
 
 function Root() {
   const [adminMode, setAdminMode] = useState(false);
+  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
+  const [publicPreviewMode, setPublicPreviewMode] = useState(false);
   const [siteSettings, setSiteSettings] = useState(DEFAULT_SITE_SETTINGS);
   const [savingSettings, setSavingSettings] = useState(false);
 
@@ -143,40 +145,80 @@ function Root() {
     finally { setSavingSettings(false); }
   };
 
-  if (!adminMode && PUBLIC_LAUNCH_GATE) {
-    return <LaunchGate onAdminLogin={() => setAdminMode(true)} />;
+  const openAdmin = () => {
+    setPublicPreviewMode(false);
+    setAdminMode(true);
+  };
+
+  if (!adminMode && PUBLIC_LAUNCH_GATE && !publicPreviewMode) {
+    return <LaunchGate onAdminLogin={openAdmin} />;
   }
 
   if (!adminMode) {
-    return <PublicDashboard onAdminLogin={() => setAdminMode(true)} siteSettings={siteSettings} onSettingsChanged={loadSettings} />;
+    return (
+      <>
+        <PublicDashboard onAdminLogin={openAdmin} siteSettings={siteSettings} onSettingsChanged={loadSettings} />
+        {publicPreviewMode && adminAuthenticated && (
+          <button
+            type="button"
+            onClick={openAdmin}
+            style={{
+              position: "fixed",
+              right: "18px",
+              bottom: "18px",
+              zIndex: 10000,
+              padding: "11px 16px",
+              color: "white",
+              fontWeight: 800,
+              background: "#166534",
+              border: 0,
+              borderRadius: "10px",
+              boxShadow: "0 8px 22px rgba(22, 101, 52, 0.3)",
+              cursor: "pointer",
+            }}
+          >
+            ← Back to Admin
+          </button>
+        )}
+      </>
+    );
   }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setAdminMode(false)}
-        style={{
-          position: "fixed",
-          right: "18px",
-          bottom: "18px",
-          zIndex: 1000,
-          padding: "11px 16px",
-          color: "white",
-          fontWeight: 700,
-          background: "#2563eb",
-          border: 0,
-          borderRadius: "10px",
-          boxShadow: "0 8px 22px rgba(37, 99, 235, 0.3)",
-          cursor: "pointer",
-        }}
-      >
-        View Public Website
-      </button>
-      <App siteSettings={siteSettings} onSaveSiteSettings={publishSettings} savingSiteSettings={savingSettings} />
+      {adminAuthenticated && (
+        <button
+          type="button"
+          onClick={() => {
+            setPublicPreviewMode(true);
+            setAdminMode(false);
+          }}
+          style={{
+            position: "fixed",
+            right: "18px",
+            bottom: "18px",
+            zIndex: 1000,
+            padding: "11px 16px",
+            color: "white",
+            fontWeight: 700,
+            background: "#2563eb",
+            border: 0,
+            borderRadius: "10px",
+            boxShadow: "0 8px 22px rgba(37, 99, 235, 0.3)",
+            cursor: "pointer",
+          }}
+        >
+          Preview Public Website
+        </button>
+      )}
+      <App
+        siteSettings={siteSettings}
+        onSaveSiteSettings={publishSettings}
+        savingSiteSettings={savingSettings}
+        onAuthenticatedChange={setAdminAuthenticated}
+      />
     </>
   );
 }
 
 export default Root;
-
