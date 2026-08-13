@@ -77,7 +77,9 @@ export async function fetchPublicDatabaseData() {
   const [{ data: projects, error: projectError }, { data: records, error: recordError }] = await Promise.all([
     supabase.from("projects").select("id, slug, name, description, icon").eq("is_active", true).order("created_at"),
     supabase.from("transactions")
-      .select("*")
+      // Public pages do not render private receipt/photo attachments. Selecting
+      // only the visible columns keeps the mobile response small and reliable.
+      .select("id, app_id, project_id, transaction_type, donor_name, amount, payment_method, purpose, transaction_date")
       .eq("is_public", true)
       .eq("payment_status", "verified")
       .order("transaction_date", { ascending: false }),
@@ -98,11 +100,22 @@ export async function fetchPublicDatabaseData() {
       date: record.transaction_date,
       method: record.payment_method,
       details: record.purpose || "",
-      slipName: record.receipt_name || "",
-      slipData: decodeStoredMedia(record.receipt_url),
-      donorPhoto: decodeStoredMedia(record.donor_photo_url),
+      slipName: "",
+      slipData: "",
+      donorPhoto: "",
     })).filter((record) => record.systemId),
   };
+}
+
+export async function deleteDatabaseTransaction(recordId) {
+  const id = String(recordId || "").trim();
+  if (!id) throw new Error("Record ID is required.");
+
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("app_id", id);
+  if (error) throw error;
 }
 
 export async function deleteDatabaseProject(projectSlug) {
@@ -168,14 +181,5 @@ export async function syncDatabaseData(systems, transactions) {
   if (transactionRows.length) {
     const { error: upsertError } = await supabase.from("transactions").upsert(transactionRows, { onConflict: "app_id" });
     if (upsertError) throw upsertError;
-  }
-
-  const { data: databaseRecords, error: listError } = await supabase.from("transactions").select("id, app_id");
-  if (listError) throw listError;
-  const activeIds = new Set(transactions.map((record) => String(record.id)));
-  const deletedIds = databaseRecords.filter((record) => record.app_id && !activeIds.has(record.app_id)).map((record) => record.id);
-  if (deletedIds.length) {
-    const { error: deleteError } = await supabase.from("transactions").delete().in("id", deletedIds);
-    if (deleteError) throw deleteError;
   }
 }

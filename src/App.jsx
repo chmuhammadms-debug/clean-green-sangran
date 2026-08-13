@@ -32,7 +32,7 @@ import {
 } from "./welfareManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
-import { deleteDatabaseProject, fetchDatabaseData, syncDatabaseData } from "./dataService";
+import { deleteDatabaseProject, deleteDatabaseTransaction, fetchDatabaseData, syncDatabaseData } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
 import {
   createWorkItemId,
@@ -925,12 +925,20 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     resetForm();
   }
 
-  function deleteRecord(recordId) {
+  async function deleteRecord(recordId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this record?"
     );
 
     if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteDatabaseTransaction(recordId);
+    } catch (error) {
+      console.error(error);
+      alert(`Record could not be deleted: ${error.message}`);
       return;
     }
 
