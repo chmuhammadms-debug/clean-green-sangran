@@ -831,6 +831,20 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     .filter((record) => recordType === "all" || record.type === recordType)
     .filter((record) => String(record.person || "").toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => b.date.localeCompare(a.date));
+  const projectLedger = (
+    <div className="ledger-card reveal">
+      <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
+      <div className="ledger-toolbar">
+        <div className="filter-tabs">
+          {[["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]].map(([id, label]) => (
+            <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
+          ))}
+        </div>
+        <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
+      </div>
+      <RecordsTable records={filteredRecords} systems={systems} language={language} />
+    </div>
+  );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
   const donorCount = new Set(
     transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
@@ -1085,6 +1099,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                         : "This initiative does not maintain a separate donation or expense account. Its financial records are shown in the central welfare project."}</p>
                     </div>
                   )}
+                  {selectedSystem.id === "cemetery" && projectLedger}
                   {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                   {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
                     <WelfareOperationsPublic
@@ -1134,7 +1149,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   getDescription={systemDescription}
                 />
               )}
-              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && (
+              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && selectedSystem.id !== "cemetery" && (
                 <div className="ledger-card reveal">
                   <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
                   <div className="ledger-toolbar">
