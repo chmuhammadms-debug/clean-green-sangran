@@ -32,7 +32,7 @@ import {
 } from "./welfareManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
-import { fetchDatabaseData, syncDatabaseData } from "./dataService";
+import { deleteDatabaseProject, fetchDatabaseData, syncDatabaseData } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
 import {
   createWorkItemId,
@@ -649,6 +649,49 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     await onSaveSiteSettings(nextSettings);
     setSystems((current) => normalizeSystems([...current, nextWork]));
     openSystem(id);
+  }
+
+  async function deleteSystemPermanently(system) {
+    const systemId = String(system?.id || "");
+    if (!systemId) throw new Error("Project ID is missing.");
+
+    const childIds = systems
+      .filter((candidate) => workParentId(candidate, projectProfiles) === systemId)
+      .map((candidate) => String(candidate.id));
+    const deletedIds = new Set([...childIds, systemId]);
+    const relatedRecordCount = transactions.filter(
+      (record) => deletedIds.has(String(record.systemId))
+    ).length;
+    if (relatedRecordCount) {
+      throw new Error(`This project contains ${relatedRecordCount} financial record(s). Delete or move those records first so the accounts remain safe.`);
+    }
+
+    for (const deletedId of [...childIds, systemId]) {
+      await deleteDatabaseProject(deletedId);
+    }
+
+    setTransactions((current) => current.filter(
+      (record) => !deletedIds.has(String(record.systemId))
+    ));
+    setSystems((current) => normalizeSystems(current.filter(
+      (candidate) => !deletedIds.has(String(candidate.id))
+    )));
+
+    if (deletedIds.has(String(selectedSystemId || ""))) {
+      const parentId = workParentId(system, projectProfiles);
+      setSelectedSystemId(parentId && !deletedIds.has(parentId) ? parentId : null);
+    }
+
+    const nextProfiles = { ...projectProfiles };
+    deletedIds.forEach((deletedId) => delete nextProfiles[deletedId]);
+    try {
+      await onSaveSiteSettings({
+        ...siteSettings,
+        projectProfilesByProject: nextProfiles,
+      });
+    } catch (error) {
+      console.warn("Project was deleted, but its unused profile could not be cleaned up.", error);
+    }
   }
 
   function openAdminNotification(item) {
@@ -1437,6 +1480,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 profiles={projectProfiles}
                 onOpenSystem={openSystem}
                 onCreateWork={createWork}
+                onDeleteWork={deleteSystemPermanently}
                 adminMode
               />
             )}
@@ -1960,6 +2004,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               setSystems={setSystems}
               setTransactions={setTransactions}
               onOpenSystem={openSystem}
+              onDeleteSystem={deleteSystemPermanently}
             />
 
             <h2
