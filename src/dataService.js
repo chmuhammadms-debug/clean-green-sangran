@@ -1,6 +1,27 @@
 import { supabase } from "./supabase";
 import { mergeSiteSettings } from "./siteSettings";
 
+function decodeStoredMedia(value) {
+  if (!value) return "";
+  if (typeof value !== "string") return value.url || value.data || "";
+
+  try {
+    const decoded = JSON.parse(value);
+    return typeof decoded === "string" ? decoded : decoded?.url || decoded?.data || value;
+  } catch {
+    return value;
+  }
+}
+
+function encodeStoredMedia(value) {
+  if (!value) return null;
+
+  // The existing Supabase receipt/photo columns use JSON in some deployments.
+  // Double encoding preserves a URL/data URL as a JSON string there, while the
+  // reader above also keeps this compatible with deployments that use text.
+  return JSON.stringify(String(value));
+}
+
 export async function fetchSiteSettings() {
   const { data, error } = await supabase.from("site_settings").select("settings").eq("id", "public").maybeSingle();
   if (error) throw error;
@@ -45,8 +66,8 @@ export async function fetchDatabaseData() {
       method: record.payment_method,
       details: record.purpose || "",
       slipName: record.receipt_name || "",
-      slipData: record.receipt_url || "",
-      donorPhoto: record.donor_photo_url || "",
+      slipData: decodeStoredMedia(record.receipt_url),
+      donorPhoto: decodeStoredMedia(record.donor_photo_url),
       paymentStatus: record.payment_status,
     })).filter((record) => record.systemId),
   };
@@ -78,8 +99,8 @@ export async function fetchPublicDatabaseData() {
       method: record.payment_method,
       details: record.purpose || "",
       slipName: record.receipt_name || "",
-      slipData: record.receipt_url || "",
-      donorPhoto: record.donor_photo_url || "",
+      slipData: decodeStoredMedia(record.receipt_url),
+      donorPhoto: decodeStoredMedia(record.donor_photo_url),
     })).filter((record) => record.systemId),
   };
 }
@@ -110,8 +131,8 @@ export async function syncDatabaseData(systems, transactions) {
     payment_status: record.paymentStatus || "verified",
     purpose: record.details || "",
     receipt_name: record.slipName || "",
-    receipt_url: record.slipData || null,
-    donor_photo_url: record.type === "income" ? (record.donorPhoto || null) : null,
+    receipt_url: encodeStoredMedia(record.slipData),
+    donor_photo_url: record.type === "income" ? encodeStoredMedia(record.donorPhoto) : null,
     is_public: true,
     transaction_date: record.date,
   })).filter((record) => record.project_id);
