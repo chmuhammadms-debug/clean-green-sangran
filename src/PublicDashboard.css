@@ -489,6 +489,9 @@ button { cursor: pointer; }
 .records-section { padding-top: 125px; padding-bottom: 125px; }
 .ledger-card { padding: 24px; background: white; box-shadow: 0 20px 60px rgba(7,47,27,.08); }
 .public-table-wrap { width: 100%; overflow-x: auto; }
+.project-ledger { opacity: 1; transform: none; }
+.public-table-wrap--scrollable { max-height: 580px; overflow: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.public-table-wrap--scrollable .public-table th { position: sticky; z-index: 3; top: 0; background: #fff; box-shadow: 0 1px 0 #e6e9e4; }
 .public-table { width: 100%; min-width: 900px; border-collapse: collapse; }
 .public-table th { padding: 14px 13px; color: #859087; font-size: 10px; text-align: left; text-transform: uppercase; letter-spacing: 1.2px; border-bottom: 1px solid #e6e9e4; }
 .public-table td { padding: 18px 13px; color: #4c5a51; font-size: 13px; border-bottom: 1px solid #edf0eb; }
@@ -1600,6 +1603,10 @@ body.gallery-open { overflow: hidden; }
 
 /* Mobile homepage focus: show the full village photo cleanly, then the project status area. */
 @media (max-width: 600px) {
+  .public-table-wrap--scrollable {
+    max-height: 520px;
+  }
+
   .hero {
     height: auto;
     min-height: 0;
@@ -1675,4 +1682,3 @@ body.gallery-open { overflow: hidden; }
     padding-bottom: 44px;
   }
 }
-

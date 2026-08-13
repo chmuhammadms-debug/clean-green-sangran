@@ -521,7 +521,7 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
   );
 }
 
-function RecordsTable({ records, systems, limit, language = "en" }) {
+function RecordsTable({ records, systems, limit, language = "en", scrollable = false }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
   const projectName = (id) => language === "ur"
@@ -539,7 +539,7 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
 
   return (
     <>
-    <div className="public-table-wrap">
+    <div className={`public-table-wrap${scrollable ? " public-table-wrap--scrollable" : ""}`}>
       <table className="public-table">
         <thead>
           <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
@@ -832,7 +832,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     .filter((record) => String(record.person || "").toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => b.date.localeCompare(a.date));
   const projectLedger = (
-    <div className="ledger-card reveal">
+    <div className="ledger-card project-ledger">
       <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
       <div className="ledger-toolbar">
         <div className="filter-tabs">
@@ -842,7 +842,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </div>
         <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
       </div>
-      <RecordsTable records={filteredRecords} systems={systems} language={language} />
+      <RecordsTable records={filteredRecords} systems={systems} language={language} scrollable />
     </div>
   );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
