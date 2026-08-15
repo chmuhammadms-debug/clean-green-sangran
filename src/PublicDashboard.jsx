@@ -1159,7 +1159,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       language={language}
                     />
                   )}
-                  <div className="project-gallery reveal">
+                  <div className="project-gallery reveal is-visible">
                       <div className="section-heading section-heading--compact">
                         <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
                         <p>{photosFor(selectedSystem).length} {ur ? "تصاویر" : "community photos"}</p>
