@@ -690,6 +690,21 @@ function currentDonationMonthKey() {
   return donationMonthKey(new Date());
 }
 
+function publicMediaUrl(value) {
+  if (typeof value === "string") return value.trim();
+  if (!value || typeof value !== "object") return "";
+  return String(value.url || value.image || value.data || "").trim();
+}
+
+function publicImageVariant(value, width = 1200) {
+  const url = publicMediaUrl(value);
+  if (!url.includes(".supabase.co/storage/v1/object/public/")) return url;
+
+  const renderedUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+  const separator = renderedUrl.includes("?") ? "&" : "?";
+  return `${renderedUrl}${separator}width=${width}&quality=76&resize=contain`;
+}
+
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
   const slides = useMemo(() => {
@@ -713,6 +728,22 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const activeReelSlides = (settings.homeReelSlides || []).filter((slide) => (
     slide?.enabled !== false && (slide.url || slide.image)
   ));
+  const configuredReelUrls = new Set(activeReelSlides.map(publicMediaUrl).filter(Boolean));
+  const plantationReelSlides = (settings.projectProfilesByProject?.plantation?.galleryUrls || [])
+    .map(publicMediaUrl)
+    .filter((url) => url && !configuredReelUrls.has(url))
+    .slice(-18)
+    .reverse()
+    .map((url, index) => ({
+      id: `plantation-gallery-${index}`,
+      url: publicImageVariant(url, 960),
+      eyebrowEn: "Plantation",
+      eyebrowUr: "شجرکاری",
+      titleEn: "Plantation work in Sangran",
+      titleUr: "سنگراں میں شجرکاری کی سرگرمیاں",
+    }));
+  const publicReelSlides = [...activeReelSlides, ...plantationReelSlides];
+  const displayedReelSlides = publicReelSlides.length ? publicReelSlides : gallerySlides;
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
   const themeStyle = {
     "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
@@ -944,10 +975,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
-      return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+      return galleryUrls
+        .map((image) => publicImageVariant(image, 1200))
+        .filter(Boolean)
+        .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
     if (Array.isArray(system.galleryUrls) && system.galleryUrls.length) {
-      return system.galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+      return system.galleryUrls
+        .map((image) => publicImageVariant(image, 1200))
+        .filter(Boolean)
+        .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
     return (isMosqueChild(system)
       ? projectGalleries.mosque
@@ -1125,7 +1162,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                               if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
                             }}
                           >
-                            <img src={photo.image} alt={photo.title} />
+                            <img src={photo.image} alt={photo.title} loading="lazy" decoding="async" />
                             <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
                             <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                           </figure>
@@ -1348,7 +1385,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
             <MoneyCards totals={totals} light language={language} />
             {topDonor && (
-              <div className="top-donors-month reveal" dir={ur ? "rtl" : "ltr"}>
+              <div className="top-donors-month reveal is-visible" dir={ur ? "rtl" : "ltr"}>
                 <div className="top-donors-month__heading">
                   <span>{ur ? "اس ماہ کے سرفہرست 5 عطیہ دہندگان" : "TOP 5 DONORS OF THE MONTH"}</span>
                   <small>{donorMonthLabel}</small>
@@ -1423,11 +1460,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="visual-reel-section">
           <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
-          <div className="visual-reel"><div className="visual-reel__track">{[...(activeReelSlides.length ? activeReelSlides : gallerySlides), ...(activeReelSlides.length ? activeReelSlides : gallerySlides)].map((slide, index) => {
+          <div className="visual-reel"><div className="visual-reel__track">{[...displayedReelSlides, ...displayedReelSlides].map((slide, index) => {
             const image = slide.url || slide.image;
             const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
             const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
-            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
+            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} loading="lazy" decoding="async" /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
           })}</div></div>
         </section>
 

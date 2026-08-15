@@ -1071,7 +1071,13 @@ body.gallery-open { overflow: hidden; }
   .money-card__top { font-size: 9px; letter-spacing: .25px; }
   .money-card > strong { margin: 11px 0 4px; font-size: 23px; letter-spacing: -1px; }
   .money-card small { font-size: 9px; }
-  .top-donors-month { margin-top: 14px; }
+  .top-donors-month {
+    display: block !important;
+    margin-top: 14px;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
   .top-donors-month__heading { gap: 8px; margin-bottom: 8px; }
   .top-donors-month__heading span { font-size: 9px; letter-spacing: .7px; }
   .top-donors-month__heading small { font-size: 9px; }
