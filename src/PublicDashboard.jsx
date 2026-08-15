@@ -255,24 +255,6 @@ E. نظام اور فنڈ
 
 اپنی اگلی نسلوں کے لیے صاف، سرسبز اور بہتر سنگراں ہم سب کی ذمہ داری ہے۔`;
 
-const gallerySlides = [
-  { id: "cemetery-work", image: cemeteryImage, eyebrow: "Cemetery Care", title: "Community-led cleaning and restoration" },
-  { id: "cemetery-team", image: cemeteryTeamImage, eyebrow: "Our Volunteers", title: "Together in service of Sangran" },
-  { id: "plantation-work", image: plantationImage, eyebrow: "Plantation Drive", title: "Planting for the next generation" },
-  { id: "plantation-youth", image: plantationYouthImage, eyebrow: "Youth Participation", title: "Passing a greener future forward" },
-  { id: "plantation-team", image: plantationTeamImage, eyebrow: "Community Action", title: "Saplings shared across the village" },
-  { id: "mosque-main", image: mosqueImage, eyebrow: "Our Mosque", title: "Faith at the heart of our community" },
-  { id: "mosque-detail", image: mosqueDetailImage, eyebrow: "Mosque Care", title: "Preserving a shared place of worship" },
-  { id: "welfare", image: welfareImage, eyebrow: "Community Welfare", title: "Compassion translated into action" },
-  { id: "mosque-village", image: mosqueVillageImage, eyebrow: "Village Identity", title: "The mosque at the heart of Sangran" },
-  { id: "mosque-interior", image: mosqueInteriorWideImage, eyebrow: "Prayer Hall", title: "A peaceful and welcoming worship space" },
-  { id: "plantation-campaign", image: campaignHandoverImage, eyebrow: "Youth Campaign", title: "A sapling passed into caring hands" },
-  { id: "plantation-display", image: saplingDisplayImage, eyebrow: "One Tree, One Life", title: "Saplings prepared for the community" },
-  { id: "plantation-youth-handover", image: youthHandoverImage, eyebrow: "Youth Participation", title: "Young hands carrying a greener future" },
-  { id: "cemetery-community", image: cemeteryCommunityTeamImage, eyebrow: "Volunteer Service", title: "Working together with dignity and care" },
-  { id: "cemetery-cleanup", image: communityCleanupImage, eyebrow: "Clean Sangran", title: "Community action creating visible change" },
-];
-
 const projectGalleries = {
   cemetery: [
     { image: cemeteryImage, title: "Cemetery cleaning and care" },
@@ -451,6 +433,52 @@ function ProjectProgressOverview({ profile = {}, language = "en", showBudget = t
         <div><small>{ur ? "متوقع تکمیل" : "Expected Completion"}</small><strong>{profile.expectedCompletionDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
       </div>
       {plan && <div className="project-progress-overview__plan"><b>{ur ? "ماسٹر پلان / اگلا ہدف" : "Master Plan / Next Goal"}</b><p>{plan}</p></div>}
+    </section>
+  );
+}
+
+function ProjectPhotoReel({ photos = [], projectName, language = "en", onOpen }) {
+  if (!photos.length) return null;
+  const ur = language === "ur";
+  const reelPhotos = photos.slice(0, 14);
+  const lapCopies = Math.max(1, Math.ceil(6 / reelPhotos.length));
+  const lap = Array.from({ length: lapCopies }, () => reelPhotos).flat();
+  const movingPhotos = [...lap, ...lap];
+
+  return (
+    <section className="project-photo-reel reveal" aria-label={`${projectName} ${ur ? "تصویری ریل" : "photo reel"}`}>
+      <div className="project-photo-reel__heading" dir={ur ? "rtl" : "ltr"}>
+        <div>
+          <span className="section-kicker">{ur ? "منصوبے کی تصویری جھلکیاں" : "PROJECT IN MOTION"}</span>
+          <h2>{projectName} {ur ? "تصویری ریل" : "Photo Reel"}</h2>
+        </div>
+        <small>{photos.length} {ur ? "تصاویر" : "project photos"}</small>
+      </div>
+      <div className="project-photo-reel__viewport">
+        <div className="project-photo-reel__track">
+          {movingPhotos.map((photo, index) => {
+            const photoIndex = index % lap.length % reelPhotos.length;
+            return (
+              <button
+                type="button"
+                className="project-photo-reel__slide"
+                key={`${photo.image}-project-reel-${index}`}
+                onClick={() => onOpen?.(photoIndex)}
+                aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${photoIndex + 1}`}
+              >
+                <img
+                  src={photo.image}
+                  alt={photo.title}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  fetchPriority={index < 2 ? "high" : "auto"}
+                  decoding="async"
+                />
+                <span>{photo.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }
@@ -723,27 +751,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       });
     return shuffledSlides(configured.length ? configured : heroSlides);
   }, [siteSettings]);
-  const activeReelSlides = (settings.homeReelSlides || []).filter((slide) => (
-    slide?.enabled !== false && (slide.url || slide.image)
-  ));
-  const configuredReelUrls = new Set(activeReelSlides.map(publicMediaUrl).filter(Boolean));
-  const plantationReelSlides = (settings.projectProfilesByProject?.plantation?.galleryUrls || [])
-    .map(publicMediaUrl)
-    .filter((url) => url && !configuredReelUrls.has(url))
-    // Keep the public reel light enough for mobile data connections. The
-    // latest plantation photos are repeated by the reel track below.
-    .slice(-8)
-    .reverse()
-    .map((url, index) => ({
-      id: `plantation-gallery-${index}`,
-      url: publicImageVariant(url, 960),
-      eyebrowEn: "Plantation",
-      eyebrowUr: "شجرکاری",
-      titleEn: "Plantation work in Sangran",
-      titleUr: "سنگراں میں شجرکاری کی سرگرمیاں",
-    }));
-  const publicReelSlides = [...activeReelSlides, ...plantationReelSlides];
-  const displayedReelSlides = publicReelSlides.length ? publicReelSlides : gallerySlides;
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
   const themeStyle = {
     "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
@@ -1094,6 +1101,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               language={language}
               showBudget={!isBloodBankProject(selectedSystem)}
             />
+            <ProjectPhotoReel
+              photos={activeGallery}
+              projectName={systemName(selectedSystem)}
+              language={language}
+              onOpen={setGalleryIndex}
+            />
             {isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
                 systems={systems}
@@ -1139,7 +1152,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     </div>
                   )}
                   {selectedSystem.id === "cemetery" && projectLedger}
-                  {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                   {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
                     <WelfareOperationsPublic
                       projectId={selectedSystem.id}
@@ -1177,6 +1189,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                         ))}
                       </div>
                   </div>
+                  {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                 </>
               )}
               {!isBloodBankProject(selectedSystem)
@@ -1465,16 +1478,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </section>
 
         <VillageMapSection locations={settings.mapLocations || []} language={language} />
-
-        <section className="visual-reel-section">
-          <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
-          <div className="visual-reel"><div className="visual-reel__track">{[...displayedReelSlides, ...displayedReelSlides].map((slide, index) => {
-            const image = slide.url || slide.image;
-            const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
-            const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
-            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} loading={index < 2 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "auto"} decoding="async" /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
-          })}</div></div>
-        </section>
 
         <section className="about-section" id="about">
           <div className="about-image"><img src={cemeteryImage} alt={ur ? "صاف اور سرسبز سنگراں" : "A clean and green Sangran"} /></div>
