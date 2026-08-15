@@ -318,7 +318,7 @@ function totalsFor(records) {
 function LogoMark({ compact = false }) {
   return (
     <span className={`brand-mark brand-mark--image ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
-      <img src={brandLogo} alt="" />
+      <img src="/logo-2026.png" alt="" />
     </span>
   );
 }
