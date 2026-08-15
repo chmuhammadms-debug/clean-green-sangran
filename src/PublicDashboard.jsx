@@ -730,7 +730,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const plantationReelSlides = (settings.projectProfilesByProject?.plantation?.galleryUrls || [])
     .map(publicMediaUrl)
     .filter((url) => url && !configuredReelUrls.has(url))
-    .slice(-18)
+    // Keep the public reel light enough for mobile data connections. The
+    // latest plantation photos are repeated by the reel track below.
+    .slice(-8)
     .reverse()
     .map((url, index) => ({
       id: `plantation-gallery-${index}`,
@@ -973,13 +975,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
-      return galleryUrls
+      return [...galleryUrls]
+        .reverse()
         .map((image) => publicImageVariant(image, 1200))
         .filter(Boolean)
         .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
     if (Array.isArray(system.galleryUrls) && system.galleryUrls.length) {
-      return system.galleryUrls
+      return [...system.galleryUrls]
+        .reverse()
         .map((image) => publicImageVariant(image, 1200))
         .filter(Boolean)
         .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
@@ -1160,7 +1164,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                               if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
                             }}
                           >
-                            <img src={photo.image} alt={photo.title} loading="lazy" decoding="async" />
+                            <img
+                              src={photo.image}
+                              alt={photo.title}
+                              loading={index < 6 ? "eager" : "lazy"}
+                              fetchPriority={index < 3 ? "high" : "auto"}
+                              decoding="async"
+                            />
                             <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
                             <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                           </figure>
@@ -1462,7 +1472,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             const image = slide.url || slide.image;
             const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
             const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
-            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} loading="lazy" decoding="async" /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
+            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} loading={index < 2 ? "eager" : "lazy"} fetchPriority={index === 0 ? "high" : "auto"} decoding="async" /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
           })}</div></div>
         </section>
 
