@@ -696,13 +696,11 @@ function publicMediaUrl(value) {
   return String(value.url || value.image || value.data || "").trim();
 }
 
-function publicImageVariant(value, width = 1200) {
-  const url = publicMediaUrl(value);
-  if (!url.includes(".supabase.co/storage/v1/object/public/")) return url;
-
-  const renderedUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
-  const separator = renderedUrl.includes("?") ? "&" : "?";
-  return `${renderedUrl}${separator}width=${width}&quality=76&resize=contain`;
+function publicImageVariant(value) {
+  // Supabase image transformations are not available on every project plan.
+  // Keep public galleries on their original public object URLs so photos never
+  // get stuck on an unavailable /render/image endpoint.
+  return publicMediaUrl(value);
 }
 
 function PublicDashboard({ onAdminLogin, siteSettings }) {
