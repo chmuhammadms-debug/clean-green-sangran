@@ -1068,19 +1068,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return (
       <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
+          <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
+            {selectedWorkParentId
+              ? (ur ? "← منصوبے کے کام" : "← Project Works")
+              : isMosqueChild(selectedSystem)
+              ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
+              : isWelfareChild(selectedSystem)
+                ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
+              : (ur ? "← واپس" : "← Back")}
+          </button>
           <button className="brand-button" onClick={() => setSelectedSystemId(selectedParentId)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
           <div className="nav-actions project-nav-actions">
-            <button className="project-top-back" onClick={() => setSelectedSystemId(selectedParentId)}>
-              {selectedWorkParentId
-                ? (ur ? "← منصوبے کے کام" : "← Project Works")
-                : isMosqueChild(selectedSystem)
-                ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
-                : isWelfareChild(selectedSystem)
-                  ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
-                : (ur ? "← واپس" : "← Back")}
-            </button>
             <SocialMediaLinks links={settings.socialLinks} variant="header" />
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
             <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
