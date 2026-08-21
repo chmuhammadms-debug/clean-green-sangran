@@ -1709,3 +1709,66 @@ body.gallery-open { overflow: hidden; }
     padding-bottom: 44px;
   }
 }
+
+
+/* Mission balance and project back-button placement */
+.mission-section {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 48px;
+}
+.mission-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.mission-copy > .section-kicker {
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.45;
+  letter-spacing: 2.2px;
+}
+.mission-visual {
+  min-width: 0;
+  height: auto;
+  min-height: 560px;
+  align-self: stretch;
+}
+.mission-visual img {
+  height: 100%;
+}
+.project-top-back--left {
+  flex: 0 0 auto;
+  order: -2;
+}
+.site-nav--solid .brand-button {
+  order: -1;
+}
+.project-nav-actions {
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .mission-section {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .mission-copy,
+  .mission-visual {
+    min-height: 0;
+  }
+  .mission-visual {
+    height: 340px;
+  }
+  .mission-copy > .section-kicker {
+    font-size: 13px;
+    letter-spacing: 1.6px;
+  }
+  .site-nav--solid {
+    gap: 7px;
+  }
+  .project-top-back--left {
+    padding: 8px 11px;
+    font-size: 11px;
+  }
+}
