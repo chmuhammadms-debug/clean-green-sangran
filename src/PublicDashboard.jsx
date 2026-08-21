@@ -948,6 +948,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       : (profile.nameEn || system.name);
   };
   const systemDescription = (system) => {
+    if (isDemographyProject(system)) {
+      return ur
+        ? "گھرانوں کی مردم شماری، آبادی کے اعداد و شمار اور تصدیق شدہ دیہی معلومات۔"
+        : "Household census, population statistics and verified village demographics.";
+    }
     const profile = profileFor(system);
     return ur
       ? (profile.descriptionUr || system.descriptionUr || projectUrdu[system.id]?.description || system.description)
@@ -1375,7 +1380,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <div className="project-card__shade" />
                   <span className="project-card__number">0{index + 1}</span>
                   <div className="project-card__content">
-                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
+                    <span><ProjectIcon project={isDemographyProject(system) ? { ...system, icon: "👥" } : system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
                     <h3>{systemName(system)}</h3>
                     <p>{systemDescription(system)}</p>
                     {isDemographyProject(system) ? (
