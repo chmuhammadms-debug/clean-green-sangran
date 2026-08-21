@@ -16,6 +16,8 @@ import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
+import DemographyPublic from "./DemographyPublic";
+import { isDemographyProject } from "./demographyService";
 import VillageMapSection from "./VillageMapSection";
 import {
   isWorkItem,
@@ -1088,7 +1090,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
-            <span className="section-kicker">{isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
+            <span className="section-kicker">{isDemographyProject(selectedSystem) ? (ur ? "سانگراں مردم شماری" : "SANGRAN POPULATION CENSUS") : isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
             <h1>{systemName(selectedSystem)}</h1>
             <p>{systemDescription(selectedSystem)}</p>
           </div>
@@ -1099,7 +1101,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <ProjectProgressOverview
               profile={profileFor(selectedSystem)}
               language={language}
-              showBudget={!isBloodBankProject(selectedSystem)}
+              showBudget={!isBloodBankProject(selectedSystem) && !isDemographyProject(selectedSystem)}
             />
             <ProjectPhotoReel
               photos={activeGallery}
@@ -1107,7 +1109,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               language={language}
               onOpen={setGalleryIndex}
             />
-            {isMosqueParent(selectedSystem) ? (
+            {isDemographyProject(selectedSystem) ? (
+              <DemographyPublic language={language} />
+            ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
@@ -1357,13 +1361,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
       <main>
         <section className="projects-section content-section" id="projects">
-          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
+          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public record."}</p></div>
           <div className="project-grid">
             {topLevelSystems(systems).map((system, index) => {
               const projectTotals = totalsFor(publicRecordsFor(system));
               return (
                 <article
-                  className={`project-card reveal is-visible ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
+                  className={`project-card reveal is-visible ${isBloodBankProject(system) ? "project-card--blood" : ""} ${isDemographyProject(system) ? "project-card--census" : ""}`}
                   key={system.id}
                   onClick={() => setSelectedSystemId(system.id)}
                 >
@@ -1374,7 +1378,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
                     <h3>{systemName(system)}</h3>
                     <p>{systemDescription(system)}</p>
-                    {!isBloodBankProject(system) && (
+                    {isDemographyProject(system) ? (
+                      <div><b>{ur ? "نظام" : "System"}</b><strong>{ur ? "مردم شماری" : "Population Census"}</strong></div>
+                    ) : !isBloodBankProject(system) && (
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
                     )}
                     <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
