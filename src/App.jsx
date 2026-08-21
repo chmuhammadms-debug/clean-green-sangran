@@ -15,6 +15,8 @@ import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
+import DemographyAdmin from "./DemographyAdmin";
+import { isDemographyProject } from "./demographyService";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
@@ -1425,7 +1427,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 selectedSystem.englishName}
             </p>
 
-            {isBloodBankProject(selectedSystem) ? (
+            {isDemographyProject(selectedSystem) ? (
+              <DemographyAdmin />
+            ) : isBloodBankProject(selectedSystem) ? (
               <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
             ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
@@ -2069,7 +2073,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                         system.englishName}
                     </p>
 
-                    {!isBloodBankProject(system) && (
+                    {isDemographyProject(system) ? (
+                      <strong>Population Census</strong>
+                    ) : !isBloodBankProject(system) && (
                       <strong>
                         Balance: Rs.{" "}
                         {systemTotals.balance.toLocaleString()}
