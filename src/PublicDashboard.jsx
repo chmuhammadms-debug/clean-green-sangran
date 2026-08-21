@@ -1363,7 +1363,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               const projectTotals = totalsFor(publicRecordsFor(system));
               return (
                 <article
-                  className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
+                  className={`project-card reveal is-visible ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
                   key={system.id}
                   onClick={() => setSelectedSystemId(system.id)}
                 >
