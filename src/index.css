@@ -22,9 +22,9 @@ input {
 
 /* Keep public project cards from going blank when a remote cover image fails. */
 .project-card {
-  background-image: url("./assets/projects/welfare/main.webp");
-  background-position: center;
-  background-size: cover;
+  background-image: url("./assets/projects/welfare/main.webp") !important;
+  background-position: center !important;
+  background-size: cover !important;
 }
 
 .project-card > img {
