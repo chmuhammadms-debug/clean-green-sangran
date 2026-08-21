@@ -4,11 +4,13 @@ export const DEMOGRAPHY_PROJECT_ID = "add5240d-073b-4bf8-a7f4-6d71084229f9";
 
 export function isDemographyProject(project) {
   if (!project) return false;
-  const haystack = [project.id, project.slug, project.name, project.title]
+  const haystack = [project.id, project.databaseId, project.slug, project.name, project.title]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
   return project.id === DEMOGRAPHY_PROJECT_ID ||
+    project.databaseId === DEMOGRAPHY_PROJECT_ID ||
+    project.id === "project-1786914142749" ||
     haystack.includes("demograph") ||
     haystack.includes("census") ||
     haystack.includes("mardam") ||
