@@ -10,6 +10,7 @@ import {
   printBloodDonorSlip,
   printBloodRequestReport,
   regenerateBloodRequestCode,
+  registerPublicBloodDonor,
   setBloodDonorAvailability,
   updateBloodAssignmentStatus,
 } from "./bloodBankService";
@@ -37,6 +38,13 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [managementPhone, setManagementPhone] = useState(settings?.bloodBankManagementPhone || "03269042000");
+  const [newDonor, setNewDonor] = useState({
+    fullName: "",
+    phone: "",
+    address: "",
+    bloodGroup: "A+",
+  });
+  const [addingDonor, setAddingDonor] = useState(false);
 
   useEffect(() => {
     setManagementPhone(settings?.bloodBankManagementPhone || "03269042000");
@@ -78,6 +86,37 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
       return matchesStatus && (group === "all" || request.blood_group === group) && (!query || haystack.includes(query));
     });
   }, [requests, group, requestStatus, search]);
+
+  const addDonor = async (event) => {
+    event.preventDefault();
+    const fullName = newDonor.fullName.trim();
+    const phone = newDonor.phone.trim();
+    const address = newDonor.address.trim();
+
+    if (!fullName || phone.replace(/\D/g, "").length < 10 || !address || !BLOOD_GROUPS.includes(newDonor.bloodGroup)) {
+      setMessage("Please enter donor name, valid phone, address and blood group.");
+      return;
+    }
+
+    setAddingDonor(true);
+    setMessage("");
+    try {
+      await registerPublicBloodDonor({
+        fullName,
+        phone,
+        address,
+        bloodGroup: newDonor.bloodGroup,
+      });
+      setNewDonor({ fullName: "", phone: "", address: "", bloodGroup: "A+" });
+      await loadData();
+      setTab("donors");
+      setMessage("New donor added successfully / نیا ڈونر کامیابی سے شامل ہوگیا۔");
+    } catch (error) {
+      setMessage(error.message || "Donor could not be added.");
+    } finally {
+      setAddingDonor(false);
+    }
+  };
 
   const removeDonor = async (donor) => {
     if (!window.confirm(`Delete donor record for ${donor.full_name}?\nKya aap yeh donor record delete karna chahte hain?`)) return;
@@ -223,12 +262,28 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
         </div>}
       </section>}
 
-      {!loading && tab === "donors" && <div className="blood-donor-list blood-donor-list--wide">
+      {!loading && tab === "donors" && <>
+        <form className="blood-admin-add-donor" onSubmit={addDonor}>
+          <div className="blood-admin-add-donor__heading">
+            <span>ADMIN DONOR ENTRY</span>
+            <h3>Add new donor / نیا ڈونر شامل کریں</h3>
+            <p>Admin can directly register a donor in the Blood Bank directory.</p>
+          </div>
+          <div className="blood-admin-add-donor__fields">
+            <label><span>Donor name / نام</span><input value={newDonor.fullName} onChange={(event) => setNewDonor((current) => ({ ...current, fullName: event.target.value }))} placeholder="Full name" required /></label>
+            <label><span>Phone / فون</span><input inputMode="tel" value={newDonor.phone} onChange={(event) => setNewDonor((current) => ({ ...current, phone: event.target.value }))} placeholder="03XX XXXXXXX" required /></label>
+            <label><span>Blood group / بلڈ گروپ</span><select value={newDonor.bloodGroup} onChange={(event) => setNewDonor((current) => ({ ...current, bloodGroup: event.target.value }))}>{BLOOD_GROUPS.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+            <label className="wide"><span>Address / پتہ</span><input value={newDonor.address} onChange={(event) => setNewDonor((current) => ({ ...current, address: event.target.value }))} placeholder="Village, area or complete address" required /></label>
+          </div>
+          <button className="blood-admin-add-donor__submit" type="submit" disabled={addingDonor}>{addingDonor ? "Saving donor…" : "Add donor to Blood Bank"}</button>
+        </form>
+        <div className="blood-donor-list blood-donor-list--wide">
         <div className="blood-donor-list__title"><h3>Donor records / ڈونر ریکارڈ</h3><span>{filteredDonors.length} result(s)</span></div>
         {filteredDonors.length === 0 ? <p className="blood-empty">No matching donor found.</p> : <div className="blood-admin-card-grid">
           {filteredDonors.map((donor) => <article className={`blood-donor ${donor.is_available === false ? "blood-donor--inactive" : ""}`} key={donor.id}><div className="blood-donor__main"><strong>{donor.blood_group}</strong><span><b>{donor.full_name}</b><small>{donor.phone}</small><small>{donor.address}</small>{donor.last_donated_at && <small className="blood-donor__last-date">Last donated: {new Date(donor.last_donated_at).toLocaleString()}</small>}{donor.next_available_on && <small>Next eligible date: {donor.next_available_on}</small>}</span><em className={donor.is_available === false ? "unavailable" : "available"}>{donor.is_available === false ? "INACTIVE" : "ACTIVE"}</em></div><div className="blood-donor__actions"><button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button type="button" disabled={busyId === donor.id} onClick={() => changeDonorAvailability(donor, donor.is_available === false)}>{donor.is_available === false ? "Reactivate donor" : "Mark unavailable"}</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Working…" : "Delete donor card"}</button></div></article>)}
         </div>}
-      </div>}
+      </div>
+      </>}
     </section>
   );
 }
