@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 
 export const WEBSITE_MEDIA_BUCKET = "website-media";
 export const MAX_WEBSITE_IMAGE_SIZE = 8 * 1024 * 1024;
+export const MAX_WEBSITE_VIDEO_SIZE = 80 * 1024 * 1024;
 
 function safePart(value) {
   return String(value || "image")
@@ -51,4 +52,36 @@ export async function uploadWebsiteImages(files, folder = "general") {
   const selected = Array.from(files || []);
   if (!selected.length) return [];
   return Promise.all(selected.map((file) => uploadWebsiteImage(file, folder)));
+}
+
+export function validateWebsiteMedia(file) {
+  if (!file) throw new Error("کوئی فائل منتخب نہیں کی گئی۔");
+  const type = String(file.type || "");
+  const isImage = type.startsWith("image/");
+  const isVideo = type.startsWith("video/");
+  if (!isImage && !isVideo) throw new Error("صرف photo یا video file منتخب کریں۔");
+  const limit = isVideo ? MAX_WEBSITE_VIDEO_SIZE : MAX_WEBSITE_IMAGE_SIZE;
+  if (file.size > limit) throw new Error(isVideo ? "ویڈیو 80MB سے کم ہونی چاہیے۔" : "تصویر 8MB سے کم ہونی چاہیے۔");
+  return isVideo ? "video" : "image";
+}
+
+export async function uploadWebsiteMedia(file, folder = "general") {
+  const mediaType = validateWebsiteMedia(file);
+  const extension = imageExtension(file);
+  const baseName = safePart(String(file.name || mediaType).replace(/\.[^.]+$/, ""));
+  const path = `${safePart(folder)}/${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${baseName}.${extension}`;
+  const { error } = await supabase.storage.from(WEBSITE_MEDIA_BUCKET).upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(WEBSITE_MEDIA_BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl, path, name: file.name, type: mediaType };
+}
+
+export async function uploadWebsiteMediaFiles(files, folder = "general") {
+  const selected = Array.from(files || []);
+  if (!selected.length) return [];
+  return Promise.all(selected.map((file) => uploadWebsiteMedia(file, folder)));
 }
