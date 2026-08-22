@@ -177,3 +177,25 @@
     width: 100%;
   }
 }
+
+
+/* All Blood Bank donors in one printable slip */
+.blood-donor-list__title > div {
+  display: grid;
+  gap: 4px;
+}
+.blood-donor-list__title .blood-report-print {
+  max-width: 360px;
+  line-height: 1.35;
+}
+@media (max-width: 700px) {
+  .blood-donor-list__title {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .blood-donor-list__title .blood-report-print {
+    width: 100%;
+    max-width: none;
+  }
+}
