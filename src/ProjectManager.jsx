@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import "./ProjectManager.css";
 import ProjectIcon from "./ProjectIcon";
-import { uploadWebsiteImage, uploadWebsiteImages } from "./mediaUpload";
+import { uploadWebsiteImage, uploadWebsiteMediaFiles } from "./mediaUpload";
 import { isMosqueChild } from "./mosqueManagement";
 import { isWelfareChild } from "./welfareManagement";
 import { isWorkItem } from "./workItems";
@@ -10,6 +10,10 @@ function buildItems(systems = [], settings = {}) {
   const profiles = settings.projectProfilesByProject || {};
   return systems.filter((system) => !isWorkItem(system, profiles)).map((system) => {
     const profile = profiles[system.id] || {};
+    const legacyUrls = Array.isArray(profile.galleryUrls) && profile.galleryUrls.length
+      ? profile.galleryUrls
+      : Array.isArray(system.galleryUrls) ? system.galleryUrls : [];
+    const configuredEvents = Array.isArray(profile.galleryEvents) ? profile.galleryEvents : [];
     return {
       id: system.id,
       nameEn: profile.nameEn || system.name || "",
@@ -18,11 +22,15 @@ function buildItems(systems = [], settings = {}) {
       descriptionUr: profile.descriptionUr || system.descriptionUr || "",
       icon: system.icon || "📁",
       coverImage: profile.coverImage || system.coverImage || "",
-      galleryText: Array.isArray(profile.galleryUrls) && profile.galleryUrls.length
-        ? profile.galleryUrls.join("\n")
-        : Array.isArray(system.galleryUrls)
-          ? system.galleryUrls.join("\n")
-          : "",
+      galleryText: legacyUrls.join("\n"),
+      galleryEvents: configuredEvents.length ? configuredEvents : (legacyUrls.length ? [{
+        id: `legacy-${system.id}`,
+        titleEn: "Previous Gallery",
+        titleUr: "پچھلی گیلری",
+        date: "",
+        description: "",
+        media: legacyUrls.map((url, index) => ({ url, type: "image", title: `Photo ${index + 1}` })),
+      }] : []),
       isActive: system.isActive !== false,
       status: profile.status || "proposed",
       budget: profile.budget ?? "",
@@ -70,15 +78,33 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     }
   };
 
-  const uploadGallery = async (item, files) => {
+  const updateEvents = (projectId, updater) => setItems((current) => current.map((item) => (
+    item.id === projectId ? { ...item, galleryEvents: updater(item.galleryEvents || []) } : item
+  )));
+
+  const addGalleryEvent = (item) => {
+    const eventId = `event-${Date.now()}`;
+    updateEvents(item.id, (events) => [...events, { id: eventId, titleEn: "New Event", titleUr: "نیا ایونٹ", date: "", description: "", media: [] }]);
+  };
+
+  const updateGalleryEvent = (projectId, eventId, key, value) => updateEvents(projectId, (events) => events.map((entry) => (
+    entry.id === eventId ? { ...entry, [key]: value } : entry
+  )));
+
+  const removeGalleryEvent = (projectId, eventId) => {
+    if (!window.confirm("اس event album کو ختم کریں؟ اس کی media list website سے ہٹ جائے گی۔")) return;
+    updateEvents(projectId, (events) => events.filter((entry) => entry.id !== eventId));
+  };
+
+  const uploadGallery = async (item, galleryEvent, files) => {
     if (!files?.length) return;
-    const key = `${item.id}-gallery`;
+    const key = `${item.id}-${galleryEvent.id}-gallery`;
     setMessage("");
     setUploadState(key, true);
     try {
-      const uploaded = await uploadWebsiteImages(files, `projects/${item.id}/gallery`);
-      setGalleryUrls(item.id, [...galleryUrls(item), ...uploaded.map((image) => image.url)]);
-      setMessage(`${uploaded.length} گیلری تصویر${uploaded.length > 1 ? "یں" : ""} اپلوڈ ہوگئی۔ آخر میں Save & Publish Projects دبائیں۔`);
+      const uploaded = await uploadWebsiteMediaFiles(files, `projects/${item.id}/events/${galleryEvent.id}`);
+      updateGalleryEvent(item.id, galleryEvent.id, "media", [...(galleryEvent.media || []), ...uploaded.map((asset) => ({ url: asset.url, type: asset.type, title: asset.name }))]);
+      setMessage(`${uploaded.length} photo/video event میں upload ہوگئی۔ آخر میں Save & Publish Projects دبائیں۔`);
     } catch (error) {
       setMessage(`گیلری اپلوڈ نہیں ہوسکی: ${error.message}`);
     } finally {
@@ -86,16 +112,16 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     }
   };
 
-  const removeGalleryImage = (item, imageIndex) => {
-    setGalleryUrls(item.id, galleryUrls(item).filter((_, index) => index !== imageIndex));
+  const removeGalleryImage = (item, galleryEvent, imageIndex) => {
+    updateGalleryEvent(item.id, galleryEvent.id, "media", (galleryEvent.media || []).filter((_, index) => index !== imageIndex));
   };
 
-  const moveGalleryImage = (item, imageIndex, direction) => {
-    const urls = galleryUrls(item);
+  const moveGalleryImage = (item, galleryEvent, imageIndex, direction) => {
+    const urls = [...(galleryEvent.media || [])];
     const nextIndex = imageIndex + direction;
     if (nextIndex < 0 || nextIndex >= urls.length) return;
     [urls[imageIndex], urls[nextIndex]] = [urls[nextIndex], urls[imageIndex]];
-    setGalleryUrls(item.id, urls);
+    updateGalleryEvent(item.id, galleryEvent.id, "media", urls);
   };
 
   const addProject = () => {
@@ -109,6 +135,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
       icon: "📁",
       coverImage: "",
       galleryText: "",
+      galleryEvents: [],
       isActive: true,
       status: "proposed",
       budget: "",
@@ -150,6 +177,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         descriptionUr: item.descriptionUr.trim(),
         coverImage: item.coverImage.trim(),
         galleryUrls: item.galleryText.split(/\r?\n/).map((url) => url.trim()).filter(Boolean),
+        galleryEvents: (item.galleryEvents || []).map((entry) => ({
+          id: entry.id,
+          titleEn: String(entry.titleEn || "Event").trim(),
+          titleUr: String(entry.titleUr || "").trim(),
+          date: entry.date || "",
+          description: String(entry.description || "").trim(),
+          media: (entry.media || []).filter((asset) => asset?.url).map((asset) => ({ url: asset.url, type: asset.type === "video" ? "video" : "image", title: asset.title || "" })),
+        })),
         status: item.status || "proposed",
         budget: Math.max(0, Number(item.budget) || 0),
         completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
@@ -224,22 +259,38 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                   {item.coverImage && <img className="project-editor__preview" src={item.coverImage} alt="Project cover preview" />}
                 </div>
 
-                <div className="project-editor__wide project-media-control">
-                  <div className="project-media-control__heading"><span>Project photo gallery</span><small>ایک ساتھ کئی تصاویر بھی منتخب کی جاسکتی ہیں</small></div>
-                  <label className={`project-media-upload ${uploading[`${item.id}-gallery`] ? "is-uploading" : ""}`}>
-                    <input type="file" accept="image/*" multiple disabled={uploading[`${item.id}-gallery`]} onChange={(event) => { uploadGallery(item, event.target.files); event.target.value = ""; }} />
-                    <span>{uploading[`${item.id}-gallery`] ? "Uploading gallery..." : "+ Add gallery photos"}</span>
-                  </label>
-                  <div className="project-gallery-editor">
-                    {galleryUrls(item).map((url, imageIndex) => (
-                      <article key={`${url}-${imageIndex}`}>
-                        <img src={url} alt={`Gallery ${imageIndex + 1}`} />
-                        <div><button type="button" disabled={imageIndex === 0} onClick={() => moveGalleryImage(item, imageIndex, -1)}>←</button><b>{imageIndex + 1}</b><button type="button" disabled={imageIndex === galleryUrls(item).length - 1} onClick={() => moveGalleryImage(item, imageIndex, 1)}>→</button><button type="button" className="danger" onClick={() => removeGalleryImage(item, imageIndex)}>×</button></div>
-                      </article>
-                    ))}
-                    {!galleryUrls(item).length && <p>ابھی کوئی اضافی تصویر شامل نہیں ہے۔</p>}
+                <div className="project-editor__wide project-media-control project-event-manager">
+                  <div className="project-media-control__heading"><span>Project Event Albums</span><small>ہر event کے اندر الگ photos اور videos رکھیں</small></div>
+                  <button className="project-event-add" type="button" onClick={() => addGalleryEvent(item)}>+ نیا Event Album</button>
+                  <div className="project-event-list">
+                    {(item.galleryEvents || []).map((galleryEvent, eventIndex) => {
+                      const uploadKey = `${item.id}-${galleryEvent.id}-gallery`;
+                      return <article className="project-event-editor" key={galleryEvent.id}>
+                        <div className="project-event-editor__heading"><strong>EVENT {eventIndex + 1}</strong><button type="button" className="danger" onClick={() => removeGalleryEvent(item.id, galleryEvent.id)}>Delete event</button></div>
+                        <div className="project-event-editor__fields">
+                          <label><span>Event name (English)</span><input value={galleryEvent.titleEn || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "titleEn", event.target.value)} /></label>
+                          <label><span>ایونٹ کا نام (اردو)</span><input dir="rtl" value={galleryEvent.titleUr || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "titleUr", event.target.value)} /></label>
+                          <label><span>Event date</span><input type="date" value={galleryEvent.date || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "date", event.target.value)} /></label>
+                          <label><span>Short description</span><input value={galleryEvent.description || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "description", event.target.value)} /></label>
+                        </div>
+                        <label className={`project-media-upload ${uploading[uploadKey] ? "is-uploading" : ""}`}>
+                          <input type="file" accept="image/*,video/*" multiple disabled={uploading[uploadKey]} onChange={(event) => { uploadGallery(item, galleryEvent, event.target.files); event.target.value = ""; }} />
+                          <span>{uploading[uploadKey] ? "Uploading media..." : "+ Add photos / videos"}</span>
+                        </label>
+                        <div className="project-gallery-editor">
+                          {(galleryEvent.media || []).map((asset, mediaIndex) => (
+                            <article key={`${asset.url}-${mediaIndex}`}>
+                              {asset.type === "video" ? <video src={asset.url} muted playsInline /> : <img src={asset.url} alt={asset.title || `Gallery ${mediaIndex + 1}`} />}
+                              <div><button type="button" disabled={mediaIndex === 0} onClick={() => moveGalleryImage(item, galleryEvent, mediaIndex, -1)}>←</button><b>{asset.type === "video" ? "VIDEO" : mediaIndex + 1}</b><button type="button" disabled={mediaIndex === galleryEvent.media.length - 1} onClick={() => moveGalleryImage(item, galleryEvent, mediaIndex, 1)}>→</button><button type="button" className="danger" onClick={() => removeGalleryImage(item, galleryEvent, mediaIndex)}>×</button></div>
+                            </article>
+                          ))}
+                          {!galleryEvent.media?.length && <p>اس event میں ابھی کوئی photo/video شامل نہیں۔</p>}
+                        </div>
+                      </article>;
+                    })}
+                    {!item.galleryEvents?.length && <p className="project-event-empty">پہلے “نیا Event Album” بنائیں، پھر اس میں media upload کریں۔</p>}
                   </div>
-                  <details className="project-media-url"><summary>Advanced: gallery URLs manually edit کریں</summary><textarea rows="4" value={item.galleryText} onChange={(event) => updateItem(item.id, "galleryText", event.target.value)} placeholder={"https://.../photo-1.jpg\nhttps://.../photo-2.jpg"} /></details>
+                  <details className="project-media-url"><summary>Legacy gallery URLs (پرانا ریکارڈ)</summary><textarea rows="4" value={item.galleryText} onChange={(event) => updateItem(item.id, "galleryText", event.target.value)} /></details>
                 </div>
               </div>
               {!systems.some((system) => system.id === item.id) && <button className="project-editor__remove" type="button" onClick={() => removeUnsavedProject(item.id)}>نیا منصوبہ منسوخ کریں</button>}
