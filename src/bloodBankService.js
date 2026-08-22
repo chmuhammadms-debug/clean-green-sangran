@@ -379,6 +379,42 @@ export function printBloodDonorSlip(donor, donation = null) {
   popup.document.close();
 }
 
+export function printAllBloodDonorsSlip(donors) {
+  const popup = window.open("", "_blank", "width=1100,height=900");
+  if (!popup) throw new Error("Please allow pop-ups to print the complete donor slip.");
+
+  const sortedDonors = [...(donors || [])].sort((first, second) =>
+    String(first.full_name || "").localeCompare(String(second.full_name || ""))
+  );
+  const activeCount = sortedDonors.filter((donor) => donor.is_available !== false).length;
+  const groupSummary = BLOOD_GROUPS
+    .map((bloodGroup) => {
+      const count = sortedDonors.filter((donor) => donor.blood_group === bloodGroup).length;
+      return count ? `<span><b>${safe(bloodGroup)}</b> ${count}</span>` : "";
+    })
+    .join("");
+
+  const rows = sortedDonors.map((donor, index) => `<tr>
+    <td>${index + 1}</td>
+    <td>${safe(bloodDonorNumber(donor))}</td>
+    <td><b>${safe(donor.full_name)}</b></td>
+    <td class="group">${safe(donor.blood_group)}</td>
+    <td>${safe(donor.phone)}</td>
+    <td>${safe(donor.address)}</td>
+    <td><span class="status ${donor.is_available === false ? "inactive" : "active"}">${donor.is_available === false ? "Inactive" : "Active"}</span></td>
+  </tr>`).join("");
+
+  popup.document.write(`<!doctype html><html><head><title>All Blood Donors — Combined Slip</title><style>
+    *{box-sizing:border-box}body{margin:0;padding:24px;font-family:Arial,sans-serif;color:#17251d;background:#eef5f0}.sheet{max-width:1120px;margin:auto;padding:28px;border:2px solid #991b1b;border-radius:20px;background:#fff}.head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:18px;border-bottom:2px solid #dce8e0}.brand h1{margin:0;color:#7f1d1d;font-size:28px}.brand p{margin:5px 0 0;color:#617168}.mark{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;color:#fff;background:#b91c1c;font-size:32px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.summary>div{padding:12px;border:1px solid #dce8e0;border-radius:12px;background:#f4f8f5}.summary span{display:block;color:#627168;font-size:10px;font-weight:800;text-transform:uppercase}.summary b{display:block;margin-top:5px;color:#7f1d1d;font-size:22px}.groups{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}.groups span{padding:7px 10px;border-radius:999px;color:#fff;background:#7f1d1d;font-size:11px}.groups b{margin-right:4px}table{width:100%;border-collapse:collapse;font-size:11px}thead{display:table-header-group}tr{page-break-inside:avoid}th,td{padding:9px 8px;border:1px solid #cedbd2;text-align:left;vertical-align:top;overflow-wrap:anywhere}th{color:#fff;background:#7f1d1d}.group{font-size:14px;font-weight:900;color:#7f1d1d}.status{display:inline-block;padding:5px 8px;border-radius:999px;font-size:9px;font-weight:900;text-transform:uppercase}.active{color:#14532d;background:#dcfce7}.inactive{color:#7f1d1d;background:#fee2e2}.foot{margin:18px 0 0;padding-top:14px;border-top:1px dashed #afbeb4;color:#617168;font-size:10px;text-align:center}@page{size:A4 landscape;margin:10mm}@media print{body{padding:0;background:#fff}.sheet{max-width:none;padding:0;border:0}.mark{width:54px;height:54px}.summary{margin:12px 0}.foot{margin-top:12px}}</style></head><body><main class="sheet">
+    <header class="head"><div class="brand"><h1>Clean &amp; Green Sangran</h1><p>Blood Bank — All Donors Combined Slip / تمام ڈونرز کی مشترکہ سلپ</p></div><div class="mark">✚</div></header>
+    <section class="summary"><div><span>Total donors</span><b>${sortedDonors.length}</b></div><div><span>Active donors</span><b>${activeCount}</b></div><div><span>Inactive donors</span><b>${sortedDonors.length - activeCount}</b></div></section>
+    <div class="groups">${groupSummary || "<span>No blood-group data</span>"}</div>
+    <table><thead><tr><th>#</th><th>Donor No.</th><th>Donor Name</th><th>Group</th><th>Phone</th><th>Address</th><th>Status</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No donor records available.</td></tr>'}</tbody></table>
+    <p class="foot">Generated ${safe(new Date().toLocaleString())} · Private donor information — authorised Blood Bank administration use only.</p>
+  </main><script>window.onload=()=>window.print()</script></body></html>`);
+  popup.document.close();
+}
+
 export function printBloodRequestReport(requests) {
   const popup = window.open("", "_blank", "width=1100,height=900");
   if (!popup) throw new Error("Please allow pop-ups to print the patient report.");
