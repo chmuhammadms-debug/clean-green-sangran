@@ -7,6 +7,7 @@ import {
   deleteBloodRequest,
   fetchBloodDonors,
   fetchBloodRequestReport,
+  printAllBloodDonorsSlip,
   printBloodDonorSlip,
   printBloodRequestReport,
   regenerateBloodRequestCode,
@@ -278,7 +279,10 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
           <button className="blood-admin-add-donor__submit" type="submit" disabled={addingDonor}>{addingDonor ? "Saving donor…" : "Add donor to Blood Bank"}</button>
         </form>
         <div className="blood-donor-list blood-donor-list--wide">
-        <div className="blood-donor-list__title"><h3>Donor records / ڈونر ریکارڈ</h3><span>{filteredDonors.length} result(s)</span></div>
+        <div className="blood-donor-list__title">
+          <div><h3>Donor records / ڈونر ریکارڈ</h3><span>{filteredDonors.length} result(s)</span></div>
+          <button className="blood-report-print" type="button" onClick={() => printAllBloodDonorsSlip(donors)}>Print all donors in one slip / تمام ڈونرز کی ایک سلپ</button>
+        </div>
         {filteredDonors.length === 0 ? <p className="blood-empty">No matching donor found.</p> : <div className="blood-admin-card-grid">
           {filteredDonors.map((donor) => <article className={`blood-donor ${donor.is_available === false ? "blood-donor--inactive" : ""}`} key={donor.id}><div className="blood-donor__main"><strong>{donor.blood_group}</strong><span><b>{donor.full_name}</b><small>{donor.phone}</small><small>{donor.address}</small>{donor.last_donated_at && <small className="blood-donor__last-date">Last donated: {new Date(donor.last_donated_at).toLocaleString()}</small>}{donor.next_available_on && <small>Next eligible date: {donor.next_available_on}</small>}</span><em className={donor.is_available === false ? "unavailable" : "available"}>{donor.is_available === false ? "INACTIVE" : "ACTIVE"}</em></div><div className="blood-donor__actions"><button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button type="button" disabled={busyId === donor.id} onClick={() => changeDonorAvailability(donor, donor.is_available === false)}>{donor.is_available === false ? "Reactivate donor" : "Mark unavailable"}</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Working…" : "Delete donor card"}</button></div></article>)}
         </div>}
