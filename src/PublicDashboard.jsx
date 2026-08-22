@@ -766,12 +766,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [showFullMission, setShowFullMission] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedSystemId, setSelectedSystemId] = useState(null);
+  const [selectedSystemId, setSelectedSystemId] = useState(() => new URLSearchParams(window.location.search).get("project"));
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
   const [showPublicRecords, setShowPublicRecords] = useState(false);
   const [showDonationDetails, setShowDonationDetails] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(() => new URLSearchParams(window.location.search).get("event"));
   const galleryTouchStart = useRef(null);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
@@ -1007,6 +1008,24 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       : projectGalleries[system.id])
       || [{ image: imageFor(system), title: systemName(system) }];
   };
+  const galleryEventsFor = (system) => {
+    const configured = profileFor(system).galleryEvents;
+    if (Array.isArray(configured) && configured.length) {
+      return configured.map((entry, eventIndex) => ({
+        id: entry.id || `event-${eventIndex}`,
+        title: ur ? (entry.titleUr || entry.titleEn || `ایونٹ ${eventIndex + 1}`) : (entry.titleEn || entry.titleUr || `Event ${eventIndex + 1}`),
+        date: entry.date || "",
+        description: entry.description || "",
+        media: (entry.media || []).filter((asset) => asset?.url).map((asset, mediaIndex) => ({
+          image: publicImageVariant(asset.url, 1400),
+          title: asset.title || `${systemName(system)} ${mediaIndex + 1}`,
+          type: asset.type === "video" ? "video" : "image",
+        })),
+      })).filter((entry) => entry.media.length);
+    }
+    const legacyMedia = photosFor(system).map((photo) => ({ ...photo, type: "image" }));
+    return legacyMedia.length ? [{ id: `legacy-${system.id}`, title: ur ? "منصوبے کی گیلری" : "Project Gallery", date: "", description: "", media: legacyMedia }] : [];
+  };
   const faithSlidesFor = (system) => {
     const slidesByProject = settings.projectFaithSlidesByProject || {};
     if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
@@ -1024,7 +1043,18 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const selectedParentId = selectedSystem
     ? (selectedWorkParentId || (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null))
     : null;
-  const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
+  const galleryEvents = selectedSystem ? galleryEventsFor(selectedSystem) : [];
+  const selectedGalleryEvent = galleryEvents.find((entry) => entry.id === selectedEventId) || null;
+  const activeGallery = selectedGalleryEvent?.media || [];
+  const shareGalleryEvent = async (galleryEvent) => {
+    const url = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(selectedSystem.id)}&event=${encodeURIComponent(galleryEvent.id)}`;
+    const title = `${systemName(selectedSystem)} — ${galleryEvent.title}`;
+    if (navigator.share) {
+      try { await navigator.share({ title, text: galleryEvent.description || title, url }); return; } catch (error) { if (error?.name === "AbortError") return; }
+    }
+    await navigator.clipboard?.writeText(url);
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`, "_blank", "noopener,noreferrer");
+  };
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
     return (current + direction + activeGallery.length) % activeGallery.length;
@@ -1168,15 +1198,28 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       language={language}
                     />
                   )}
-                  <div className="project-gallery reveal is-visible">
+                  <div className="project-gallery project-event-gallery reveal is-visible">
                       <div className="section-heading section-heading--compact">
-                        <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
-                        <p>{photosFor(selectedSystem).length} {ur ? "تصاویر" : "community photos"}</p>
+                        <div><span className="section-kicker">{ur ? "منصوبے کے ایونٹس" : "PROJECT EVENT ALBUMS"}</span><h2>{systemName(selectedSystem)} {ur ? "میڈیا گیلری" : "Media Gallery"}</h2></div>
+                        <p>{galleryEvents.length} {ur ? "ایونٹس" : "events"}</p>
                       </div>
-                      <div className="project-gallery__grid">
-                        {photosFor(selectedSystem).map((photo, index) => (
+                      {!selectedGalleryEvent ? <div className="project-event-cards">
+                        {galleryEvents.map((galleryEvent) => {
+                          const cover = galleryEvent.media.find((asset) => asset.type === "image") || galleryEvent.media[0];
+                          return <article className="project-event-card" key={galleryEvent.id}>
+                            <button className="project-event-card__open" type="button" onClick={() => setSelectedEventId(galleryEvent.id)}>
+                              <div className="project-event-card__cover">{cover?.type === "video" ? <video src={cover.image} muted playsInline preload="metadata" /> : <img src={cover?.image} alt="" loading="lazy" />}</div>
+                              <div><small>{galleryEvent.date || (ur ? "کمیونٹی ایونٹ" : "COMMUNITY EVENT")}</small><h3>{galleryEvent.title}</h3><p>{galleryEvent.description || `${galleryEvent.media.length} ${ur ? "تصاویر / ویڈیوز" : "photos / videos"}`}</p></div>
+                            </button>
+                            <button className="project-event-card__share" type="button" onClick={() => shareGalleryEvent(galleryEvent)}>{ur ? "شیئر کریں" : "Share"}</button>
+                          </article>;
+                        })}
+                      </div> : <>
+                        <div className="project-event-gallery__toolbar"><button type="button" onClick={() => setSelectedEventId(null)}>← {ur ? "تمام ایونٹس" : "All events"}</button><div><h3>{selectedGalleryEvent.title}</h3><span>{selectedGalleryEvent.media.length} {ur ? "فائلیں" : "media files"}</span></div><button type="button" onClick={() => shareGalleryEvent(selectedGalleryEvent)}>{ur ? "شیئر" : "Share"}</button></div>
+                        <div className="project-gallery__grid">
+                        {selectedGalleryEvent.media.map((photo, index) => (
                           <figure
-                            key={`${selectedSystem.id}-photo-${index}`}
+                            key={`${selectedGalleryEvent.id}-media-${index}`}
                             role="button"
                             tabIndex="0"
                             aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${index + 1}`}
@@ -1185,18 +1228,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                               if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
                             }}
                           >
-                            <img
-                              src={photo.image}
-                              alt={photo.title}
-                              loading={index < 6 ? "eager" : "lazy"}
-                              fetchPriority={index < 3 ? "high" : "auto"}
-                              decoding="async"
-                            />
-                            <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
+                            {photo.type === "video" ? <video src={photo.image} muted playsInline preload="metadata" /> : <img src={photo.image} alt={photo.title} loading={index < 6 ? "eager" : "lazy"} fetchPriority={index < 3 ? "high" : "auto"} decoding="async" />}
+                            <figcaption><span>{photo.type === "video" ? "VIDEO" : "PHOTO"} {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
                             <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                           </figure>
                         ))}
                       </div>
+                      </>}
                   </div>
                   {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                 </>
@@ -1259,7 +1297,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               </div>
               <div className="gallery-viewer__stage">
                 <button className="gallery-viewer__arrow gallery-viewer__arrow--previous" onClick={() => moveGallery(-1)} aria-label={ur ? "پچھلی تصویر" : "Previous photo"}>‹</button>
-                <img src={activeGallery[galleryIndex].image} alt={activeGallery[galleryIndex].title} />
+                {activeGallery[galleryIndex].type === "video" ? <video src={activeGallery[galleryIndex].image} controls autoPlay playsInline /> : <img src={activeGallery[galleryIndex].image} alt={activeGallery[galleryIndex].title} />}
                 <button className="gallery-viewer__arrow gallery-viewer__arrow--next" onClick={() => moveGallery(1)} aria-label={ur ? "اگلی تصویر" : "Next photo"}>›</button>
               </div>
               <div className="gallery-viewer__filmstrip" aria-label={ur ? "تمام تصاویر" : "All photos"}>
@@ -1270,7 +1308,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     onClick={() => setGalleryIndex(index)}
                     aria-label={`${ur ? "تصویر" : "Photo"} ${index + 1}`}
                   >
-                    <img src={photo.image} alt="" />
+                    {photo.type === "video" ? <video src={photo.image} muted playsInline /> : <img src={photo.image} alt="" />}
                   </button>
                 ))}
               </div>
