@@ -71,3 +71,109 @@
 .blood-secure-match span{font-weight:800}.blood-secure-match p{margin:7px 0 0;color:#d3e4da;line-height:1.65}
 .blood-secure-match__actions{display:flex;gap:9px;flex-wrap:wrap}.blood-secure-match__actions a{padding:11px 15px;border-radius:999px;background:#9df43f;color:#14351f;text-decoration:none;font-weight:800}
 @media(max-width:700px){.blood-secure-match{grid-template-columns:auto 1fr}.blood-secure-match__actions{grid-column:1/-1}.blood-secure-match>b{width:62px;height:62px;font-size:28px}}
+
+
+/* Admin-only Blood Bank donor entry */
+.blood-admin-add-donor {
+  display: grid;
+  grid-template-columns: minmax(220px, .85fr) minmax(0, 1.6fr) auto;
+  align-items: end;
+  gap: 18px;
+  margin: 18px 0 24px;
+  padding: 22px;
+  color: #2b1717;
+  background: linear-gradient(135deg, #fff7f7 0%, #ffffff 68%);
+  border: 1px solid #fecaca;
+  border-radius: 20px;
+  box-shadow: 0 14px 34px rgba(127, 29, 29, .08);
+}
+.blood-admin-add-donor__heading span {
+  display: block;
+  margin-bottom: 6px;
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+.blood-admin-add-donor__heading h3 {
+  margin: 0 0 6px;
+  color: #7f1d1d;
+  font-size: 21px;
+}
+.blood-admin-add-donor__heading p {
+  margin: 0;
+  color: #786568;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.blood-admin-add-donor__fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.blood-admin-add-donor__fields label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.blood-admin-add-donor__fields label.wide {
+  grid-column: 1 / -1;
+}
+.blood-admin-add-donor__fields label > span {
+  color: #5f4347;
+  font-size: 12px;
+  font-weight: 800;
+}
+.blood-admin-add-donor__fields input,
+.blood-admin-add-donor__fields select {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  color: #241719;
+  background: #fff;
+  border: 1px solid #e8c8cc;
+  border-radius: 10px;
+  outline: none;
+}
+.blood-admin-add-donor__fields input:focus,
+.blood-admin-add-donor__fields select:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, .1);
+}
+.blood-admin-add-donor__submit {
+  min-height: 46px;
+  padding: 11px 17px;
+  color: #fff;
+  font-weight: 900;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #991b1b, #dc2626);
+  border: 0;
+  border-radius: 11px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(153, 27, 27, .2);
+}
+.blood-admin-add-donor__submit:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+@media (max-width: 950px) {
+  .blood-admin-add-donor {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+}
+@media (max-width: 620px) {
+  .blood-admin-add-donor {
+    padding: 17px;
+  }
+  .blood-admin-add-donor__fields {
+    grid-template-columns: 1fr;
+  }
+  .blood-admin-add-donor__fields label.wide {
+    grid-column: auto;
+  }
+  .blood-admin-add-donor__submit {
+    width: 100%;
+  }
+}
