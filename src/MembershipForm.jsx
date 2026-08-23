@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { prepareMembershipPhoto, registerMembership } from "./membershipService";
-import MembershipCard from "./MembershipCard";
 
 const blank = { fullName: "", fatherName: "", phone: "", whatsapp: "", cnic: "", address: "", occupation: "", age: "", interests: [] };
 const interestOptions = ["Plantation", "Cleanliness", "Blood Bank", "Welfare", "Sports", "Volunteer Work"];
@@ -10,7 +9,7 @@ export default function MembershipForm({ language = "en", onClose }) {
   const [form, setForm] = useState(blank);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [member, setMember] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -21,19 +20,8 @@ export default function MembershipForm({ language = "en", onClose }) {
     try {
       const photoData = await prepareMembershipPhoto(photo);
       const savedMember = await registerMembership({ ...form, photoData });
-      setMember({
-        ...savedMember,
-        full_name: savedMember.full_name || form.fullName.trim(),
-        father_name: savedMember.father_name || form.fatherName.trim(),
-        phone: savedMember.phone || form.phone.trim(),
-        whatsapp: savedMember.whatsapp || form.whatsapp.trim() || null,
-        cnic: savedMember.cnic || form.cnic.trim() || null,
-        address: savedMember.address || form.address.trim(),
-        occupation: savedMember.occupation || form.occupation.trim() || null,
-        age: savedMember.age || (form.age ? Number(form.age) : null),
-        interest_areas: savedMember.interest_areas?.length ? savedMember.interest_areas : form.interests,
-        photo_data: savedMember.photo_data || photoData,
-      });
+      if (savedMember.status !== "pending") throw new Error("Membership request could not be placed in review.");
+      setSubmitted(true);
     }
     catch (err) { setError(err.message || "Membership could not be created."); }
     finally { setSaving(false); }
@@ -46,13 +34,13 @@ export default function MembershipForm({ language = "en", onClose }) {
     </header>
     <main className="membership-page__content">
     <section className="membership-card">
-      {member ? <div className="membership-success">
-        <span>✓</span><small>{ur ? "ممبرشپ منظور ہو گئی" : "MEMBERSHIP APPROVED"}</small>
-        <h2>{ur ? "آپ کا ممبرشپ کارڈ تیار ہے" : "Your membership card is ready"}</h2>
-        <MembershipCard member={member} language={language} />
+      {submitted ? <div className="membership-success membership-pending-success">
+        <span>✓</span><small>{ur ? "درخواست موصول ہو گئی" : "REQUEST RECEIVED"}</small>
+        <h2>{ur ? "آپ کی درخواست ایڈمن کی منظوری کے لیے بھیج دی گئی ہے" : "Your request is waiting for admin approval"}</h2>
+        <p>{ur ? "منظوری کے بعد ہی ممبرشپ فعال ہوگی اور ممبرشپ کارڈ جاری کیا جائے گا۔" : "Your membership will become active and your card will be issued only after an administrator approves it."}</p>
         <button className="membership-submit" onClick={onClose}>{ur ? "مکمل" : "Done"}</button>
       </div> : <>
-        <div className="membership-head"><span>{ur ? "مفت عوامی ممبرشپ" : "FREE COMMUNITY MEMBERSHIP"}</span><h2>{ur ? "کلین اینڈ گرین سنگراں کا حصہ بنیں" : "Become a Member"}</h2><p>{ur ? "کوئی فیس نہیں۔ فارم جمع ہوتے ہی ممبرشپ منظور ہو جائے گی۔" : "No fee. Your membership is approved as soon as you submit."}</p></div>
+        <div className="membership-head"><span>{ur ? "مفت عوامی ممبرشپ" : "FREE COMMUNITY MEMBERSHIP"}</span><h2>{ur ? "کلین اینڈ گرین سنگراں کا حصہ بنیں" : "Become a Member"}</h2><p>{ur ? "کوئی فیس نہیں۔ فارم جمع ہونے کے بعد ایڈمن درخواست کی منظوری دے گا۔" : "No fee. An administrator will review your request after submission."}</p></div>
         <form className="membership-form" onSubmit={submit}>
           <label className="membership-photo-field membership-wide"><span>{ur ? "پروفائل تصویر (اختیاری)" : "Profile photo (optional)"}</span><div className="membership-photo-picker">{photoPreview ? <img src={photoPreview} alt="Profile preview" /> : <span>📷</span>}<div><b>{ur ? "تصویر منتخب کریں" : "Choose a clear photo"}</b><small>JPG, PNG or WebP</small><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const next = e.target.files?.[0] || null; setPhoto(next); setPhotoPreview(next ? URL.createObjectURL(next) : ""); }} /></div></div></label>
           <label><span>{ur ? "پورا نام" : "Full name"} *</span><input required minLength="3" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} /></label>
@@ -66,7 +54,7 @@ export default function MembershipForm({ language = "en", onClose }) {
           <fieldset className="membership-wide"><legend>{ur ? "دلچسپی کے شعبے" : "Areas of interest"}</legend><div className="membership-interests">{interestOptions.map((item) => <label key={item}><input type="checkbox" checked={form.interests.includes(item)} onChange={() => toggleInterest(item)} /><span>{item}</span></label>)}</div></fieldset>
           {error && <p className="membership-error membership-wide">{error}</p>}
           <label className="membership-consent membership-wide"><input required type="checkbox" /><span>{ur ? "میں درست معلومات دینے اور کمیونٹی اصولوں کی پابندی سے اتفاق کرتا/کرتی ہوں۔" : "I confirm these details are correct and agree to follow the community guidelines."}</span></label>
-          <button className="membership-submit membership-wide" disabled={saving}>{saving ? (ur ? "جمع ہو رہا ہے…" : "Submitting…") : (ur ? "مفت ممبر بنیں" : "Join Free — Auto Approved")}</button>
+          <button className="membership-submit membership-wide" disabled={saving}>{saving ? (ur ? "جمع ہو رہا ہے…" : "Submitting…") : (ur ? "درخواست جمع کریں" : "Submit Membership Request")}</button>
         </form>
       </>}
     </section>

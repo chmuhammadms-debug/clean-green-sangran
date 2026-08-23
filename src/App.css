@@ -562,6 +562,7 @@ tbody tr:last-child td {
 .membership-admin__head h2 { margin: 0; color: #166534; }
 .membership-admin__head p { margin: 5px 0 0; color: #6b7280; }
 .membership-admin__head > strong, .membership-approved { padding: 7px 11px; border-radius: 999px; color: #166534; background: #dcfce7; font-size: 12px; }
+.membership-pending { display: inline-block; padding: 7px 11px; border-radius: 999px; color: #92400e; background: #fef3c7; font-size: 12px; font-weight: 800; }
 .membership-admin > input { width: min(520px, 100%); margin: 18px 0; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; }
 .membership-admin__table { overflow-x: auto; }
 .membership-admin__table table { width: 100%; border-collapse: collapse; }
@@ -573,6 +574,8 @@ tbody tr:last-child td {
 .membership-actions { display: flex; gap: 6px; }
 .membership-actions button { padding: 7px 10px; border: 1px solid #b9d1c0; border-radius: 8px; color: #166534; background: white; font-weight: 800; cursor: pointer; }
 .membership-actions button:last-child { color: white; background: #166534; }
+.membership-actions .membership-action-approve, .membership-action-approve { color: #fff; background: #15803d; border-color: #15803d; }
+.membership-pending-success > p { max-width: 640px; margin: 0 auto 22px; color: #49675a; line-height: 1.7; }
 .membership-manage-overlay { position: fixed; inset: 0; z-index: 12000; display: grid; place-items: center; padding: 18px; background: rgba(3,25,15,.72); }
 .membership-manage-card { width: min(720px,100%); max-height: calc(100vh - 36px); overflow-y: auto; border-radius: 20px; background: white; box-shadow: 0 24px 75px rgba(0,0,0,.32); }
 .membership-manage-card > header { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 17px 20px; color: white; background: #105332; }
