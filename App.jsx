@@ -9,16 +9,21 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
+import MembershipAdmin from "./MembershipAdmin";
+import ComplaintAdmin from "./ComplaintAdmin";
 import MosqueManagementHub from "./MosqueManagementHub";
+import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
+import DemographyAdmin from "./DemographyAdmin";
+import { isDemographyProject } from "./demographyService";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
-  mosqueParentRecords,
+  mosqueChildSystems,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -26,12 +31,18 @@ import {
   ensureWelfareSystems,
   isWelfareChild,
   isWelfareParent,
-  welfareParentRecords,
+  welfareChildSystems,
 } from "./welfareManagement";
 import { isCurrentUserAdmin } from "./bloodBankService";
 import { supabase } from "./supabase";
-import { fetchDatabaseData, syncDatabaseData } from "./dataService";
+import { deleteDatabaseProject, deleteDatabaseTransaction, fetchDatabaseData, syncDatabaseData } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
+import {
+  createWorkItemId,
+  isWorkItem,
+  recordsForProject,
+  workParentId,
+} from "./workItems";
 
 const defaultSystems = [
   {
@@ -80,20 +91,12 @@ function normalizeSystems(systems = []) {
   );
 }
 
-const defaultTransactions = [
-  {
-    id: "cemetery-first-record",
-    systemId: "cemetery",
-    type: "income",
-    person: "Ghulam Mustafa",
-    amount: 15000,
-    date: "2026-07-08",
-    method: "Bank",
-    details: "Cemetery Fund",
-    slipName: "",
-    slipData: "",
-  },
-];
+const defaultTransactions = [];
+const legacyTransactionIds = new Set(["cemetery-first-record"]);
+
+function withoutLegacyTransactions(records = []) {
+  return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
+}
 
 function getToday() {
   return new Date().toISOString().slice(0, 10);
@@ -141,20 +144,9 @@ function loadTransactions() {
       localStorage.getItem("sangrahnTransactions")
     );
 
-    if (!Array.isArray(saved)) {
-      return defaultTransactions;
-    }
+    if (!Array.isArray(saved)) return defaultTransactions;
 
-    return saved.map((record) => {
-      if (record.id === "cemetery-first-record") {
-        return {
-          ...record,
-          person: "Ghulam Mustafa",
-          method: "Bank",
-          details: "Cemetery Fund",
-        };
-      }
-
+    return withoutLegacyTransactions(saved).map((record) => {
       const methodTranslations = {
         نقد: "Cash",
         بینک: "Bank",
@@ -392,7 +384,7 @@ function RecordsTable({
   );
 }
 
-function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
+function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthenticatedChange }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -422,6 +414,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     useState(getCurrentMonth());
 
   useEffect(() => {
+    onAuthenticatedChange?.(loggedIn);
+  }, [loggedIn, onAuthenticatedChange]);
+
+  useEffect(() => {
     localStorage.setItem(
       "sangrahnSystems",
       JSON.stringify(systems)
@@ -446,18 +442,19 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
       const databaseData = await fetchDatabaseData();
       const localSystems = loadSystems();
       const localTransactions = loadTransactions();
+      const databaseTransactions = withoutLegacyTransactions(databaseData.transactions);
       const databaseSlugs = new Set(databaseData.systems.map((system) => String(system.id)));
       const mergedSystems = normalizeSystems([
         ...databaseData.systems,
         ...localSystems.filter((system) => !databaseSlugs.has(String(system.id))),
       ]);
-      if (databaseData.transactions.length === 0 && localTransactions.length > 0) {
+      if (databaseTransactions.length === 0 && localTransactions.length > 0) {
         setSystems(mergedSystems.length ? mergedSystems : localSystems);
         setTransactions(localTransactions);
         setDatabaseMessage("Local records are being migrated to Supabase...");
       } else {
         setSystems(databaseData.systems.length ? mergedSystems : normalizeSystems(localSystems));
-        setTransactions(databaseData.transactions);
+        setTransactions(databaseTransactions);
         setDatabaseMessage("Database connected");
       }
       setDatabaseReady(true);
@@ -496,17 +493,43 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
   const selectedSystem = systems.find(
     (system) => system.id === selectedSystemId
   );
+  const projectProfiles = siteSettings.projectProfilesByProject || {};
+  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
+  const relatedChildIdsFor = (systemOrId) => (
+    isMosqueParent(systemOrId)
+      ? mosqueChildSystems(systems).map((system) => system.id)
+      : isWelfareParent(systemOrId)
+        ? welfareChildSystems(systems).map((system) => system.id)
+        : []
+  );
 
-  const selectedTransactions = (isMosqueParent(selectedSystemId)
-    ? mosqueParentRecords(transactions)
-    : isWelfareParent(selectedSystemId)
-      ? welfareParentRecords(transactions)
-      : transactions.filter((record) => record.systemId === selectedSystemId))
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const selectedTransactions = recordsForProject(
+    transactions,
+    systems,
+    selectedSystemId,
+    projectProfiles,
+    relatedChildIdsFor(selectedSystemId)
+  ).sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
     selectedTransactions
   );
+  const selectedWorkBudget = selectedWorkParentId
+    ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
+    : 0;
+
+  const financeSections = selectedWorkParentId
+    ? [
+        ["income", "Add Donation"],
+        ["expense", "Add Expense"],
+        ["ledger", "Ledger / Report"],
+      ]
+    : [
+        ["income", "Donations"],
+        ["expense", "Expenses"],
+        ["daily", "Daily Report"],
+        ["monthly", "Monthly Report"],
+      ];
 
   const allTotals = totalsFor(transactions);
 
@@ -591,8 +614,100 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     resetForm();
   }
 
+  async function createWork(parentProjectId, work) {
+    const name = work.name.trim();
+    if (!name) throw new Error("Work name is required.");
+    const description = work.description.trim();
+    const budget = Math.max(0, Number(work.budget) || 0);
+    const id = createWorkItemId(parentProjectId);
+    const nextWork = {
+      id,
+      parentProjectId,
+      name,
+      nameUr: name,
+      description,
+      descriptionUr: description,
+      icon: "🛠️",
+      isActive: true,
+    };
+    const nextSettings = {
+      ...siteSettings,
+      projectProfilesByProject: {
+        ...projectProfiles,
+        [id]: {
+          parentProjectId,
+          nameEn: name,
+          nameUr: name,
+          descriptionEn: description,
+          descriptionUr: description,
+          coverImage: "",
+          galleryUrls: [],
+          status: "in-progress",
+          budget,
+          completionPercent: 0,
+          startDate: "",
+          expectedCompletionDate: "",
+          planEn: "",
+          planUr: "",
+        },
+      },
+    };
+
+    await onSaveSiteSettings(nextSettings);
+    setSystems((current) => normalizeSystems([...current, nextWork]));
+    openSystem(id);
+  }
+
+  async function deleteSystemPermanently(system) {
+    const systemId = String(system?.id || "");
+    if (!systemId) throw new Error("Project ID is missing.");
+
+    const childIds = systems
+      .filter((candidate) => workParentId(candidate, projectProfiles) === systemId)
+      .map((candidate) => String(candidate.id));
+    const deletedIds = new Set([...childIds, systemId]);
+    const relatedRecordCount = transactions.filter(
+      (record) => deletedIds.has(String(record.systemId))
+    ).length;
+    if (relatedRecordCount) {
+      throw new Error(`This project contains ${relatedRecordCount} financial record(s). Delete or move those records first so the accounts remain safe.`);
+    }
+
+    for (const deletedId of [...childIds, systemId]) {
+      await deleteDatabaseProject(deletedId);
+    }
+
+    setTransactions((current) => current.filter(
+      (record) => !deletedIds.has(String(record.systemId))
+    ));
+    setSystems((current) => normalizeSystems(current.filter(
+      (candidate) => !deletedIds.has(String(candidate.id))
+    )));
+
+    if (deletedIds.has(String(selectedSystemId || ""))) {
+      const parentId = workParentId(system, projectProfiles);
+      setSelectedSystemId(parentId && !deletedIds.has(parentId) ? parentId : null);
+    }
+
+    const nextProfiles = { ...projectProfiles };
+    deletedIds.forEach((deletedId) => delete nextProfiles[deletedId]);
+    try {
+      await onSaveSiteSettings({
+        ...siteSettings,
+        projectProfilesByProject: nextProfiles,
+      });
+    } catch (error) {
+      console.warn("Project was deleted, but its unused profile could not be cleaned up.", error);
+    }
+  }
+
   function openAdminNotification(item) {
     const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
+    if (notificationType.includes("complaint")) {
+      setSelectedSystemId(null);
+      window.setTimeout(() => document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      return;
+    }
     if (notificationType.includes("blood")) {
       const bloodSystem = systems.find((system) => isBloodBankProject(system));
       if (bloodSystem) openSystem(bloodSystem.id);
@@ -813,12 +928,20 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
     resetForm();
   }
 
-  function deleteRecord(recordId) {
+  async function deleteRecord(recordId) {
     const confirmed = window.confirm(
       "Are you sure you want to delete this record?"
     );
 
     if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteDatabaseTransaction(recordId);
+    } catch (error) {
+      console.error(error);
+      alert(`Record could not be deleted: ${error.message}`);
       return;
     }
 
@@ -1271,11 +1394,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               className="logout-button"
               onClick={() =>
                 setSelectedSystemId(
-                  isMosqueChild(selectedSystem)
-                    ? "mosque"
-                    : isWelfareChild(selectedSystem)
-                      ? "welfare"
-                      : null
+                  selectedWorkParentId
+                    ? selectedWorkParentId
+                    : isMosqueChild(selectedSystem)
+                      ? "mosque"
+                      : isWelfareChild(selectedSystem)
+                        ? "welfare"
+                        : null
                 )
               }
               style={{
@@ -1284,11 +1409,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 background: "#166534",
               }}
             >
-              {isMosqueChild(selectedSystem)
-                ? "← Mosque Management"
-                : isWelfareChild(selectedSystem)
-                  ? "← Welfare Management"
-                  : "← Central Dashboard"}
+              {selectedWorkParentId
+                ? "← Project Works"
+                : isMosqueChild(selectedSystem)
+                  ? "← Mosque Management"
+                  : isWelfareChild(selectedSystem)
+                    ? "← Welfare Management"
+                    : "← Central Dashboard"}
             </button>
 
             <h1 className="page-heading">
@@ -1301,12 +1428,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 selectedSystem.englishName}
             </p>
 
-            {isBloodBankProject(selectedSystem) ? (
+            {isDemographyProject(selectedSystem) ? (
+              <DemographyAdmin />
+            ) : isBloodBankProject(selectedSystem) ? (
               <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
             ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
+                profiles={projectProfiles}
                 onOpenSystem={openSystem}
                 adminMode
               />
@@ -1359,14 +1489,35 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                 adminMode
               />
             )}
-            <SummaryCards
-              totals={selectedTotals}
-              labels={[
-                "Total Donations",
-                "Total Expenses",
-                "Current Balance",
-              ]}
-            />
+            {!isWorkItem(selectedSystem, projectProfiles) && (
+              <WorkItemsHub
+                project={selectedSystem}
+                systems={systems}
+                transactions={transactions}
+                profiles={projectProfiles}
+                onOpenSystem={openSystem}
+                onCreateWork={createWork}
+                onDeleteWork={deleteSystemPermanently}
+                adminMode
+              />
+            )}
+            {selectedWorkParentId ? (
+              <div className="summary-grid">
+                <div className="summary-card"><p>Work Budget</p><h2>Rs. {selectedWorkBudget.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Donations</p><h2>Rs. {selectedTotals.income.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Expenses</p><h2>Rs. {selectedTotals.expenses.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Work Balance</p><h2>Rs. {selectedTotals.balance.toLocaleString()}</h2></div>
+              </div>
+            ) : (
+              <SummaryCards
+                totals={selectedTotals}
+                labels={[
+                  "Total Donations",
+                  "Total Expenses",
+                  "Current Balance",
+                ]}
+              />
+            )}
 
             {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
             <section
@@ -1381,12 +1532,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   gap: "12px",
                 }}
               >
-                {[
-                  ["income", "Donations"],
-                  ["expense", "Expenses"],
-                  ["daily", "Daily Report"],
-                  ["monthly", "Monthly Report"],
-                ].map(([id, label]) => (
+                {financeSections.map(([id, label]) => (
                   <button
                     key={id}
                     type="button"
@@ -1433,7 +1579,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                         event.target.value
                       )
                     }
-                    placeholder="For example: Ghulam Mustafa"
+                    placeholder="For example: Donor Name"
                   />
                 </div>
 
@@ -1748,45 +1894,53 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   <h3>
                     {activeSection === "daily"
                       ? "Daily Report"
-                      : "Monthly Report"}
+                      : activeSection === "monthly"
+                        ? "Monthly Report"
+                        : "Complete Ledger / Report"}
                   </h3>
 
-                  <div
-                    className="form-field"
-                    style={{ maxWidth: "350px" }}
-                  >
-                    <label>
-                      {activeSection === "daily"
-                        ? "Select report date"
-                        : "Select report month"}
-                    </label>
+                  {(activeSection === "daily" || activeSection === "monthly") && (
+                    <div
+                      className="form-field"
+                      style={{ maxWidth: "350px" }}
+                    >
+                      <label>
+                        {activeSection === "daily"
+                          ? "Select report date"
+                          : "Select report month"}
+                      </label>
 
-                    {activeSection === "daily" ? (
-                      <input
-                        type="date"
-                        value={dailyDate}
-                        onChange={(event) =>
-                          setDailyDate(
-                            event.target.value
-                          )
-                        }
-                      />
-                    ) : (
-                      <input
-                        type="month"
-                        value={monthlyDate}
-                        onChange={(event) =>
-                          setMonthlyDate(
-                            event.target.value
-                          )
-                        }
-                      />
-                    )}
-                  </div>
+                      {activeSection === "daily" ? (
+                        <input
+                          type="date"
+                          value={dailyDate}
+                          onChange={(event) =>
+                            setDailyDate(
+                              event.target.value
+                            )
+                          }
+                        />
+                      ) : (
+                        <input
+                          type="month"
+                          value={monthlyDate}
+                          onChange={(event) =>
+                            setMonthlyDate(
+                              event.target.value
+                            )
+                          }
+                        />
+                      )}
+                    </div>
+                  )}
 
                   <SummaryCards
                     totals={reportTotals}
-                    labels={[
+                    labels={activeSection === "ledger" ? [
+                      "Total Work Donations",
+                      "Total Work Expenses",
+                      "Work Balance",
+                    ] : [
                       "Income During This Period",
                       "Expenses During This Period",
                       "Balance During This Period",
@@ -1799,14 +1953,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                   style={{ marginTop: "22px" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <h3>Report Details</h3>
+                    <h3>{activeSection === "ledger" ? "Complete Work Ledger" : "Report Details"}</h3>
                     <button
                       className="primary-button"
                       type="button"
                       style={{ width: "auto", padding: "10px 18px" }}
                       onClick={() => printCombinedReport(
                         reportRecords,
-                        `${selectedSystem?.name || "Project"} - ${activeSection === "daily" ? `Daily Report (${dailyDate})` : `Monthly Report (${monthlyDate})`}`
+                        `${selectedSystem?.name || "Project"} - ${activeSection === "daily" ? `Daily Report (${dailyDate})` : activeSection === "monthly" ? `Monthly Report (${monthlyDate})` : "Complete Ledger / Report"}`
                       )}
                     >
                       Print Report / Save PDF
@@ -1845,6 +1999,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               ]}
             />
 
+            <ComplaintAdmin />
+            <MembershipAdmin />
+
             <ProjectManager
               systems={systems}
               setSystems={(updater) => setSystems((currentSystems) =>
@@ -1865,6 +2022,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
               setSystems={setSystems}
               setTransactions={setTransactions}
               onOpenSystem={openSystem}
+              onDeleteSystem={deleteSystemPermanently}
             />
 
             <h2
@@ -1878,16 +2036,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
 
             <div className="summary-grid">
               {topLevelSystems(systems).map((system) => {
-                const systemTotals = totalsFor(
-                  isMosqueParent(system)
-                    ? mosqueParentRecords(transactions)
-                    : isWelfareParent(system)
-                      ? welfareParentRecords(transactions)
-                    : transactions.filter(
-                        (record) =>
-                          record.systemId === system.id
-                      )
-                );
+                const systemTotals = totalsFor(recordsForProject(
+                  transactions,
+                  systems,
+                  system.id,
+                  projectProfiles,
+                  relatedChildIdsFor(system)
+                ));
 
                 return (
                   <button
@@ -1920,7 +2075,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings }) {
                         system.englishName}
                     </p>
 
-                    {!isBloodBankProject(system) && (
+                    {isDemographyProject(system) ? (
+                      <strong>Population Census</strong>
+                    ) : !isBloodBankProject(system) && (
                       <strong>
                         Balance: Rs.{" "}
                         {systemTotals.balance.toLocaleString()}

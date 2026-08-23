@@ -9,17 +9,28 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankPublic from "./BloodBankPublic";
 import SuggestionBox from "./SuggestionBox";
+import ComplaintPortal from "./ComplaintPortal";
 import PublicNotificationCenter from "./PublicNotificationCenter";
 import MosqueManagementHub from "./MosqueManagementHub";
+import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
+import DemographyPublic from "./DemographyPublic";
+import MembershipForm from "./MembershipForm";
+import { isDemographyProject } from "./demographyService";
+import VillageMapSection from "./VillageMapSection";
+import {
+  isWorkItem,
+  recordsForProject,
+  workParentId,
+} from "./workItems";
 import {
   defaultMosqueSystems,
   ensureMosqueSystems,
   isMosqueChild,
   isMosqueParent,
-  mosqueParentRecords,
+  mosqueChildSystems,
   topLevelSystems,
 } from "./mosqueManagement";
 import {
@@ -27,7 +38,7 @@ import {
   ensureWelfareSystems,
   isWelfareChild,
   isWelfareParent,
-  welfareParentRecords,
+  welfareChildSystems,
 } from "./welfareManagement";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
@@ -88,9 +99,12 @@ function ensurePublicSystems(systems = []) {
   );
 }
 
-const fallbackTransactions = [
-  { id: "cemetery-first-record", systemId: "cemetery", type: "income", person: "Ghulam Mustafa", amount: 15000, date: "2026-07-08", method: "Bank", details: "Cemetery Fund" },
-];
+const legacyTransactionIds = new Set(["cemetery-first-record"]);
+const fallbackTransactions = [];
+
+function withoutLegacyTransactions(records = []) {
+  return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
+}
 
 const projectUrdu = {
   cemetery: { name: "قبرستان مینجمنٹ", description: "قبرستان کی دیکھ بھال، اخراجات اور شفاف مالی ریکارڈ۔" },
@@ -244,24 +258,6 @@ E. نظام اور فنڈ
 
 اپنی اگلی نسلوں کے لیے صاف، سرسبز اور بہتر سنگراں ہم سب کی ذمہ داری ہے۔`;
 
-const gallerySlides = [
-  { id: "cemetery-work", image: cemeteryImage, eyebrow: "Cemetery Care", title: "Community-led cleaning and restoration" },
-  { id: "cemetery-team", image: cemeteryTeamImage, eyebrow: "Our Volunteers", title: "Together in service of Sangran" },
-  { id: "plantation-work", image: plantationImage, eyebrow: "Plantation Drive", title: "Planting for the next generation" },
-  { id: "plantation-youth", image: plantationYouthImage, eyebrow: "Youth Participation", title: "Passing a greener future forward" },
-  { id: "plantation-team", image: plantationTeamImage, eyebrow: "Community Action", title: "Saplings shared across the village" },
-  { id: "mosque-main", image: mosqueImage, eyebrow: "Our Mosque", title: "Faith at the heart of our community" },
-  { id: "mosque-detail", image: mosqueDetailImage, eyebrow: "Mosque Care", title: "Preserving a shared place of worship" },
-  { id: "welfare", image: welfareImage, eyebrow: "Community Welfare", title: "Compassion translated into action" },
-  { id: "mosque-village", image: mosqueVillageImage, eyebrow: "Village Identity", title: "The mosque at the heart of Sangran" },
-  { id: "mosque-interior", image: mosqueInteriorWideImage, eyebrow: "Prayer Hall", title: "A peaceful and welcoming worship space" },
-  { id: "plantation-campaign", image: campaignHandoverImage, eyebrow: "Youth Campaign", title: "A sapling passed into caring hands" },
-  { id: "plantation-display", image: saplingDisplayImage, eyebrow: "One Tree, One Life", title: "Saplings prepared for the community" },
-  { id: "plantation-youth-handover", image: youthHandoverImage, eyebrow: "Youth Participation", title: "Young hands carrying a greener future" },
-  { id: "cemetery-community", image: cemeteryCommunityTeamImage, eyebrow: "Volunteer Service", title: "Working together with dignity and care" },
-  { id: "cemetery-cleanup", image: communityCleanupImage, eyebrow: "Clean Sangran", title: "Community action creating visible change" },
-];
-
 const projectGalleries = {
   cemetery: [
     { image: cemeteryImage, title: "Cemetery cleaning and care" },
@@ -325,7 +321,7 @@ function totalsFor(records) {
 function LogoMark({ compact = false }) {
   return (
     <span className={`brand-mark brand-mark--image ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
-      <img src={brandLogo} alt="" />
+      <img src="/logo-2026.png" alt="" />
     </span>
   );
 }
@@ -389,15 +385,116 @@ function MoneyCards({ totals, light = false, language = "en" }) {
   );
 }
 
+function projectProgressStatus(profile = {}) {
+  const saved = String(profile.status || "").toLowerCase().replace("_", "-");
+  if (["proposed", "in-progress", "completed"].includes(saved)) return saved;
+  const completion = Number(profile.completionPercent) || 0;
+  if (completion >= 100) return "completed";
+  if (completion > 0) return "in-progress";
+  return "proposed";
+}
+
+function projectCompletion(profile = {}) {
+  const status = projectProgressStatus(profile);
+  if (status === "completed") return 100;
+  return Math.max(0, Math.min(100, Number(profile.completionPercent) || 0));
+}
+
+function projectStatusLabel(status, ur) {
+  if (status === "completed") return ur ? "مکمل" : "Completed";
+  if (status === "in-progress") return ur ? "کام جاری ہے" : "In Progress";
+  return ur ? "تجویز کردہ" : "Proposed";
+}
+
+function ProjectProgressOverview({ profile = {}, language = "en", showBudget = true }) {
+  const ur = language === "ur";
+  const status = projectProgressStatus(profile);
+  const completion = projectCompletion(profile);
+  const budget = Math.max(0, Number(profile.budget) || 0);
+  const plan = ur
+    ? (profile.planUr || profile.planEn || "")
+    : (profile.planEn || profile.planUr || "");
+
+  return (
+    <section className="project-progress-overview reveal" dir={ur ? "rtl" : "ltr"}>
+      <div className="project-progress-overview__header">
+        <div>
+          <span className="section-kicker">{ur ? "منصوبے کی پیش رفت" : "PROJECT PROGRESS"}</span>
+          <h2>{ur ? "منصوبے کی موجودہ حالت" : "Current project status"}</h2>
+        </div>
+        <span className={"project-progress-badge project-progress-badge--" + status}>
+          {projectStatusLabel(status, ur)}
+        </span>
+      </div>
+      <div className="project-progress-overview__bar">
+        <span style={{ width: completion + "%" }} />
+      </div>
+      <div className="project-progress-overview__meta">
+        <div><small>{ur ? "تکمیل" : "Completion"}</small><strong>{completion}%</strong></div>
+        {showBudget && <div><small>{ur ? "کل بجٹ" : "Total Budget"}</small><strong>{budget ? `Rs. ${budget.toLocaleString()}` : (ur ? "ابھی درج نہیں" : "Not set")}</strong></div>}
+        <div><small>{ur ? "آغاز" : "Start Date"}</small><strong>{profile.startDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
+        <div><small>{ur ? "متوقع تکمیل" : "Expected Completion"}</small><strong>{profile.expectedCompletionDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
+      </div>
+      {plan && <div className="project-progress-overview__plan"><b>{ur ? "ماسٹر پلان / اگلا ہدف" : "Master Plan / Next Goal"}</b><p>{plan}</p></div>}
+    </section>
+  );
+}
+
+function ProjectPhotoReel({ photos = [], projectName, language = "en", onOpen }) {
+  if (!photos.length) return null;
+  const ur = language === "ur";
+  const reelPhotos = photos.slice(0, 14);
+  const lapCopies = Math.max(1, Math.ceil(6 / reelPhotos.length));
+  const lap = Array.from({ length: lapCopies }, () => reelPhotos).flat();
+  const movingPhotos = [...lap, ...lap];
+
+  return (
+    <section className="project-photo-reel reveal" aria-label={`${projectName} ${ur ? "تصویری ریل" : "photo reel"}`}>
+      <div className="project-photo-reel__heading" dir={ur ? "rtl" : "ltr"}>
+        <div>
+          <span className="section-kicker">{ur ? "منصوبے کی تصویری جھلکیاں" : "PROJECT IN MOTION"}</span>
+          <h2>{projectName} {ur ? "تصویری ریل" : "Photo Reel"}</h2>
+        </div>
+        <small>{photos.length} {ur ? "تصاویر" : "project photos"}</small>
+      </div>
+      <div className="project-photo-reel__viewport">
+        <div className="project-photo-reel__track">
+          {movingPhotos.map((photo, index) => {
+            const photoIndex = index % lap.length % reelPhotos.length;
+            return (
+              <button
+                type="button"
+                className="project-photo-reel__slide"
+                key={`${photo.image}-project-reel-${index}`}
+                onClick={() => onOpen?.(photoIndex)}
+                aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${photoIndex + 1}`}
+              >
+                <img
+                  src={photo.image}
+                  alt={photo.title}
+                  loading={index < 4 ? "eager" : "lazy"}
+                  fetchPriority={index < 2 ? "high" : "auto"}
+                  decoding="async"
+                />
+                <span>{photo.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function socialPlatform(name = "") {
-  const value = String(name).toLowerCase();
-  if (value.includes("facebook")) return "facebook";
-  if (value.includes("instagram")) return "instagram";
-  if (value.includes("youtube")) return "youtube";
-  if (value.includes("whatsapp")) return "whatsapp";
+  const value = String(name).trim().toLowerCase();
+  if (value.includes("facebook") || value.includes("fb.com") || value.includes("fb.me")) return "facebook";
+  if (value.includes("instagram") || value.includes("instagr.am")) return "instagram";
+  if (value.includes("youtube") || value.includes("youtu.be")) return "youtube";
+  if (value.includes("whatsapp") || value.includes("wa.me")) return "whatsapp";
   if (value.includes("tiktok")) return "tiktok";
-  if (value.includes("linkedin")) return "linkedin";
-  if (value.includes("twitter") || value.trim() === "x") return "x";
+  if (value.includes("linkedin") || value.includes("lnkd.in")) return "linkedin";
+  if (value.includes("twitter") || value.includes("x.com") || value === "x") return "x";
   return "link";
 }
 
@@ -434,24 +531,28 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
 
   return (
     <div className={`social-media-links social-media-links--${variant}`} aria-label="Social media links">
-      {activeLinks.map((link) => (
-        <a
-          href={link.url}
-          key={link.id || `${link.name}-${link.url}`}
-          target="_blank"
-          rel="noreferrer"
-          title={link.name}
-          aria-label={link.name}
-        >
-          <SocialMediaIcon name={link.name} />
-          {variant === "footer" && <span className="social-media-label">{link.name}</span>}
-        </a>
-      ))}
+      {activeLinks.map((link) => {
+        const platform = socialPlatform(`${link.name || ""} ${link.url || ""}`);
+        return (
+          <a
+            className={`social-media-link social-media-link--${platform}`}
+            href={link.url}
+            key={link.id || `${link.name}-${link.url}`}
+            target="_blank"
+            rel="noreferrer"
+            title={link.name}
+            aria-label={link.name}
+          >
+            <SocialMediaIcon name={`${link.name || ""} ${link.url || ""}`} />
+            {variant === "footer" && <span className="social-media-label">{link.name}</span>}
+          </a>
+        );
+      })}
     </div>
   );
 }
 
-function RecordsTable({ records, systems, limit, language = "en" }) {
+function RecordsTable({ records, systems, limit, language = "en", scrollable = false }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
   const projectName = (id) => language === "ur"
@@ -469,7 +570,7 @@ function RecordsTable({ records, systems, limit, language = "en" }) {
 
   return (
     <>
-    <div className="public-table-wrap">
+    <div className={`public-table-wrap${scrollable ? " public-table-wrap--scrollable" : ""}`}>
       <table className="public-table">
         <thead>
           <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
@@ -595,6 +696,44 @@ function ProjectFaithSlider({ slides = [], language = "en", projectId = "" }) {
   );
 }
 
+const PAKISTAN_TIME_ZONE = "Asia/Karachi";
+
+function donationMonthKey(value = new Date()) {
+  if (typeof value === "string") {
+    const isoDate = value.trim().match(/^(\d{4})-(\d{2})-\d{2}/);
+    if (isoDate) return `${isoDate[1]}-${isoDate[2]}`;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: PAKISTAN_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  return year && month ? `${year}-${month}` : "";
+}
+
+function currentDonationMonthKey() {
+  return donationMonthKey(new Date());
+}
+
+function publicMediaUrl(value) {
+  if (typeof value === "string") return value.trim();
+  if (!value || typeof value !== "object") return "";
+  return String(value.url || value.image || value.data || "").trim();
+}
+
+function publicImageVariant(value) {
+  // Supabase image transformations are not available on every project plan.
+  // Keep public galleries on their original public object URLs so photos never
+  // get stuck on an unavailable /render/image endpoint.
+  return publicMediaUrl(value);
+}
+
 function PublicDashboard({ onAdminLogin, siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
   const slides = useMemo(() => {
@@ -615,9 +754,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       });
     return shuffledSlides(configured.length ? configured : heroSlides);
   }, [siteSettings]);
-  const activeReelSlides = (settings.homeReelSlides || []).filter((slide) => (
-    slide?.enabled !== false && (slide.url || slide.image)
-  ));
   const dynamicTicker = settings.tickerText.split("|").map((text) => ({ language: "ur", text: text.trim() })).filter((item) => item.text);
   const themeStyle = {
     "--forest": settings.colors.forest, "--forest-2": settings.colors.forest2,
@@ -625,26 +761,36 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     "--cream": settings.colors.cream, "--ink": settings.colors.ink,
   };
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
-  const [transactions, setTransactions] = useState(() => loadArray("sangrahnTransactions", fallbackTransactions));
+  const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
   const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedSystemId, setSelectedSystemId] = useState(null);
+  const [selectedSystemId, setSelectedSystemId] = useState(() => new URLSearchParams(window.location.search).get("project"));
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
   const [showPublicRecords, setShowPublicRecords] = useState(false);
   const [showDonationDetails, setShowDonationDetails] = useState(false);
+  const [showMembership, setShowMembership] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(null);
+  const [selectedEventId, setSelectedEventId] = useState(() => new URLSearchParams(window.location.search).get("event"));
   const galleryTouchStart = useRef(null);
   const [language, setLanguage] = useState(() => localStorage.getItem("cgs-language") || "en");
   const ur = language === "ur";
+  const [donorMonthKey, setDonorMonthKey] = useState(currentDonationMonthKey);
   const changeLanguage = () => setLanguage((current) => {
     const next = current === "en" ? "ur" : "en";
     localStorage.setItem("cgs-language", next);
     return next;
   });
+
+  useEffect(() => {
+    const refreshMonth = () => setDonorMonthKey(currentDonationMonthKey());
+    refreshMonth();
+    const timer = window.setInterval(refreshMonth, 60 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -653,7 +799,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         const data = await fetchPublicDatabaseData();
         if (!active) return;
         if (data.systems.length) setSystems(ensurePublicSystems(data.systems));
-        setTransactions(data.transactions);
+        setTransactions(withoutLegacyTransactions(data.transactions));
       } catch (error) {
         console.error("Public database load failed", error);
       }
@@ -706,20 +852,96 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const totals = useMemo(() => totalsFor(transactions), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
-  const selectedAllRecords = isMosqueParent(selectedSystemId)
-    ? mosqueParentRecords(transactions)
-    : isWelfareParent(selectedSystemId)
-      ? welfareParentRecords(transactions)
-      : transactions.filter((record) => record.systemId === selectedSystemId);
+  const projectProfiles = settings.projectProfilesByProject || {};
+  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
+  const relatedChildIdsFor = (systemOrId) => (
+    isMosqueParent(systemOrId)
+      ? mosqueChildSystems(systems).map((system) => system.id)
+      : isWelfareParent(systemOrId)
+        ? welfareChildSystems(systems).map((system) => system.id)
+        : []
+  );
+  const publicRecordsFor = (systemOrId) => recordsForProject(
+    transactions,
+    systems,
+    typeof systemOrId === "object" ? systemOrId?.id : systemOrId,
+    projectProfiles,
+    relatedChildIdsFor(systemOrId)
+  );
+  const selectedAllRecords = publicRecordsFor(selectedSystemId);
   const selectedTotals = totalsFor(selectedAllRecords);
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
     .filter((record) => String(record.person || "").toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => b.date.localeCompare(a.date));
+  const projectLedger = (
+    <div className="ledger-card project-ledger">
+      <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
+      <div className="ledger-toolbar">
+        <div className="filter-tabs">
+          {[["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]].map(([id, label]) => (
+            <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
+          ))}
+        </div>
+        <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
+      </div>
+      <RecordsTable records={filteredRecords} systems={systems} language={language} scrollable />
+    </div>
+  );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
   const donorCount = new Set(
     transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
   ).size;
+  const topDonors = useMemo(() => {
+    const donors = new Map();
+
+    transactions
+      .filter(
+        (record) =>
+          record.type === "income" &&
+          Number(record.amount) > 0 &&
+          String(record.person || "").trim() &&
+          donationMonthKey(record.date) === donorMonthKey,
+      )
+      .forEach((record) => {
+        const displayName = String(record.person).trim();
+        const key = displayName.toLocaleLowerCase();
+        const current = donors.get(key) || {
+          displayName,
+          total: 0,
+          donations: 0,
+          donorPhoto: "",
+          systemId: "",
+          latestDate: "",
+        };
+
+        current.total += Number(record.amount) || 0;
+        current.donations += 1;
+        if (record.donorPhoto) current.donorPhoto = record.donorPhoto;
+        if (!current.latestDate || String(record.date || "") >= current.latestDate) {
+          current.latestDate = String(record.date || "");
+          current.systemId = record.systemId || current.systemId;
+        }
+        donors.set(key, current);
+      });
+
+    return [...donors.values()]
+      .sort((a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate))
+      .slice(0, 5);
+  }, [transactions, donorMonthKey]);
+  const topDonor = topDonors[0] || null;
+
+  const donorMonthLabel = useMemo(() => {
+    const [year, month] = donorMonthKey.split("-").map(Number);
+    const monthDate = new Date(Date.UTC(year, month - 1, 1));
+    if (Number.isNaN(monthDate.getTime())) return "";
+
+    return new Intl.DateTimeFormat(ur ? "ur-PK" : "en-US", {
+      timeZone: PAKISTAN_TIME_ZONE,
+      month: "long",
+      year: "numeric",
+    }).format(monthDate);
+  }, [donorMonthKey, ur]);
 
   const profileFor = (system) => settings.projectProfilesByProject?.[system.id] || {};
   const systemName = (system) => {
@@ -729,42 +951,112 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       : (profile.nameEn || system.name);
   };
   const systemDescription = (system) => {
+    if (isDemographyProject(system)) {
+      return ur
+        ? "گھرانوں کی مردم شماری، آبادی کے اعداد و شمار اور تصدیق شدہ دیہی معلومات۔"
+        : "Household census, population statistics and verified village demographics.";
+    }
     const profile = profileFor(system);
     return ur
       ? (profile.descriptionUr || system.descriptionUr || projectUrdu[system.id]?.description || system.description)
       : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
   };
-  const imageFor = (system) => profileFor(system).coverImage
-    || system.coverImage
-    || (isMosqueChild(system) ? projectImages.mosque : projectImages[system.id])
-    || (isWelfareChild(system) ? projectImages.welfare : null)
-    || welfareImage;
+  const topDonorSystem = topDonor
+    ? systems.find((system) => system.id === topDonor.systemId)
+    : null;
+  const topDonorInitials = topDonor
+    ? topDonor.displayName
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0))
+      .join("")
+      .toUpperCase()
+    : "";
+  const donorInitials = (donor) => donor.displayName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+  const imageFor = (system) => {
+    const ownImage = profileFor(system).coverImage || system.coverImage;
+    if (ownImage) return ownImage;
+    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
+    const source = parent || system;
+    return profileFor(source).coverImage
+      || source.coverImage
+      || (isMosqueChild(source) ? projectImages.mosque : projectImages[source.id])
+      || (isWelfareChild(source) ? projectImages.welfare : null)
+      || welfareImage;
+  };
   const photosFor = (system) => {
     const galleryUrls = profileFor(system).galleryUrls;
     if (Array.isArray(galleryUrls) && galleryUrls.length) {
-      return galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+      return [...galleryUrls]
+        .reverse()
+        .map((image) => publicImageVariant(image, 1200))
+        .filter(Boolean)
+        .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
     if (Array.isArray(system.galleryUrls) && system.galleryUrls.length) {
-      return system.galleryUrls.map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
+      return [...system.galleryUrls]
+        .reverse()
+        .map((image) => publicImageVariant(image, 1200))
+        .filter(Boolean)
+        .map((image, index) => ({ image, title: `${systemName(system)} ${index + 1}` }));
     }
     return (isMosqueChild(system)
       ? projectGalleries.mosque
       : projectGalleries[system.id])
       || [{ image: imageFor(system), title: systemName(system) }];
   };
+  const galleryEventsFor = (system) => {
+    const configured = profileFor(system).galleryEvents;
+    if (Array.isArray(configured) && configured.length) {
+      return configured.map((entry, eventIndex) => ({
+        id: entry.id || `event-${eventIndex}`,
+        title: ur ? (entry.titleUr || entry.titleEn || `ایونٹ ${eventIndex + 1}`) : (entry.titleEn || entry.titleUr || `Event ${eventIndex + 1}`),
+        date: entry.date || "",
+        description: entry.description || "",
+        media: (entry.media || []).filter((asset) => asset?.url).map((asset, mediaIndex) => ({
+          image: publicImageVariant(asset.url, 1400),
+          title: asset.title || `${systemName(system)} ${mediaIndex + 1}`,
+          type: asset.type === "video" ? "video" : "image",
+        })),
+      })).filter((entry) => entry.media.length);
+    }
+    const legacyMedia = photosFor(system).map((photo) => ({ ...photo, type: "image" }));
+    return legacyMedia.length ? [{ id: `legacy-${system.id}`, title: ur ? "منصوبے کی گیلری" : "Project Gallery", date: "", description: "", media: legacyMedia }] : [];
+  };
   const faithSlidesFor = (system) => {
     const slidesByProject = settings.projectFaithSlidesByProject || {};
     if (Object.prototype.hasOwnProperty.call(slidesByProject, system.id)) {
       return slidesByProject[system.id] || [];
     }
-    if (isMosqueChild(system)) return slidesByProject.mosque || [];
-    if (isWelfareChild(system)) return slidesByProject.welfare || [];
-    return isBloodBankProject(system) ? (slidesByProject.blood || []) : [];
+    const parent = systems.find((candidate) => candidate.id === workParentId(system, projectProfiles));
+    const source = parent || system;
+    if (parent && Object.prototype.hasOwnProperty.call(slidesByProject, source.id)) {
+      return slidesByProject[source.id] || [];
+    }
+    if (isMosqueChild(source)) return slidesByProject.mosque || [];
+    if (isWelfareChild(source)) return slidesByProject.welfare || [];
+    return isBloodBankProject(source) ? (slidesByProject.blood || []) : [];
   };
   const selectedParentId = selectedSystem
-    ? (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null)
+    ? (selectedWorkParentId || (isMosqueChild(selectedSystem) ? "mosque" : isWelfareChild(selectedSystem) ? "welfare" : null))
     : null;
-  const activeGallery = selectedSystem ? photosFor(selectedSystem) : [];
+  const galleryEvents = selectedSystem ? galleryEventsFor(selectedSystem) : [];
+  const selectedGalleryEvent = galleryEvents.find((entry) => entry.id === selectedEventId) || null;
+  const activeGallery = selectedGalleryEvent?.media || [];
+  const shareGalleryEvent = async (galleryEvent) => {
+    const url = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(selectedSystem.id)}&event=${encodeURIComponent(galleryEvent.id)}`;
+    const title = `${systemName(selectedSystem)} — ${galleryEvent.title}`;
+    if (navigator.share) {
+      try { await navigator.share({ title, text: galleryEvent.description || title, url }); return; } catch (error) { if (error?.name === "AbortError") return; }
+    }
+    await navigator.clipboard?.writeText(url);
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`, "_blank", "noopener,noreferrer");
+  };
   const moveGallery = (direction) => setGalleryIndex((current) => {
     if (current === null || !activeGallery.length) return current;
     return (current + direction + activeGallery.length) % activeGallery.length;
@@ -808,17 +1100,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return (
       <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
+          <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
+            {selectedWorkParentId
+              ? (ur ? "← منصوبے کے کام" : "← Project Works")
+              : isMosqueChild(selectedSystem)
+              ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
+              : isWelfareChild(selectedSystem)
+                ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
+              : (ur ? "← واپس" : "← Back")}
+          </button>
           <button className="brand-button" onClick={() => setSelectedSystemId(selectedParentId)}>
             <LogoMark compact /><span><b>Clean &amp; Green</b><small>SANGRAN</small></span>
           </button>
           <div className="nav-actions project-nav-actions">
-            <button className="project-top-back" onClick={() => setSelectedSystemId(selectedParentId)}>
-              {isMosqueChild(selectedSystem)
-                ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
-                : isWelfareChild(selectedSystem)
-                  ? (ur ? "← فلاحی منصوبے" : "← Welfare Management")
-                : (ur ? "← واپس" : "← Back")}
-            </button>
             <SocialMediaLinks links={settings.socialLinks} variant="header" />
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
             <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
@@ -833,7 +1127,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
-            <span className="section-kicker">{isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
+            <span className="section-kicker">{isDemographyProject(selectedSystem) ? (ur ? "سانگراں مردم شماری" : "SANGRAN POPULATION CENSUS") : isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
             <h1>{systemName(selectedSystem)}</h1>
             <p>{systemDescription(selectedSystem)}</p>
           </div>
@@ -841,10 +1135,24 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            {isMosqueParent(selectedSystem) ? (
+            <ProjectProgressOverview
+              profile={profileFor(selectedSystem)}
+              language={language}
+              showBudget={!isBloodBankProject(selectedSystem) && !isDemographyProject(selectedSystem)}
+            />
+            <ProjectPhotoReel
+              photos={activeGallery}
+              projectName={systemName(selectedSystem)}
+              language={language}
+              onOpen={setGalleryIndex}
+            />
+            {isDemographyProject(selectedSystem) ? (
+              <DemographyPublic language={language} />
+            ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
+                profiles={projectProfiles}
                 onOpenSystem={setSelectedSystemId}
                 language={language}
                 getName={systemName}
@@ -884,7 +1192,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                         : "This initiative does not maintain a separate donation or expense account. Its financial records are shown in the central welfare project."}</p>
                     </div>
                   )}
-                  {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
+                  {selectedSystem.id === "cemetery" && projectLedger}
                   {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
                     <WelfareOperationsPublic
                       projectId={selectedSystem.id}
@@ -892,15 +1200,28 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       language={language}
                     />
                   )}
-                  <div className="project-gallery reveal">
+                  <div className="project-gallery project-event-gallery reveal is-visible">
                       <div className="section-heading section-heading--compact">
-                        <div><span className="section-kicker">{ur ? "منصوبے کی تصاویر" : "PROJECT PHOTO FOLDER"}</span><h2>{systemName(selectedSystem)} {ur ? "گیلری" : "Gallery"}</h2></div>
-                        <p>{photosFor(selectedSystem).length} {ur ? "تصاویر" : "community photos"}</p>
+                        <div><span className="section-kicker">{ur ? "منصوبے کے ایونٹس" : "PROJECT EVENT ALBUMS"}</span><h2>{systemName(selectedSystem)} {ur ? "میڈیا گیلری" : "Media Gallery"}</h2></div>
+                        <p>{galleryEvents.length} {ur ? "ایونٹس" : "events"}</p>
                       </div>
-                      <div className="project-gallery__grid">
-                        {photosFor(selectedSystem).map((photo, index) => (
+                      {!selectedGalleryEvent ? <div className="project-event-cards">
+                        {galleryEvents.map((galleryEvent) => {
+                          const cover = galleryEvent.media.find((asset) => asset.type === "image") || galleryEvent.media[0];
+                          return <article className="project-event-card" key={galleryEvent.id}>
+                            <button className="project-event-card__open" type="button" onClick={() => setSelectedEventId(galleryEvent.id)}>
+                              <div className="project-event-card__cover">{cover?.type === "video" ? <video src={cover.image} muted playsInline preload="metadata" /> : <img src={cover?.image} alt="" loading="lazy" />}</div>
+                              <div><small>{galleryEvent.date || (ur ? "کمیونٹی ایونٹ" : "COMMUNITY EVENT")}</small><h3>{galleryEvent.title}</h3><p>{galleryEvent.description || `${galleryEvent.media.length} ${ur ? "تصاویر / ویڈیوز" : "photos / videos"}`}</p></div>
+                            </button>
+                            <button className="project-event-card__share" type="button" onClick={() => shareGalleryEvent(galleryEvent)}>{ur ? "شیئر کریں" : "Share"}</button>
+                          </article>;
+                        })}
+                      </div> : <>
+                        <div className="project-event-gallery__toolbar"><button type="button" onClick={() => setSelectedEventId(null)}>← {ur ? "تمام ایونٹس" : "All events"}</button><div><h3>{selectedGalleryEvent.title}</h3><span>{selectedGalleryEvent.media.length} {ur ? "فائلیں" : "media files"}</span></div><button type="button" onClick={() => shareGalleryEvent(selectedGalleryEvent)}>{ur ? "شیئر" : "Share"}</button></div>
+                        <div className="project-gallery__grid">
+                        {selectedGalleryEvent.media.map((photo, index) => (
                           <figure
-                            key={`${selectedSystem.id}-photo-${index}`}
+                            key={`${selectedGalleryEvent.id}-media-${index}`}
                             role="button"
                             tabIndex="0"
                             aria-label={`${ur ? "تصویر کھولیں" : "Open photo"} ${index + 1}`}
@@ -909,16 +1230,33 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                               if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
                             }}
                           >
-                            <img src={photo.image} alt={photo.title} />
-                            <figcaption><span>PHOTO {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
+                            {photo.type === "video" ? <video src={photo.image} muted playsInline preload="metadata" /> : <img src={photo.image} alt={photo.title} loading={index < 6 ? "eager" : "lazy"} fetchPriority={index < 3 ? "high" : "auto"} decoding="async" />}
+                            <figcaption><span>{photo.type === "video" ? "VIDEO" : "PHOTO"} {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
                             <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                           </figure>
                         ))}
                       </div>
+                      </>}
                   </div>
+                  {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                 </>
               )}
-              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && (
+              {!isBloodBankProject(selectedSystem)
+                && !isWelfareChild(selectedSystem)
+                && !isMosqueParent(selectedSystem)
+                && !isWorkItem(selectedSystem, projectProfiles) && (
+                <WorkItemsHub
+                  project={selectedSystem}
+                  systems={systems}
+                  transactions={transactions}
+                  profiles={projectProfiles}
+                  onOpenSystem={setSelectedSystemId}
+                  language={language}
+                  getName={systemName}
+                  getDescription={systemDescription}
+                />
+              )}
+              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && selectedSystem.id !== "cemetery" && (
                 <div className="ledger-card reveal">
                   <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
                   <div className="ledger-toolbar">
@@ -961,7 +1299,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               </div>
               <div className="gallery-viewer__stage">
                 <button className="gallery-viewer__arrow gallery-viewer__arrow--previous" onClick={() => moveGallery(-1)} aria-label={ur ? "پچھلی تصویر" : "Previous photo"}>‹</button>
-                <img src={activeGallery[galleryIndex].image} alt={activeGallery[galleryIndex].title} />
+                {activeGallery[galleryIndex].type === "video" ? <video src={activeGallery[galleryIndex].image} controls autoPlay playsInline /> : <img src={activeGallery[galleryIndex].image} alt={activeGallery[galleryIndex].title} />}
                 <button className="gallery-viewer__arrow gallery-viewer__arrow--next" onClick={() => moveGallery(1)} aria-label={ur ? "اگلی تصویر" : "Next photo"}>›</button>
               </div>
               <div className="gallery-viewer__filmstrip" aria-label={ur ? "تمام تصاویر" : "All photos"}>
@@ -972,7 +1310,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     onClick={() => setGalleryIndex(index)}
                     aria-label={`${ur ? "تصویر" : "Photo"} ${index + 1}`}
                   >
-                    <img src={photo.image} alt="" />
+                    {photo.type === "video" ? <video src={photo.image} muted playsInline /> : <img src={photo.image} alt="" />}
                   </button>
                 ))}
               </div>
@@ -989,7 +1327,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <a href="/data-deletion.html">{ur ? "معلومات حذف کروائیں" : "Delete My Data"}</a>
           </nav>
           <button onClick={() => setSelectedSystemId(selectedParentId)}>
-            {isMosqueChild(selectedSystem)
+            {selectedWorkParentId
+              ? (ur ? "منصوبے کے کاموں پر واپس جائیں ↑" : "Back to Project Works ↑")
+              : isMosqueChild(selectedSystem)
               ? (ur ? "مسجد مینجمنٹ پر واپس جائیں ↑" : "Back to Mosque Management ↑")
               : isWelfareChild(selectedSystem)
                 ? (ur ? "فلاحی منصوبوں پر واپس جائیں ↑" : "Back to Welfare Management ↑")
@@ -997,6 +1337,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </button>
         </footer>
         <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+        <ComplaintPortal language={language} />
         <SuggestionBox language={language} />
       </div>
     );
@@ -1015,9 +1356,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <nav className={menuOpen ? "nav-links nav-links--open" : "nav-links"}>
           <button onClick={() => scrollTo("home")}>{ur ? "صفحۂ اول" : "Home"}</button>
           <button onClick={() => scrollTo("mission")}>{ur ? "مشن" : "Mission"}</button>
+          <button onClick={() => scrollTo("village-map")}>{ur ? "گاؤں کا نقشہ" : "Village Map"}</button>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
+          <button className="nav-membership-button" onClick={() => { setMenuOpen(false); setShowMembership(true); }}>{ur ? "مفت ممبرشپ" : "Free Membership"}</button>
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
           <SocialMediaLinks links={settings.socialLinks} variant="header" />
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
@@ -1027,7 +1370,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
       <section className="hero" id="home">
         {slides.map((slide, index) => (
-          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }} />
+          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }}><img className="hero-slide__fit" src={slide.image} alt="" aria-hidden="true" /></div>
         ))}
         <div className="hero-shade" />
         <div className={`hero-content ${ur ? "hero-content--urdu" : ""}`}>
@@ -1063,6 +1406,37 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       </div>
 
       <main>
+        <section className="projects-section content-section" id="projects">
+          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public record."}</p></div>
+          <div className="project-grid">
+            {topLevelSystems(systems).map((system, index) => {
+              const projectTotals = totalsFor(publicRecordsFor(system));
+              return (
+                <article
+                  className={`project-card reveal is-visible ${isBloodBankProject(system) ? "project-card--blood" : ""} ${isDemographyProject(system) ? "project-card--census" : ""}`}
+                  key={system.id}
+                  onClick={() => setSelectedSystemId(system.id)}
+                >
+                  <img src={imageFor(system)} alt={system.name} />
+                  <div className="project-card__shade" />
+                  <span className="project-card__number">0{index + 1}</span>
+                  <div className="project-card__content">
+                    <span><ProjectIcon project={isDemographyProject(system) ? { ...system, icon: "👥" } : system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
+                    <h3>{systemName(system)}</h3>
+                    <p>{systemDescription(system)}</p>
+                    {isDemographyProject(system) ? (
+                      <div><b>{ur ? "نظام" : "System"}</b><strong>{ur ? "مردم شماری" : "Population Census"}</strong></div>
+                    ) : !isBloodBankProject(system) && (
+                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
+                    )}
+                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
         <section className="mission-section content-section" id="mission">
           <div className="mission-copy reveal">
             <span className="section-kicker">OUR SHARED MISSION • ہمارا مشترکہ عزم</span>
@@ -1083,54 +1457,79 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="content-section">
             <div className="section-heading section-heading--light reveal"><div><span className="section-kicker">LIVE FINANCIAL IMPACT</span><h2>Every rupee, visible.</h2></div><p>Updated directly from verified community records.</p></div>
             <MoneyCards totals={totals} light language={language} />
+            {topDonor && (
+              <div className="top-donors-month reveal is-visible" dir={ur ? "rtl" : "ltr"}>
+                <div className="top-donors-month__heading">
+                  <span>{ur ? "اس ماہ کے سرفہرست 5 عطیہ دہندگان" : "TOP 5 DONORS OF THE MONTH"}</span>
+                  <small>{donorMonthLabel}</small>
+                </div>
+                <aside className="top-donor-spotlight">
+                  <div className="top-donor-spotlight__copy">
+                    <span className="top-donor-spotlight__eyebrow">
+                      {ur
+                        ? `نمبر 1 عطیہ دہندہ • ${donorMonthLabel}`
+                        : `#1 DONOR • ${donorMonthLabel.toUpperCase()}`}
+                    </span>
+                    <h3>{topDonor.displayName}</h3>
+                    <p>
+                      {ur
+                        ? `${donorMonthLabel} میں سب سے زیادہ مجموعی عطیہ—خدمتِ سنگراں کی ایک قابلِ قدر مثال۔`
+                        : `The highest combined contribution in ${donorMonthLabel}—a valued example of service to Sangran.`}
+                    </p>
+                    <div className="top-donor-spotlight__stats">
+                      <div>
+                        <span>{ur ? "اس ماہ کا تصدیق شدہ عطیہ" : "Verified contribution this month"}</span>
+                        <strong>Rs. {topDonor.total.toLocaleString()}</strong>
+                      </div>
+                      <div>
+                        <span>{ur ? "نمایاں منصوبہ" : "Featured project"}</span>
+                        <strong>
+                          {topDonorSystem
+                            ? systemName(topDonorSystem)
+                            : (ur ? "تمام عوامی منصوبے" : "Community projects")}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="top-donor-spotlight__portrait">
+                    {topDonor.donorPhoto ? (
+                      <img src={topDonor.donorPhoto} alt={topDonor.displayName} />
+                    ) : (
+                      <div className="top-donor-spotlight__fallback" aria-label={topDonor.displayName}>
+                        {topDonorInitials}
+                      </div>
+                    )}
+                    <span>{ur ? "نمبر 1 • ماہ کا عطیہ دہندہ" : "#1 • DONOR OF THE MONTH"}</span>
+                  </div>
+                </aside>
+
+                {topDonors.length > 1 && (
+                  <div className="top-donors-month__runner-ups">
+                    {topDonors.slice(1).map((donor, index) => (
+                      <article className="top-donor-mini" key={donor.displayName.toLocaleLowerCase()}>
+                        <b className="top-donor-mini__rank">#{index + 2}</b>
+                        <div className="top-donor-mini__portrait">
+                          {donor.donorPhoto ? (
+                            <img src={donor.donorPhoto} alt={donor.displayName} />
+                          ) : (
+                            <span aria-label={donor.displayName}>{donorInitials(donor)}</span>
+                          )}
+                        </div>
+                        <div className="top-donor-mini__copy">
+                          <strong>{donor.displayName}</strong>
+                          <small>Rs. {donor.total.toLocaleString()}</small>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
           </div>
         </section>
 
-        <section className="projects-section content-section" id="projects">
-          <div className="section-heading reveal"><div><span className="section-kicker">{ur ? "ہمارے عوامی منصوبے" : "WHAT WE CARE FOR"}</span><h2>{ur ? "ہمارے مشترکہ مستقبل کے منصوبے" : <>Projects that shape<br />our shared future.</>}</h2></div><p>{ur ? "مالی ریکارڈ دیکھنے کے لیے کسی منصوبے کو منتخب کریں۔" : "Select any project to explore its public financial record."}</p></div>
-          <div className="project-grid">
-            {topLevelSystems(systems).map((system, index) => {
-              const projectTotals = totalsFor(
-                isMosqueParent(system)
-                  ? mosqueParentRecords(transactions)
-                  : isWelfareParent(system)
-                    ? welfareParentRecords(transactions)
-                  : transactions.filter((record) => record.systemId === system.id)
-              );
-              return (
-                <article
-                  className={`project-card reveal ${isBloodBankProject(system) ? "project-card--blood" : ""}`}
-                  key={system.id}
-                  onClick={() => setSelectedSystemId(system.id)}
-                >
-                  <img src={imageFor(system)} alt={system.name} />
-                  <div className="project-card__shade" />
-                  <span className="project-card__number">0{index + 1}</span>
-                  <div className="project-card__content">
-                    <span><ProjectIcon project={system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
-                    <h3>{systemName(system)}</h3>
-                    <p>{systemDescription(system)}</p>
-                    {!isBloodBankProject(system) && (
-                      <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
-                    )}
-                    <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="visual-reel-section">
-          <div className="section-heading content-section reveal"><div><span className="section-kicker">SANGRAN IN MOTION</span><h2>Small actions.<br />Lasting change.</h2></div></div>
-          <div className="visual-reel"><div className="visual-reel__track">{[...(activeReelSlides.length ? activeReelSlides : gallerySlides), ...(activeReelSlides.length ? activeReelSlides : gallerySlides)].map((slide, index) => {
-            const image = slide.url || slide.image;
-            const title = ur ? (slide.titleUr || slide.titleEn || slide.title) : (slide.titleEn || slide.title);
-            const eyebrow = ur ? (slide.eyebrowUr || slide.eyebrowEn || slide.eyebrow) : (slide.eyebrowEn || slide.eyebrow);
-            return <figure key={`${slide.id || image}-reel-${index}`}><img src={image} alt={title || "Sangran community work"} /><figcaption><span>{eyebrow || (ur ? "سنگراں کی خدمت" : "Sangran in Motion")}</span><b>{title || (ur ? "اجتماعی کوشش سے نمایاں تبدیلی" : "Community action creating visible change")}</b></figcaption></figure>;
-          })}</div></div>
-        </section>
+        <VillageMapSection locations={settings.mapLocations || []} language={language} />
 
         <section className="about-section" id="about">
           <div className="about-image"><img src={cemeteryImage} alt={ur ? "صاف اور سرسبز سنگراں" : "A clean and green Sangran"} /></div>
@@ -1176,6 +1575,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </div>
         </div>
       )}
+      {showMembership && <MembershipForm language={language} onClose={() => setShowMembership(false)} />}
 
       <footer className="site-footer">
         <LogoMark compact />
@@ -1196,10 +1596,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
         <button onClick={() => setShowDonationDetails(true)}><b>Rs</b><span>{ur ? "عطیہ" : "Donate"}</span></button>
+        <button onClick={() => setShowMembership(true)}><b>✓</b><span>{ur ? "ممبر" : "Join"}</span></button>
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
       <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+      <ComplaintPortal language={language} />
       <SuggestionBox language={language} />
     </div>
   );
