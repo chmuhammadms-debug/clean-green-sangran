@@ -588,6 +588,10 @@ tbody tr:last-child td {
 .membership-manage-profile b { color: #153f2b; font-size: 20px; }
 .membership-manage-profile small { width: fit-content; padding: 5px 8px; border-radius: 999px; color: #166534; background: #dcfce7; font-weight: 800; }
 .membership-manage-profile small.is-cancelled { color: #991b1b; background: #fee2e2; }
+.membership-photo-change { position: relative; display: inline-flex; width: fit-content; cursor: pointer; }
+.membership-photo-change input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.membership-photo-change > span { display: inline-flex; min-height: 34px; align-items: center; padding: 0 12px; border: 1px solid #86b99a; border-radius: 9px; color: #166534; background: #f0fdf4; font-size: 12px; font-weight: 900; }
+.membership-photo-change:hover > span { color: white; background: #166534; }
 .membership-manage-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px 20px 20px; }
 .membership-manage-fields label { display: grid; gap: 6px; min-width: 0; }
 .membership-manage-fields label > span { color: #6b7c72; font-size: 11px; font-weight: 900; text-transform: uppercase; }
