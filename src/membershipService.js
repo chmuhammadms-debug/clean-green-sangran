@@ -62,7 +62,9 @@ export async function updateMembership(id, updates) {
 }
 
 export async function cancelMembership(id) {
-  return updateMembership(id, { status: "cancelled" });
+  // The memberships table status constraint accepts "rejected", not
+  // "cancelled". In the UI a rejected membership is presented as cancelled.
+  return updateMembership(id, { status: "rejected" });
 }
 
 export async function reactivateMembership(id) {
