@@ -20,7 +20,20 @@ export default function MembershipForm({ language = "en", onClose }) {
     event.preventDefault(); setSaving(true); setError("");
     try {
       const photoData = await prepareMembershipPhoto(photo);
-      setMember(await registerMembership({ ...form, photoData }));
+      const savedMember = await registerMembership({ ...form, photoData });
+      setMember({
+        ...savedMember,
+        full_name: savedMember.full_name || form.fullName.trim(),
+        father_name: savedMember.father_name || form.fatherName.trim(),
+        phone: savedMember.phone || form.phone.trim(),
+        whatsapp: savedMember.whatsapp || form.whatsapp.trim() || null,
+        cnic: savedMember.cnic || form.cnic.trim() || null,
+        address: savedMember.address || form.address.trim(),
+        occupation: savedMember.occupation || form.occupation.trim() || null,
+        age: savedMember.age || (form.age ? Number(form.age) : null),
+        interest_areas: savedMember.interest_areas?.length ? savedMember.interest_areas : form.interests,
+        photo_data: savedMember.photo_data || photoData,
+      });
     }
     catch (err) { setError(err.message || "Membership could not be created."); }
     finally { setSaving(false); }
