@@ -784,6 +784,14 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     localStorage.setItem("cgs-language", next);
     return next;
   });
+  const openMembership = () => {
+    setMenuOpen(false);
+    setShowWelcome(false);
+    setShowFullMission(false);
+    setShowPublicRecords(false);
+    setShowDonationDetails(false);
+    setShowMembership(true);
+  };
 
   useEffect(() => {
     const refreshMonth = () => setDonorMonthKey(currentDonationMonthKey());
@@ -1360,7 +1368,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button className="nav-records-button" onClick={() => { setMenuOpen(false); setShowPublicRecords(true); }}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button>
           <button className="nav-donate-button" onClick={() => { setMenuOpen(false); setShowDonationDetails(true); }}>{ur ? "عطیہ دیں" : "Donate Now"}</button>
-          <button className="nav-membership-button" onClick={() => { setMenuOpen(false); setShowMembership(true); }}>{ur ? "مفت ممبرشپ" : "Free Membership"}</button>
+          <button className="nav-membership-button" onClick={openMembership}>{ur ? "مفت ممبرشپ" : "Free Membership"}</button>
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
           <SocialMediaLinks links={settings.socialLinks} variant="header" />
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
@@ -1596,7 +1604,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={() => scrollTo("home")}><b>⌂</b><span>{ur ? "صفحۂ اول" : "Home"}</span></button>
         <button onClick={() => scrollTo("projects")}><b>▦</b><span>{ur ? "منصوبے" : "Projects"}</span></button>
         <button onClick={() => setShowDonationDetails(true)}><b>Rs</b><span>{ur ? "عطیہ" : "Donate"}</span></button>
-        <button onClick={() => setShowMembership(true)}><b>✓</b><span>{ur ? "ممبر" : "Join"}</span></button>
+        <button onClick={openMembership}><b>✓</b><span>{ur ? "ممبر" : "Join"}</span></button>
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>

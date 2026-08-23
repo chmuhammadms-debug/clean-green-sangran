@@ -20,10 +20,13 @@ export default function MembershipForm({ language = "en", onClose }) {
     finally { setSaving(false); }
   };
 
-  return <div className="membership-modal" role="dialog" aria-modal="true" aria-label="Free membership form">
-    <button className="membership-modal__backdrop" onClick={onClose} aria-label="Close" />
-    <section className="membership-card" dir={ur ? "rtl" : "ltr"}>
-      <button className="membership-close" onClick={onClose} aria-label="Close">×</button>
+  return <div className="membership-page" role="dialog" aria-modal="true" aria-label="Free membership form" dir={ur ? "rtl" : "ltr"}>
+    <header className="membership-page__bar">
+      <button className="membership-back" onClick={onClose}>{ur ? "واپس" : "← Back"}</button>
+      <div><strong>Clean &amp; Green Sangran</strong><span>{ur ? "مفت ممبرشپ" : "Free Membership"}</span></div>
+    </header>
+    <main className="membership-page__content">
+    <section className="membership-card">
       {member ? <div className="membership-success">
         <span>✓</span><small>{ur ? "ممبرشپ منظور ہو گئی" : "MEMBERSHIP APPROVED"}</small>
         <h2>{ur ? "خوش آمدید!" : "Welcome to the community!"}</h2>
@@ -48,5 +51,6 @@ export default function MembershipForm({ language = "en", onClose }) {
         </form>
       </>}
     </section>
+    </main>
   </div>;
 }
