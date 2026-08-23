@@ -598,3 +598,5 @@ tbody tr:last-child td {
 .membership-action-secondary { color: #374151; background: #eef2ef; }
 .membership-action-break { color: white; background: #b91c1c; }
 @media (max-width: 650px) { .membership-admin__head { align-items: flex-start; flex-direction: column; } .membership-admin { padding: 15px; } .membership-manage-overlay { padding: 0; } .membership-manage-card { width: 100%; height: 100%; max-height: none; border-radius: 0; } .membership-manage-fields { grid-template-columns: 1fr; padding: 13px; } .membership-manage-wide { grid-column: 1; } .membership-manage-card > footer { display: grid; grid-template-columns: 1fr 1fr; padding: 11px 13px; } }
+.membership-manage-card--id { width: min(760px, calc(100vw - 28px)); }
+.membership-action-card { color: #fff; background: #0f6c93; }

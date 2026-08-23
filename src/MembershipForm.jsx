@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { prepareMembershipPhoto, registerMembership } from "./membershipService";
+import MembershipCard from "./MembershipCard";
 
 const blank = { fullName: "", fatherName: "", phone: "", whatsapp: "", cnic: "", address: "", occupation: "", age: "", interests: [] };
 const interestOptions = ["Plantation", "Cleanliness", "Blood Bank", "Welfare", "Sports", "Volunteer Work"];
@@ -35,14 +36,7 @@ export default function MembershipForm({ language = "en", onClose }) {
       {member ? <div className="membership-success">
         <span>✓</span><small>{ur ? "ممبرشپ منظور ہو گئی" : "MEMBERSHIP APPROVED"}</small>
         <h2>{ur ? "آپ کا ممبرشپ کارڈ تیار ہے" : "Your membership card is ready"}</h2>
-        <article className="member-id-card">
-          <div className="member-id-card__brand"><img src="/logo-icon-2026.png" alt="" /><div><b>CLEAN &amp; GREEN</b><em>SANGRAN</em></div><small>COMMUNITY MEMBER</small></div>
-          <div className="member-id-card__body">
-            <div className="member-id-card__photo">{member.photo_data ? <img src={member.photo_data} alt={member.full_name} /> : <b>{member.full_name?.charAt(0) || "M"}</b>}</div>
-            <div className="member-id-card__details"><small>MEMBER NAME</small><h3>{member.full_name}</h3><small>MEMBERSHIP NUMBER</small><strong>{member.membership_number}</strong><p><span>✓</span> AUTO APPROVED MEMBER</p></div>
-          </div>
-          <footer><span>Serving our village together</span><b>{new Date(member.created_at).getFullYear()}</b></footer>
-        </article>
+        <MembershipCard member={member} language={language} />
         <button className="membership-submit" onClick={onClose}>{ur ? "مکمل" : "Done"}</button>
       </div> : <>
         <div className="membership-head"><span>{ur ? "مفت عوامی ممبرشپ" : "FREE COMMUNITY MEMBERSHIP"}</span><h2>{ur ? "کلین اینڈ گرین سنگراں کا حصہ بنیں" : "Become a Member"}</h2><p>{ur ? "کوئی فیس نہیں۔ فارم جمع ہوتے ہی ممبرشپ منظور ہو جائے گی۔" : "No fee. Your membership is approved as soon as you submit."}</p></div>

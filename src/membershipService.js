@@ -61,12 +61,9 @@ export async function updateMembership(id, updates) {
   return data;
 }
 
-export async function cancelMembership(id) {
-  // The memberships table status constraint accepts "rejected", not
-  // "cancelled". In the UI a rejected membership is presented as cancelled.
-  return updateMembership(id, { status: "rejected" });
-}
-
-export async function reactivateMembership(id) {
-  return updateMembership(id, { status: "approved" });
+export async function deleteMembership(id) {
+  const { data, error } = await supabase.from("memberships").delete().eq("id", id).select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("Membership could not be deleted. Please sign in as an administrator and try again.");
+  return data[0];
 }

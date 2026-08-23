@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { cancelMembership, fetchMemberships, reactivateMembership, updateMembership } from "./membershipService";
+import { deleteMembership, fetchMemberships, updateMembership } from "./membershipService";
+import MembershipCard from "./MembershipCard";
 
 const fields = [
   ["full_name", "Full name"], ["father_name", "Father's name"], ["phone", "Phone"],
@@ -7,11 +8,9 @@ const fields = [
   ["occupation", "Occupation"], ["address", "Address / Mohalla"],
 ];
 
-const isCancelled = (member) => member?.status === "rejected" || member?.status === "cancelled";
-
 export default function MembershipAdmin() {
   const [members, setMembers] = useState([]); const [search, setSearch] = useState(""); const [error, setError] = useState("");
-  const [selected, setSelected] = useState(null); const [editing, setEditing] = useState(false); const [draft, setDraft] = useState(null); const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState(null); const [cardMember, setCardMember] = useState(null); const [editing, setEditing] = useState(false); const [draft, setDraft] = useState(null); const [saving, setSaving] = useState(false);
   const load = () => fetchMemberships().then(setMembers).catch((err) => setError(err.message));
   useEffect(load, []);
   const visible = members.filter((m) => `${m.full_name} ${m.membership_number} ${m.phone}`.toLowerCase().includes(search.toLowerCase()));
@@ -29,27 +28,27 @@ export default function MembershipAdmin() {
       setMembers((all) => all.map((item) => item.id === updated.id ? updated : item)); setSelected(updated); setEditing(false);
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   };
-  const changeStatus = async () => {
-    const cancelling = !isCancelled(selected);
-    if (cancelling && !window.confirm(`Cancel membership ${selected.membership_number}?`)) return;
+  const remove = async () => {
+    if (!window.confirm(`Permanently delete membership ${selected.membership_number}? This cannot be undone. The person will have to register again as a new member.`)) return;
     setSaving(true); setError("");
     try {
-      const updated = cancelling ? await cancelMembership(selected.id) : await reactivateMembership(selected.id);
-      setMembers((all) => all.map((item) => item.id === updated.id ? updated : item)); setSelected(updated); setDraft((current) => ({ ...current, status: updated.status }));
+      await deleteMembership(selected.id);
+      setMembers((all) => all.filter((item) => item.id !== selected.id)); close();
     } catch (err) { setError(err.message); } finally { setSaving(false); }
   };
   return <section className="panel membership-admin"><div className="membership-admin__head"><div><h2>Website Members</h2><p>Free memberships are approved automatically.</p></div><strong>{members.length} Members</strong></div>
     <input type="search" placeholder="Search name, member number or phone" value={search} onChange={(e) => setSearch(e.target.value)} />
     {error && <p className="membership-error">{error}</p>}
-    <div className="membership-admin__table"><table><thead><tr><th>Member #</th><th>Name</th><th>Phone</th><th>Address</th><th>Interests</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visible.map((m) => <tr key={m.id}><td><b>{m.membership_number}</b></td><td><div className="membership-admin__person">{m.photo_data ? <img src={m.photo_data} alt="" /> : <span>{m.full_name?.charAt(0)}</span>}<div>{m.full_name}<small>{m.father_name}</small></div></div></td><td>{m.phone}</td><td>{m.address}</td><td>{(m.interest_areas || []).join(", ") || "—"}</td><td><span className={isCancelled(m) ? "membership-cancelled" : "membership-approved"}>{isCancelled(m) ? "Cancelled" : "Approved"}</span></td><td><div className="membership-actions"><button onClick={() => open(m)}>View</button><button onClick={() => open(m, true)}>Edit</button></div></td></tr>)}</tbody></table>{!visible.length && <p>No members found.</p>}</div>
+    <div className="membership-admin__table"><table><thead><tr><th>Member #</th><th>Name</th><th>Phone</th><th>Address</th><th>Interests</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visible.map((m) => <tr key={m.id}><td><b>{m.membership_number}</b></td><td><div className="membership-admin__person">{m.photo_data ? <img src={m.photo_data} alt="" /> : <span>{m.full_name?.charAt(0)}</span>}<div>{m.full_name}<small>{m.father_name}</small></div></div></td><td>{m.phone}</td><td>{m.address}</td><td>{(m.interest_areas || []).join(", ") || "—"}</td><td><span className="membership-approved">Approved</span></td><td><div className="membership-actions"><button onClick={() => open(m)}>View</button><button onClick={() => open(m, true)}>Edit</button><button onClick={() => setCardMember(m)}>Card</button></div></td></tr>)}</tbody></table>{!visible.length && <p>No members found.</p>}</div>
     {selected && <div className="membership-manage-overlay" onMouseDown={(event) => event.target === event.currentTarget && close()}><section className="membership-manage-card"><header><div><small>{selected.membership_number}</small><h3>{editing ? "Edit Membership" : "Member Details"}</h3></div><button onClick={close}>×</button></header>
-      <div className="membership-manage-profile">{selected.photo_data ? <img src={selected.photo_data} alt={selected.full_name} /> : <span>{selected.full_name?.charAt(0)}</span>}<div><b>{selected.full_name}</b><small className={isCancelled(selected) ? "is-cancelled" : ""}>{isCancelled(selected) ? "Membership Cancelled" : "Active Member"}</small></div></div>
+      <div className="membership-manage-profile">{selected.photo_data ? <img src={selected.photo_data} alt={selected.full_name} /> : <span>{selected.full_name?.charAt(0)}</span>}<div><b>{selected.full_name}</b><small>Active Member</small></div></div>
       <div className="membership-manage-fields">{fields.map(([key, label]) => <label key={key}><span>{label}</span>{editing ? (key === "address" ? <textarea rows="2" value={draft[key] || ""} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} /> : <input type={key === "age" ? "number" : "text"} value={draft[key] || ""} onChange={(e) => setDraft({ ...draft, [key]: e.target.value })} />) : <strong>{selected[key] || "—"}</strong>}</label>)}
         <label className="membership-manage-wide"><span>Areas of interest</span>{editing ? <input value={draft.interest_text} onChange={(e) => setDraft({ ...draft, interest_text: e.target.value })} /> : <strong>{(selected.interest_areas || []).join(", ") || "—"}</strong>}</label>
         <label><span>Joined</span><strong>{new Date(selected.created_at).toLocaleDateString("en-GB")}</strong></label>
       </div>
       {error && <p className="membership-error">{error}</p>}
-      <footer>{editing ? <><button className="membership-action-secondary" onClick={() => setEditing(false)}>Cancel Edit</button><button className="membership-action-save" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save Changes"}</button></> : <><button className="membership-action-edit" onClick={() => setEditing(true)}>Edit Details</button><button className={isCancelled(selected) ? "membership-action-restore" : "membership-action-break"} disabled={saving} onClick={changeStatus}>{isCancelled(selected) ? "Reactivate Membership" : "Cancel Membership"}</button></>}</footer>
+      <footer>{editing ? <><button className="membership-action-secondary" onClick={() => setEditing(false)}>Cancel Edit</button><button className="membership-action-save" disabled={saving} onClick={save}>{saving ? "Saving…" : "Save Changes"}</button></> : <><button className="membership-action-edit" onClick={() => setEditing(true)}>Edit Details</button><button className="membership-action-card" onClick={() => setCardMember(selected)}>View / Print Card</button><button className="membership-action-break" disabled={saving} onClick={remove}>{saving ? "Deleting…" : "Delete Membership"}</button></>}</footer>
     </section></div>}
+    {cardMember && <div className="membership-manage-overlay membership-card-overlay" onMouseDown={(event) => event.target === event.currentTarget && setCardMember(null)}><section className="membership-manage-card membership-manage-card--id"><header><div><small>{cardMember.membership_number}</small><h3>Membership Card — Front &amp; Back</h3></div><button onClick={() => setCardMember(null)}>×</button></header><MembershipCard member={cardMember} /><footer><button className="membership-action-secondary" onClick={() => setCardMember(null)}>Close</button></footer></section></div>}
   </section>;
 }
