@@ -9,6 +9,7 @@ import ProjectIcon, {
 } from "./ProjectIcon";
 import BloodBankAdmin from "./BloodBankAdmin";
 import AdminNotificationCenter from "./AdminNotificationCenter";
+import MembershipAdmin from "./MembershipAdmin";
 import ComplaintAdmin from "./ComplaintAdmin";
 import MosqueManagementHub from "./MosqueManagementHub";
 import WorkItemsHub from "./WorkItemsHub";
@@ -1999,6 +2000,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             />
 
             <ComplaintAdmin />
+            <MembershipAdmin />
 
             <ProjectManager
               systems={systems}
