@@ -49,3 +49,22 @@ export async function fetchMemberships() {
   if (error) throw error;
   return data || [];
 }
+
+export async function updateMembership(id, updates) {
+  const { data, error } = await supabase
+    .from("memberships")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function cancelMembership(id) {
+  return updateMembership(id, { status: "cancelled" });
+}
+
+export async function reactivateMembership(id) {
+  return updateMembership(id, { status: "approved" });
+}

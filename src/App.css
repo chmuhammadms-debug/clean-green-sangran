@@ -569,4 +569,32 @@ tbody tr:last-child td {
 .membership-admin__table td small { display: block; margin-top: 4px; color: #6b7280; }
 .membership-admin__person { display: flex; align-items: center; gap: 9px; min-width: 170px; }
 .membership-admin__person > img, .membership-admin__person > span { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; color: white; background: #16803b; object-fit: cover; font-weight: 900; }
-@media (max-width: 650px) { .membership-admin__head { align-items: flex-start; flex-direction: column; } .membership-admin { padding: 15px; } }
+.membership-cancelled { display: inline-flex; padding: 7px 11px; border-radius: 999px; color: #991b1b; background: #fee2e2; font-size: 12px; font-weight: 800; }
+.membership-actions { display: flex; gap: 6px; }
+.membership-actions button { padding: 7px 10px; border: 1px solid #b9d1c0; border-radius: 8px; color: #166534; background: white; font-weight: 800; cursor: pointer; }
+.membership-actions button:last-child { color: white; background: #166534; }
+.membership-manage-overlay { position: fixed; inset: 0; z-index: 12000; display: grid; place-items: center; padding: 18px; background: rgba(3,25,15,.72); }
+.membership-manage-card { width: min(720px,100%); max-height: calc(100vh - 36px); overflow-y: auto; border-radius: 20px; background: white; box-shadow: 0 24px 75px rgba(0,0,0,.32); }
+.membership-manage-card > header { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; align-items: center; padding: 17px 20px; color: white; background: #105332; }
+.membership-manage-card > header small { color: #b8f36b; font-weight: 900; }
+.membership-manage-card > header h3 { margin: 3px 0 0; }
+.membership-manage-card > header button { width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.4); border-radius: 50%; color: white; background: transparent; font-size: 25px; cursor: pointer; }
+.membership-manage-profile { display: flex; align-items: center; gap: 13px; padding: 18px 20px 7px; }
+.membership-manage-profile > img, .membership-manage-profile > span { display: grid; place-items: center; width: 72px; height: 72px; border-radius: 50%; color: white; background: #16803b; object-fit: cover; font-size: 28px; font-weight: 900; }
+.membership-manage-profile > div { display: grid; gap: 5px; }
+.membership-manage-profile b { color: #153f2b; font-size: 20px; }
+.membership-manage-profile small { width: fit-content; padding: 5px 8px; border-radius: 999px; color: #166534; background: #dcfce7; font-weight: 800; }
+.membership-manage-profile small.is-cancelled { color: #991b1b; background: #fee2e2; }
+.membership-manage-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px 20px 20px; }
+.membership-manage-fields label { display: grid; gap: 6px; min-width: 0; }
+.membership-manage-fields label > span { color: #6b7c72; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.membership-manage-fields label > strong { min-height: 22px; overflow-wrap: anywhere; color: #173d2c; }
+.membership-manage-fields input, .membership-manage-fields textarea { width: 100%; min-height: 43px; box-sizing: border-box; padding: 10px 11px; border: 1px solid #c7d6cc; border-radius: 9px; font: inherit; }
+.membership-manage-wide { grid-column: 1 / -1; }
+.membership-manage-card > .membership-error { margin: 0 20px 12px; }
+.membership-manage-card > footer { position: sticky; bottom: 0; display: flex; justify-content: flex-end; gap: 9px; padding: 14px 20px; border-top: 1px solid #e5e7eb; background: white; }
+.membership-manage-card > footer button { min-height: 43px; padding: 0 15px; border: 0; border-radius: 9px; font-weight: 900; cursor: pointer; }
+.membership-action-edit, .membership-action-save, .membership-action-restore { color: white; background: #166534; }
+.membership-action-secondary { color: #374151; background: #eef2ef; }
+.membership-action-break { color: white; background: #b91c1c; }
+@media (max-width: 650px) { .membership-admin__head { align-items: flex-start; flex-direction: column; } .membership-admin { padding: 15px; } .membership-manage-overlay { padding: 0; } .membership-manage-card { width: 100%; height: 100%; max-height: none; border-radius: 0; } .membership-manage-fields { grid-template-columns: 1fr; padding: 13px; } .membership-manage-wide { grid-column: 1; } .membership-manage-card > footer { display: grid; grid-template-columns: 1fr 1fr; padding: 11px 13px; } }
