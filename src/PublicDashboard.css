@@ -163,6 +163,13 @@ button { cursor: pointer; }
 .membership-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 .membership-form > label { display: grid; gap: 7px; color: #254536; font-size: 13px; font-weight: 800; }
 .membership-form input, .membership-form textarea { width: 100%; min-height: 47px; box-sizing: border-box; padding: 11px 13px; border: 1px solid #cbd9cf; border-radius: 11px; background: white; font: inherit; }
+.membership-photo-field { margin-bottom: 4px; }
+.membership-photo-picker { display: flex; align-items: center; gap: 15px; padding: 14px; border: 1px dashed #8eb79b; border-radius: 14px; background: #f3faf5; }
+.membership-photo-picker > img, .membership-photo-picker > span { width: 82px; height: 82px; flex: 0 0 82px; border-radius: 50%; object-fit: cover; }
+.membership-photo-picker > span { display: grid; place-items: center; color: #166534; background: #dff3e4; font-size: 30px; }
+.membership-photo-picker > div { display: grid; flex: 1; gap: 4px; }
+.membership-photo-picker small { color: #718078; font-weight: 600; }
+.membership-photo-picker input { min-height: 40px; margin-top: 5px; padding: 7px; background: white; }
 .membership-wide { grid-column: 1 / -1; }
 .membership-form fieldset { margin: 0; padding: 12px; border: 1px solid #d2ded5; border-radius: 13px; }
 .membership-form legend { padding: 0 6px; color: #254536; font-size: 13px; font-weight: 900; }
@@ -180,6 +187,23 @@ button { cursor: pointer; }
 .membership-success p { color: #65736b; }
 .membership-success strong { margin: 12px 0 24px; padding: 14px 20px; border-radius: 12px; color: #14532d; background: #dcfce7; font-size: 22px; letter-spacing: 1px; }
 .membership-success .membership-submit { width: min(320px, 100%); }
+.member-id-card { width: min(560px,100%); margin: 18px 0 25px; overflow: hidden; border: 1px solid #c9ddce; border-radius: 22px; color: #163d2b; background: #fff; box-shadow: 0 20px 45px rgba(14,78,43,.2); text-align: left; }
+.member-id-card__brand { display: flex; align-items: center; gap: 10px; padding: 15px 18px; color: white; background: linear-gradient(125deg,#0c4b2d,#16803b); }
+.member-id-card__brand img { width: 48px; height: 48px; border-radius: 50%; background: white; object-fit: contain; }
+.member-id-card__brand > div { display: grid; line-height: 1; }
+.member-id-card__brand b { font-size: 20px; letter-spacing: .8px; }
+.member-id-card__brand em { margin-top: 5px; color: #c4f46d; font-size: 12px; font-style: normal; font-weight: 900; letter-spacing: 4px; }
+.member-id-card__brand > small { margin-left: auto; padding: 7px 9px; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; color: white; font-size: 9px; letter-spacing: 1px; }
+.member-id-card__body { display: grid; grid-template-columns: 132px 1fr; gap: 20px; align-items: center; padding: 24px; background: linear-gradient(145deg,#fff,#f0f8f2); }
+.member-id-card__photo { display: grid; place-items: center; width: 124px; height: 142px; overflow: hidden; border: 5px solid white; border-radius: 18px; color: white; background: #16803b; box-shadow: 0 7px 20px rgba(15,81,50,.2); font-size: 52px; }
+.member-id-card__photo img { width: 100%; height: 100%; object-fit: cover; }
+.member-id-card__details { display: grid; gap: 4px; min-width: 0; }
+.member-id-card__details small { color: #708078; font-size: 9px; font-weight: 900; letter-spacing: 1.4px; }
+.member-id-card__details h3 { margin: 0 0 10px; overflow-wrap: anywhere; color: #123b29; font-size: 24px; }
+.member-id-card__details strong { margin: 0; padding: 0; color: #166534; background: none; font-size: 18px; letter-spacing: .7px; }
+.member-id-card__details p { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; color: #166534; font-size: 10px; font-weight: 900; letter-spacing: .7px; }
+.member-id-card__details p span { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: white; background: #16a34a; }
+.member-id-card footer { display: flex; justify-content: space-between; padding: 10px 18px; color: #daeade; background: #0c3d27; font-size: 10px; letter-spacing: .8px; text-transform: uppercase; }
 @media (max-width: 650px) {
   .membership-page__bar { min-height: 64px; padding: 8px 12px; gap: 10px; }
   .membership-page__bar strong { font-size: 14px; }
@@ -193,6 +217,16 @@ button { cursor: pointer; }
   .membership-form input, .membership-form textarea { min-height: 48px; font-size: 16px; }
   .membership-interests { gap: 6px; }
   .membership-submit { width: 100%; min-height: 54px; }
+  .membership-photo-picker { align-items: flex-start; gap: 11px; padding: 11px; }
+  .membership-photo-picker > img, .membership-photo-picker > span { width: 68px; height: 68px; flex-basis: 68px; }
+  .member-id-card__brand { padding: 12px; }
+  .member-id-card__brand img { width: 40px; height: 40px; }
+  .member-id-card__brand b { font-size: 15px; }
+  .member-id-card__brand > small { display: none; }
+  .member-id-card__body { grid-template-columns: 92px 1fr; gap: 13px; padding: 16px 13px; }
+  .member-id-card__photo { width: 84px; height: 105px; border-width: 3px; border-radius: 13px; }
+  .member-id-card__details h3 { font-size: 18px; }
+  .member-id-card__details strong { font-size: 13px; letter-spacing: 0; }
 }
 .mobile-menu i { display: block; height: 2px; margin: 5px 0; background: white; }
 

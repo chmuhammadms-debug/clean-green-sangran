@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { registerMembership } from "./membershipService";
+import { prepareMembershipPhoto, registerMembership } from "./membershipService";
 
 const blank = { fullName: "", fatherName: "", phone: "", whatsapp: "", cnic: "", address: "", occupation: "", age: "", interests: [] };
 const interestOptions = ["Plantation", "Cleanliness", "Blood Bank", "Welfare", "Sports", "Volunteer Work"];
@@ -10,12 +10,17 @@ export default function MembershipForm({ language = "en", onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [member, setMember] = useState(null);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
   const toggleInterest = (value) => set("interests", form.interests.includes(value) ? form.interests.filter((item) => item !== value) : [...form.interests, value]);
 
   const submit = async (event) => {
     event.preventDefault(); setSaving(true); setError("");
-    try { setMember(await registerMembership(form)); }
+    try {
+      const photoData = await prepareMembershipPhoto(photo);
+      setMember(await registerMembership({ ...form, photoData }));
+    }
     catch (err) { setError(err.message || "Membership could not be created."); }
     finally { setSaving(false); }
   };
@@ -29,13 +34,20 @@ export default function MembershipForm({ language = "en", onClose }) {
     <section className="membership-card">
       {member ? <div className="membership-success">
         <span>✓</span><small>{ur ? "ممبرشپ منظور ہو گئی" : "MEMBERSHIP APPROVED"}</small>
-        <h2>{ur ? "خوش آمدید!" : "Welcome to the community!"}</h2>
-        <p>{ur ? "آپ کی مفت ممبرشپ فوراً منظور ہو گئی ہے۔" : "Your free membership has been approved instantly."}</p>
-        <strong>{member.membership_number}</strong>
+        <h2>{ur ? "آپ کا ممبرشپ کارڈ تیار ہے" : "Your membership card is ready"}</h2>
+        <article className="member-id-card">
+          <div className="member-id-card__brand"><img src="/logo-icon-2026.png" alt="" /><div><b>CLEAN &amp; GREEN</b><em>SANGRAN</em></div><small>COMMUNITY MEMBER</small></div>
+          <div className="member-id-card__body">
+            <div className="member-id-card__photo">{member.photo_data ? <img src={member.photo_data} alt={member.full_name} /> : <b>{member.full_name?.charAt(0) || "M"}</b>}</div>
+            <div className="member-id-card__details"><small>MEMBER NAME</small><h3>{member.full_name}</h3><small>MEMBERSHIP NUMBER</small><strong>{member.membership_number}</strong><p><span>✓</span> AUTO APPROVED MEMBER</p></div>
+          </div>
+          <footer><span>Serving our village together</span><b>{new Date(member.created_at).getFullYear()}</b></footer>
+        </article>
         <button className="membership-submit" onClick={onClose}>{ur ? "مکمل" : "Done"}</button>
       </div> : <>
         <div className="membership-head"><span>{ur ? "مفت عوامی ممبرشپ" : "FREE COMMUNITY MEMBERSHIP"}</span><h2>{ur ? "کلین اینڈ گرین سنگراں کا حصہ بنیں" : "Become a Member"}</h2><p>{ur ? "کوئی فیس نہیں۔ فارم جمع ہوتے ہی ممبرشپ منظور ہو جائے گی۔" : "No fee. Your membership is approved as soon as you submit."}</p></div>
         <form className="membership-form" onSubmit={submit}>
+          <label className="membership-photo-field membership-wide"><span>{ur ? "پروفائل تصویر (اختیاری)" : "Profile photo (optional)"}</span><div className="membership-photo-picker">{photoPreview ? <img src={photoPreview} alt="Profile preview" /> : <span>📷</span>}<div><b>{ur ? "تصویر منتخب کریں" : "Choose a clear photo"}</b><small>JPG, PNG or WebP</small><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => { const next = e.target.files?.[0] || null; setPhoto(next); setPhotoPreview(next ? URL.createObjectURL(next) : ""); }} /></div></div></label>
           <label><span>{ur ? "پورا نام" : "Full name"} *</span><input required minLength="3" value={form.fullName} onChange={(e) => set("fullName", e.target.value)} /></label>
           <label><span>{ur ? "والد کا نام" : "Father's name"} *</span><input required minLength="3" value={form.fatherName} onChange={(e) => set("fatherName", e.target.value)} /></label>
           <label><span>{ur ? "موبائل نمبر" : "Mobile number"} *</span><input required inputMode="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} /></label>

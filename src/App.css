@@ -567,4 +567,6 @@ tbody tr:last-child td {
 .membership-admin__table table { width: 100%; border-collapse: collapse; }
 .membership-admin__table th, .membership-admin__table td { padding: 11px; border-bottom: 1px solid #e5e7eb; text-align: left; vertical-align: top; }
 .membership-admin__table td small { display: block; margin-top: 4px; color: #6b7280; }
+.membership-admin__person { display: flex; align-items: center; gap: 9px; min-width: 170px; }
+.membership-admin__person > img, .membership-admin__person > span { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 50%; color: white; background: #16803b; object-fit: cover; font-weight: 900; }
 @media (max-width: 650px) { .membership-admin__head { align-items: flex-start; flex-direction: column; } .membership-admin { padding: 15px; } }
