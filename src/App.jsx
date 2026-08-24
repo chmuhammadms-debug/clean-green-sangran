@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState } from "react";
 import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
@@ -227,6 +227,33 @@ function SummaryCards({ totals, labels }) {
       ))}
     </div>
   );
+}
+
+class OptionalProjectPanelBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { failed: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error) {
+    console.error("Optional project panel failed to load", error);
+  }
+
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="empty-message" style={{ marginTop: "22px" }}>
+          The project payment page is ready. An optional project panel could not be loaded.
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }
 
 function RecordsTable({
@@ -1444,35 +1471,6 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 onOpenSystem={openSystem}
                 adminMode
               />
-            ) : isWelfareChild(selectedSystem) ? (
-              <>
-                <section className="panel welfare-child-admin" style={{ marginTop: "22px" }}>
-                  <div className="welfare-child-admin__cover">
-                    <img
-                      src={siteSettings.projectProfilesByProject?.[selectedSystem.id]?.coverImage || selectedSystem.coverImage}
-                      alt=""
-                    />
-                  </div>
-                  <span>SEPARATE PROJECT GALLERY</span>
-                  <h2>{selectedSystem.name}</h2>
-                  <p>
-                    This subproject does not keep a separate donation or expense account.
-                    Add every financial entry in the main Community Welfare project.
-                    Its name, icon, cover and gallery can be changed from Project Manager.
-                  </p>
-                  <button type="button" className="primary-button" onClick={() => setSelectedSystemId("welfare")}>
-                    Open Central Welfare Fund
-                  </button>
-                </section>
-                {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
-                  <WelfareOperationsPanel
-                    projectId={selectedSystem.id}
-                    settings={siteSettings}
-                    onSave={onSaveSiteSettings}
-                    saving={savingSiteSettings}
-                  />
-                )}
-              </>
             ) : <>
             {selectedWorkParentId ? (
               <div className="summary-grid">
@@ -1951,38 +1949,48 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               </>
             )}
 
-            {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
-            {isWelfareParent(selectedSystem) && (
-              <WelfareManagementHub
-                systems={systems}
-                onOpenSystem={openSystem}
-                getImage={(project) => (
-                  siteSettings.projectProfilesByProject?.[project.id]?.coverImage
-                  || project.coverImage
-                  || ""
-                )}
-                getPhotoCount={(project) => {
-                  const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
-                  const gallery = Array.isArray(savedGallery) && savedGallery.length
-                    ? savedGallery
-                    : project.galleryUrls;
-                  return Array.isArray(gallery) ? gallery.length : 0;
-                }}
-                adminMode
-              />
-            )}
-            {!isWorkItem(selectedSystem, projectProfiles) && (
-              <WorkItemsHub
-                project={selectedSystem}
-                systems={systems}
-                transactions={transactions}
-                profiles={projectProfiles}
-                onOpenSystem={openSystem}
-                onCreateWork={createWork}
-                onDeleteWork={deleteSystemPermanently}
-                adminMode
-              />
-            )}
+            <OptionalProjectPanelBoundary key={selectedSystem.id}>
+              {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
+              {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
+                <WelfareOperationsPanel
+                  projectId={selectedSystem.id}
+                  settings={siteSettings}
+                  onSave={onSaveSiteSettings}
+                  saving={savingSiteSettings}
+                />
+              )}
+              {isWelfareParent(selectedSystem) && (
+                <WelfareManagementHub
+                  systems={systems}
+                  onOpenSystem={openSystem}
+                  getImage={(project) => (
+                    siteSettings.projectProfilesByProject?.[project.id]?.coverImage
+                    || project.coverImage
+                    || ""
+                  )}
+                  getPhotoCount={(project) => {
+                    const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
+                    const gallery = Array.isArray(savedGallery) && savedGallery.length
+                      ? savedGallery
+                      : project.galleryUrls;
+                    return Array.isArray(gallery) ? gallery.length : 0;
+                  }}
+                  adminMode
+                />
+              )}
+              {!isWorkItem(selectedSystem, projectProfiles) && (
+                <WorkItemsHub
+                  project={selectedSystem}
+                  systems={systems}
+                  transactions={transactions}
+                  profiles={projectProfiles}
+                  onOpenSystem={openSystem}
+                  onCreateWork={createWork}
+                  onDeleteWork={deleteSystemPermanently}
+                  adminMode
+                />
+              )}
+            </OptionalProjectPanelBoundary>
             </>}
           </>
         ) : (
