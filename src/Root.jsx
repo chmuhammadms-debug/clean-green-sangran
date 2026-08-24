@@ -21,7 +21,33 @@ class AdminAppBoundary extends Component {
 
   componentDidCatch(error) {
     console.error("Admin application failed to render", error);
+
+    if (sessionStorage.getItem("cgs-admin-cache-repair") !== "attempted") {
+      sessionStorage.setItem("cgs-admin-cache-repair", "attempted");
+      localStorage.removeItem("sangrahnSystems");
+      localStorage.removeItem("sangrahnTransactions");
+      window.setTimeout(() => window.location.reload(), 50);
+    }
   }
+
+  repairAndReload = async () => {
+    localStorage.removeItem("sangrahnSystems");
+    localStorage.removeItem("sangrahnTransactions");
+    sessionStorage.removeItem("cgs-admin-cache-repair");
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.update()));
+    }
+    if ("caches" in window) {
+      const cacheNames = await window.caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("adminRepair", Date.now().toString());
+    window.location.replace(url.toString());
+  };
 
   render() {
     if (!this.state.error) return this.props.children;
@@ -30,12 +56,12 @@ class AdminAppBoundary extends Component {
       <main className="login-page">
         <section className="login-card">
           <h1>Admin page recovery</h1>
-          <p>A damaged old browser record was blocked. Reload the admin page to continue.</p>
+          <p>An old browser cache entry was blocked. Repair it and load fresh records from Supabase.</p>
           <p style={{ color: "#b91c1c", overflowWrap: "anywhere" }}>
             {String(this.state.error?.message || "Unknown admin error")}
           </p>
-          <button type="button" className="primary-button" onClick={() => window.location.reload()}>
-            Reload Admin
+          <button type="button" className="primary-button" onClick={this.repairAndReload}>
+            Repair &amp; Reload Admin
           </button>
         </section>
       </main>
