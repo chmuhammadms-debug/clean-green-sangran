@@ -491,7 +491,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   }, [systems, transactions, loggedIn, databaseReady]);
 
   const selectedSystem = systems.find(
-    (system) => system.id === selectedSystemId
+    (system) => String(system.id ?? "") === String(selectedSystemId ?? "")
   );
   const projectProfiles = siteSettings.projectProfilesByProject || {};
   const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
@@ -503,13 +503,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
         : []
   );
 
-  const selectedTransactions = recordsForProject(
+  const selectedTransactions = [...recordsForProject(
     transactions,
     systems,
     selectedSystemId,
     projectProfiles,
     relatedChildIdsFor(selectedSystemId)
-  ).sort((a, b) => b.date.localeCompare(a.date));
+  )].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
 
   const selectedTotals = totalsFor(
     selectedTransactions
@@ -608,10 +608,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   }
 
   function openSystem(systemId) {
-    setSelectedSystemId(systemId);
+    const normalizedId = String(systemId ?? "").trim();
+    if (!normalizedId) return;
+
+    setSelectedSystemId(normalizedId);
     setActiveSection("income");
     setDonorSearch("");
     resetForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function createWork(parentProjectId, work) {
@@ -1470,37 +1474,6 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 )}
               </>
             ) : <>
-            {isWelfareParent(selectedSystem) && (
-              <WelfareManagementHub
-                systems={systems}
-                onOpenSystem={openSystem}
-                getImage={(project) => (
-                  siteSettings.projectProfilesByProject?.[project.id]?.coverImage
-                  || project.coverImage
-                  || ""
-                )}
-                getPhotoCount={(project) => {
-                  const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
-                  const gallery = Array.isArray(savedGallery) && savedGallery.length
-                    ? savedGallery
-                    : project.galleryUrls;
-                  return Array.isArray(gallery) ? gallery.length : 0;
-                }}
-                adminMode
-              />
-            )}
-            {!isWorkItem(selectedSystem, projectProfiles) && (
-              <WorkItemsHub
-                project={selectedSystem}
-                systems={systems}
-                transactions={transactions}
-                profiles={projectProfiles}
-                onOpenSystem={openSystem}
-                onCreateWork={createWork}
-                onDeleteWork={deleteSystemPermanently}
-                adminMode
-              />
-            )}
             {selectedWorkParentId ? (
               <div className="summary-grid">
                 <div className="summary-card"><p>Work Budget</p><h2>Rs. {selectedWorkBudget.toLocaleString()}</h2></div>
@@ -1519,8 +1492,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               />
             )}
 
-            {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
             <section
+              id="project-finance-admin"
               className="panel"
               style={{ marginTop: "22px" }}
             >
@@ -1977,6 +1950,39 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 </section>
               </>
             )}
+
+            {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
+            {isWelfareParent(selectedSystem) && (
+              <WelfareManagementHub
+                systems={systems}
+                onOpenSystem={openSystem}
+                getImage={(project) => (
+                  siteSettings.projectProfilesByProject?.[project.id]?.coverImage
+                  || project.coverImage
+                  || ""
+                )}
+                getPhotoCount={(project) => {
+                  const savedGallery = siteSettings.projectProfilesByProject?.[project.id]?.galleryUrls;
+                  const gallery = Array.isArray(savedGallery) && savedGallery.length
+                    ? savedGallery
+                    : project.galleryUrls;
+                  return Array.isArray(gallery) ? gallery.length : 0;
+                }}
+                adminMode
+              />
+            )}
+            {!isWorkItem(selectedSystem, projectProfiles) && (
+              <WorkItemsHub
+                project={selectedSystem}
+                systems={systems}
+                transactions={transactions}
+                profiles={projectProfiles}
+                onOpenSystem={openSystem}
+                onCreateWork={createWork}
+                onDeleteWork={deleteSystemPermanently}
+                adminMode
+              />
+            )}
             </>}
           </>
         ) : (
@@ -2047,6 +2053,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 return (
                   <button
                     key={system.id}
+                    type="button"
                     className="summary-card"
                     onClick={() =>
                       openSystem(system.id)
@@ -2088,6 +2095,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               })}
 
               <button
+                type="button"
                 className="summary-card"
                 onClick={addNewSystem}
                 style={{
