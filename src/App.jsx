@@ -630,6 +630,28 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   const selectedWorkParentId = typeof workParentId === "function"
     ? workParentId(selectedSystem, projectProfiles)
     : null;
+  // Never allow an optional project-type helper to take down the finance
+  // entry screen. Some older deployed chunks/browser caches exposed one of
+  // these imports as a non-function (the minified "l is not a function"
+  // crash). Resolve every flag defensively once and render from booleans.
+  const safeProjectCheck = (check, project) => {
+    try {
+      return typeof check === "function" ? Boolean(check(project)) : false;
+    } catch (error) {
+      console.warn("Optional project check was skipped", error);
+      return false;
+    }
+  };
+  const selectedIsDemography = safeProjectCheck(isDemographyProject, selectedSystem);
+  const selectedIsBloodBank = safeProjectCheck(isBloodBankProject, selectedSystem);
+  const selectedIsMosqueParent = safeProjectCheck(isMosqueParent, selectedSystem);
+  const selectedIsMosqueChild = safeProjectCheck(isMosqueChild, selectedSystem);
+  const selectedIsWelfareParent = safeProjectCheck(isWelfareParent, selectedSystem);
+  const selectedIsWelfareChild = safeProjectCheck(isWelfareChild, selectedSystem);
+  const selectedIsWorkItem = safeProjectCheck(
+    (project) => isWorkItem(project, projectProfiles),
+    selectedSystem
+  );
   const relatedChildIdsFor = (systemOrId) => (
     typeof isMosqueParent === "function" && isMosqueParent(systemOrId)
       ? mosqueChildSystems(safeSystems).map((system) => system.id)
@@ -1575,9 +1597,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 setSelectedSystemId(
                   selectedWorkParentId
                     ? selectedWorkParentId
-                    : isMosqueChild(selectedSystem)
+                    : selectedIsMosqueChild
                       ? "mosque"
-                      : isWelfareChild(selectedSystem)
+                      : selectedIsWelfareChild
                         ? "welfare"
                         : null
                 )
@@ -1590,9 +1612,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             >
               {selectedWorkParentId
                 ? "← Project Works"
-                : isMosqueChild(selectedSystem)
+                : selectedIsMosqueChild
                   ? "← Mosque Management"
-                  : isWelfareChild(selectedSystem)
+                  : selectedIsWelfareChild
                     ? "← Welfare Management"
                     : "← Central Dashboard"}
             </button>
@@ -1607,11 +1629,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 selectedSystem.englishName}
             </p>
 
-            {isDemographyProject(selectedSystem) ? (
+            {selectedIsDemography ? (
               <DemographyAdmin />
-            ) : isBloodBankProject(selectedSystem) ? (
+            ) : selectedIsBloodBank ? (
               <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
-            ) : isMosqueParent(selectedSystem) ? (
+            ) : selectedIsMosqueParent ? (
               <MosqueManagementHub
                 systems={systems}
                 transactions={transactions}
@@ -2107,7 +2129,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   saving={savingSiteSettings}
                 />
               )}
-              {isWelfareParent(selectedSystem) && (
+              {selectedIsWelfareParent && (
                 <WelfareManagementHub
                   systems={systems}
                   onOpenSystem={openSystem}
@@ -2126,7 +2148,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   adminMode
                 />
               )}
-              {!isWorkItem(selectedSystem, projectProfiles) && (
+              {!selectedIsWorkItem && (
                 <WorkItemsHub
                   project={selectedSystem}
                   systems={systems}
