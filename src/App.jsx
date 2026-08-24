@@ -186,6 +186,38 @@ function totalsFor(records) {
   };
 }
 
+function safeRecordText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeTransactionRecord(record, index = 0) {
+  const source = record && typeof record === "object" ? record : {};
+  const amount = Number(source.amount);
+  const type = source.type === "expense" ? "expense" : "income";
+
+  return {
+    ...source,
+    id: safeRecordText(source.id || source.databaseId, `record-${index}`),
+    systemId: safeRecordText(source.systemId),
+    type,
+    person: safeRecordText(source.person, type === "income" ? "Anonymous" : "Expense"),
+    amount: Number.isFinite(amount) ? amount : 0,
+    date: safeRecordText(source.date, getToday()),
+    method: safeRecordText(source.method, "Other"),
+    details: safeRecordText(source.details),
+    slipName: safeRecordText(source.slipName),
+    slipData: typeof source.slipData === "string" ? source.slipData : "",
+    donorPhoto: typeof source.donorPhoto === "string" ? source.donorPhoto : "",
+  };
+}
+
 function receiptNumber(record) {
   const shortId = String(record.id)
     .replace(/[^a-zA-Z0-9]/g, "")
@@ -253,6 +285,44 @@ class OptionalProjectPanelBoundary extends Component {
     }
 
     return this.props.children;
+  }
+}
+
+class AdminProjectBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error) {
+    console.error("Admin project page failed to render", error);
+  }
+
+  componentDidUpdate(previousProps) {
+    if (previousProps.projectId !== this.props.projectId && this.state.error) {
+      this.setState({ error: null });
+    }
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+
+    return (
+      <section className="panel" style={{ marginTop: "22px" }}>
+        <h2>Project page could not load</h2>
+        <p>A damaged old record was blocked so the complete admin dashboard does not turn white.</p>
+        <p style={{ color: "#b91c1c", overflowWrap: "anywhere" }}>
+          {safeRecordText(this.state.error?.message, "Unknown project error")}
+        </p>
+        <button type="button" className="primary-button" onClick={this.props.onBack}>
+          Back to Central Dashboard
+        </button>
+      </section>
+    );
   }
 }
 
@@ -536,7 +606,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     selectedSystemId,
     projectProfiles,
     relatedChildIdsFor(selectedSystemId)
-  )].sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  )]
+    .map(normalizeTransactionRecord)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   const selectedTotals = totalsFor(
     selectedTransactions
@@ -1420,7 +1492,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
       <main className="container">
         {selectedSystem ? (
-          <>
+          <AdminProjectBoundary
+            projectId={String(selectedSystem.id || "")}
+            onBack={() => setSelectedSystemId(null)}
+          >
             <button
               className="logout-button"
               onClick={() =>
@@ -1992,7 +2067,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               )}
             </OptionalProjectPanelBoundary>
             </>}
-          </>
+          </AdminProjectBoundary>
         ) : (
           <>
             <h1 className="page-heading">
