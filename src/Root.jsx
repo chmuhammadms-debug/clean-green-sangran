@@ -21,13 +21,6 @@ class AdminAppBoundary extends Component {
 
   componentDidCatch(error) {
     console.error("Admin application failed to render", error);
-
-    if (sessionStorage.getItem("cgs-admin-cache-repair") !== "attempted") {
-      sessionStorage.setItem("cgs-admin-cache-repair", "attempted");
-      localStorage.removeItem("sangrahnSystems");
-      localStorage.removeItem("sangrahnTransactions");
-      window.setTimeout(() => window.location.reload(), 50);
-    }
   }
 
   repairAndReload = async () => {
