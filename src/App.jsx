@@ -511,6 +511,25 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     useState(getCurrentMonth());
 
   useEffect(() => {
+    if (!selectedSystemId) return undefined;
+
+    const moveProjectPageToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    moveProjectPageToTop();
+    const animationFrame = window.requestAnimationFrame(moveProjectPageToTop);
+    const timer = window.setTimeout(moveProjectPageToTop, 80);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(timer);
+    };
+  }, [selectedSystemId]);
+
+  useEffect(() => {
     onAuthenticatedChange?.(loggedIn);
   }, [loggedIn, onAuthenticatedChange]);
 
@@ -714,7 +733,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     setActiveSection("income");
     setDonorSearch("");
     resetForm();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }
 
   async function createWork(parentProjectId, work) {
