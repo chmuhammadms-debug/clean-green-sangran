@@ -313,12 +313,6 @@ class AdminProjectBoundary extends Component {
     console.error("Admin project page failed to render", error);
   }
 
-  componentDidUpdate(previousProps) {
-    if (previousProps.projectId !== this.props.projectId && this.state.error) {
-      this.setState({ error: null });
-    }
-  }
-
   render() {
     if (!this.state.error) return this.props.children;
 
@@ -1529,6 +1523,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       <main className="container">
         {selectedSystem ? (
           <AdminProjectBoundary
+            key={String(selectedSystem.id || "")}
             projectId={String(selectedSystem.id || "")}
             onBack={() => setSelectedSystemId(null)}
           >
