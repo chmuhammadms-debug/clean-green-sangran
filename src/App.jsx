@@ -593,512 +593,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   }, []);
 
   useEffect(() => {
-    if (!loggedIn || !databaseReady) return undefined;
-    const timer = window.setTimeout(async () => {
-      try {
-        await syncDatabaseData(systems, transactions);
-        setDatabaseMessage("All changes saved to Supabase");
-      } catch (error) {
-        console.error(error);
-        setDatabaseMessage(`Database save failed: ${error.message}`);
-      }
-    }, 700);
-    return () => window.clearTimeout(timer);
-  }, [systems, transactions, loggedIn, databaseReady]);
 
-  const selectedSystem = systems.find(
-    (system) => String(system.id ?? "") === String(selectedSystemId ?? "")
-  );
-  const projectProfiles = siteSettings.projectProfilesByProject || {};
-  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
-  const relatedChildIdsFor = (systemOrId) => (
-    isMosqueParent(systemOrId)
-      ? mosqueChildSystems(systems).map((system) => system.id)
-      : isWelfareParent(systemOrId)
-        ? welfareChildSystems(systems).map((system) => system.id)
-        : []
-  );
-
-  const selectedTransactions = [...recordsForProject(
-    transactions,
-    systems,
-    selectedSystemId,
-    projectProfiles,
-    relatedChildIdsFor(selectedSystemId)
-  )]
-    .map(normalizeTransactionRecord)
-    .sort((a, b) => b.date.localeCompare(a.date));
-
-  const selectedTotals = totalsFor(
-    selectedTransactions
-  );
-  const selectedWorkBudget = selectedWorkParentId
-    ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
-    : 0;
-
-  const financeSections = selectedWorkParentId
-    ? [
-        ["income", "Add Donation"],
-        ["expense", "Add Expense"],
-        ["ledger", "Ledger / Report"],
-      ]
-    : [
-        ["income", "Donations"],
-        ["expense", "Expenses"],
-        ["daily", "Daily Report"],
-        ["monthly", "Monthly Report"],
-      ];
-
-  const allTotals = totalsFor(transactions);
-
-  const sectionRecords = selectedTransactions.filter(
-    (record) => record.type === activeSection
-  );
-
-  const donorRecords = selectedTransactions.filter(
-    (record) => {
-      const search = donorSearch.trim().toLowerCase();
-
-      return (
-        record.type === "income" &&
-        search &&
-        String(record.person)
-          .toLowerCase()
-          .includes(search)
-      );
-    }
-  );
-
-  const donorTotal = donorRecords.reduce(
-    (total, record) =>
-      total + Number(record.amount),
-    0
-  );
-
-  const reportRecords = selectedTransactions.filter(
-    (record) => {
-      if (activeSection === "daily") {
-        return record.date === dailyDate;
-      }
-
-      if (activeSection === "monthly") {
-        return record.date.startsWith(monthlyDate);
-      }
-
-      return true;
-    }
-  );
-
-  const reportTotals = totalsFor(reportRecords);
-
-  async function handleLogin(event) {
-    event.preventDefault();
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
-    if (!error && await isCurrentUserAdmin(data.user)) {
-      setLoggedIn(true);
-      await loadFromDatabase();
-    } else {
-      if (!error) await supabase.auth.signOut();
-      alert(error ? "Incorrect email or password" : "This is a donor account, not an administrator account.");
-    }
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    setLoggedIn(false);
-    setDatabaseReady(false);
-    setSelectedSystemId(null);
-    setUsername("");
-    setPassword("");
-  }
-
-  function resetForm() {
-    setEditingRecordId(null);
-    setEntryForm(emptyForm());
-
-    setFileInputKey(
-      (currentKey) => currentKey + 1
-    );
-    setDonorPhotoInputKey(
-      (currentKey) => currentKey + 1
-    );
-  }
-
-  function openSystem(systemId) {
-    const normalizedId = String(systemId ?? "").trim();
-    if (!normalizedId) return;
-
-    setSelectedSystemId(normalizedId);
-    setActiveSection("income");
-    setDonorSearch("");
-    resetForm();
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }
-
-  async function createWork(parentProjectId, work) {
-    const name = work.name.trim();
-    if (!name) throw new Error("Work name is required.");
-    const description = work.description.trim();
-    const budget = Math.max(0, Number(work.budget) || 0);
-    const id = createWorkItemId(parentProjectId);
-    const nextWork = {
-      id,
-      parentProjectId,
-      name,
-      nameUr: name,
-      description,
-      descriptionUr: description,
-      icon: "🛠️",
-      isActive: true,
-    };
-    const nextSettings = {
-      ...siteSettings,
-      projectProfilesByProject: {
-        ...projectProfiles,
-        [id]: {
-          parentProjectId,
-          nameEn: name,
-          nameUr: name,
-          descriptionEn: description,
-          descriptionUr: description,
-          coverImage: "",
-          galleryUrls: [],
-          status: "in-progress",
-          budget,
-          completionPercent: 0,
-          startDate: "",
-          expectedCompletionDate: "",
-          planEn: "",
-          planUr: "",
-        },
-      },
-    };
-
-    await onSaveSiteSettings(nextSettings);
-    setSystems((current) => normalizeSystems([...current, nextWork]));
-    openSystem(id);
-  }
-
-  async function deleteSystemPermanently(system) {
-    const systemId = String(system?.id || "");
-    if (!systemId) throw new Error("Project ID is missing.");
-
-    const childIds = systems
-      .filter((candidate) => workParentId(candidate, projectProfiles) === systemId)
-      .map((candidate) => String(candidate.id));
-    const deletedIds = new Set([...childIds, systemId]);
-    const relatedRecordCount = transactions.filter(
-      (record) => deletedIds.has(String(record.systemId))
-    ).length;
-    if (relatedRecordCount) {
-      throw new Error(`This project contains ${relatedRecordCount} financial record(s). Delete or move those records first so the accounts remain safe.`);
-    }
-
-    for (const deletedId of [...childIds, systemId]) {
-      await deleteDatabaseProject(deletedId);
-    }
-
-    setTransactions((current) => current.filter(
-      (record) => !deletedIds.has(String(record.systemId))
-    ));
-    setSystems((current) => normalizeSystems(current.filter(
-      (candidate) => !deletedIds.has(String(candidate.id))
-    )));
-
-    if (deletedIds.has(String(selectedSystemId || ""))) {
-      const parentId = workParentId(system, projectProfiles);
-      setSelectedSystemId(parentId && !deletedIds.has(parentId) ? parentId : null);
-    }
-
-    const nextProfiles = { ...projectProfiles };
-    deletedIds.forEach((deletedId) => delete nextProfiles[deletedId]);
-    try {
-      await onSaveSiteSettings({
-        ...siteSettings,
-        projectProfilesByProject: nextProfiles,
-      });
-    } catch (error) {
-      console.warn("Project was deleted, but its unused profile could not be cleaned up.", error);
-    }
-  }
-
-  function openAdminNotification(item) {
-    const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
-    if (notificationType.includes("complaint")) {
-      setSelectedSystemId(null);
-      window.setTimeout(() => document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-      return;
-    }
-    if (notificationType.includes("blood")) {
-      const bloodSystem = systems.find((system) => isBloodBankProject(system));
-      if (bloodSystem) openSystem(bloodSystem.id);
-      return;
-    }
-    if (item?.source_id && systems.some((system) => system.id === item.source_id)) {
-      openSystem(item.source_id);
-    }
-  }
-
-  function changeSection(sectionId) {
-    setActiveSection(sectionId);
-    resetForm();
-  }
-
-  function addNewSystem() {
-    const name = window.prompt(
-      "Enter the name of the new management system:"
-    );
-
-    if (!name?.trim()) {
-      return;
-    }
-
-    setSystems((currentSystems) => normalizeSystems([
-      ...currentSystems,
-      {
-        id: Date.now().toString(),
-        name: name.trim(),
-        description: "Community management system",
-        icon: "📁",
-      },
-    ]));
-  }
-
-  function handleFileChange(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
-    if (file.size > 1.5 * 1024 * 1024) {
-      alert(
-        "The receipt file must be smaller than 1.5 MB"
-      );
-
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      setEntryForm((currentForm) => ({
-        ...currentForm,
-        slipName: file.name,
-        slipData: reader.result,
-      }));
-    };
-
-    reader.onerror = () => {
-      alert("The receipt could not be read");
-    };
-
-    reader.readAsDataURL(file);
-  }
-
-  function removeFile() {
-    setEntryForm((currentForm) => ({
-      ...currentForm,
-      slipName: "",
-      slipData: "",
-    }));
-
-    setFileInputKey(
-      (currentKey) => currentKey + 1
-    );
-  }
-
-  async function handleDonorPhotoChange(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingDonorPhoto(true);
-    setDatabaseMessage("Uploading donor photo...");
-
-    try {
-      const uploaded = await uploadWebsiteImage(file, "donors");
-      setEntryForm((currentForm) => ({
-        ...currentForm,
-        donorPhoto: uploaded.url,
-        donorPhotoName: uploaded.name,
-      }));
-      setDatabaseMessage("Donor photo uploaded");
-    } catch (error) {
-      console.error(error);
-      alert(error.message || "Donor photo could not be uploaded");
-      setDatabaseMessage(`Donor photo upload failed: ${error.message}`);
-      event.target.value = "";
-    } finally {
-      setUploadingDonorPhoto(false);
-    }
-  }
-
-  function removeDonorPhoto() {
-    setEntryForm((currentForm) => ({
-      ...currentForm,
-      donorPhoto: "",
-      donorPhotoName: "",
-    }));
-    setDonorPhotoInputKey((currentKey) => currentKey + 1);
-  }
-
-  function startEditing(record) {
-    setSelectedSystemId(record.systemId);
-    setActiveSection(record.type);
-    setEditingRecordId(record.id);
-
-    setEntryForm({
-      person: record.person,
-      amount: record.amount,
-      date: record.date,
-      method: record.method,
-      details: record.details || "",
-      slipName: record.slipName || "",
-      slipData: record.slipData || "",
-      donorPhoto: record.donorPhoto || "",
-      donorPhotoName: record.donorPhotoName || "",
-    });
-
-    setFileInputKey(
-      (currentKey) => currentKey + 1
-    );
-    setDonorPhotoInputKey(
-      (currentKey) => currentKey + 1
-    );
-
-    setTimeout(() => {
-      document
-        .getElementById("entry-form")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-    }, 50);
-  }
-
-  async function saveRecord(event) {
-    event.preventDefault();
-
-    const amount = Number(entryForm.amount);
-
-    if (!entryForm.person.trim() || amount <= 0) {
-      alert(
-        "Please enter a name or purpose and a valid amount"
-      );
-
-      return;
-    }
-
-    const recordData = {
-      systemId: selectedSystemId,
-      type: activeSection,
-      person: entryForm.person.trim(),
-      amount,
-      date: entryForm.date,
-      method: entryForm.method,
-      details: entryForm.details.trim(),
-      slipName: entryForm.slipName,
-      slipData: entryForm.slipData,
-      donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
-      donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
-    };
-
-    let nextTransactions;
-
-    if (editingRecordId) {
-      nextTransactions = transactions.map((record) =>
-          record.id === editingRecordId
-            ? {
-                ...record,
-                ...recordData,
-              }
-            : record
-      );
-    } else {
-      nextTransactions = [
-        {
-          ...recordData,
-          id: Date.now().toString(),
-        },
-        ...transactions,
-      ];
-    }
-
-    setTransactions(nextTransactions);
-    setDatabaseMessage("Saving record to Supabase...");
-
-    try {
-      await syncDatabaseData(systems, nextTransactions);
-      setDatabaseReady(true);
-      setDatabaseMessage("All changes saved to Supabase");
-
-      alert(
-        editingRecordId
-          ? "Record updated and saved to database"
-          : activeSection === "income"
-            ? "Donation saved to database successfully"
-            : "Expense saved to database successfully"
-      );
-    } catch (error) {
-      console.error(error);
-      setDatabaseMessage(`Database save failed: ${error.message}`);
-      alert(`Database save failed: ${error.message}`);
-    }
-
-    resetForm();
-  }
-
-  async function deleteRecord(recordId) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this record?"
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await deleteDatabaseTransaction(recordId);
-    } catch (error) {
-      console.error(error);
-      alert(`Record could not be deleted: ${error.message}`);
-      return;
-    }
-
-    setTransactions((currentRecords) =>
-      currentRecords.filter(
-        (record) => record.id !== recordId
-      )
-    );
-
-    if (editingRecordId === recordId) {
-      resetForm();
-    }
-  }
-
-  function printRecord(record) {
-    const project = systems.find(
-      (system) => system.id === record.systemId
-    );
-
-    const printWindow = window.open(
-      "",
-      "_blank",
-      "width=900,height=750"
-    );
-
-    if (!printWindow) {
-      alert(
-        "Please allow pop-ups to print the receipt"
-      );
-
-      return;
-    }
-
-    const title =
-      record.type === "income"
+          record.type === "income"
         ? "DONATION RECEIPT"
         : "EXPENSE VOUCHER";
 
@@ -1515,6 +1011,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             projectId={String(selectedSystem.id || "")}
             onBack={() => setSelectedSystemId(null)}
           >
+            <div className="admin-project-screen">
             <button
               className="logout-button"
               onClick={() =>
@@ -2086,6 +1583,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               )}
             </OptionalProjectPanelBoundary>
             </>}
+            </div>
           </AdminProjectBoundary>
         ) : (
           <>
@@ -2225,4 +1723,508 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 }
 
 export default App;
-  
+if (!loggedIn || !databaseReady) return undefined;
+    const timer = window.setTimeout(async () => {
+      try {
+        await syncDatabaseData(systems, transactions);
+        setDatabaseMessage("All changes saved to Supabase");
+      } catch (error) {
+        console.error(error);
+        setDatabaseMessage(`Database save failed: ${error.message}`);
+      }
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [systems, transactions, loggedIn, databaseReady]);
+
+  const selectedSystem = systems.find(
+    (system) => String(system.id ?? "") === String(selectedSystemId ?? "")
+  );
+  const projectProfiles = siteSettings.projectProfilesByProject || {};
+  const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
+  const relatedChildIdsFor = (systemOrId) => (
+    isMosqueParent(systemOrId)
+      ? mosqueChildSystems(systems).map((system) => system.id)
+      : isWelfareParent(systemOrId)
+        ? welfareChildSystems(systems).map((system) => system.id)
+        : []
+  );
+
+  const selectedTransactions = [...recordsForProject(
+    transactions,
+    systems,
+    selectedSystemId,
+    projectProfiles,
+    relatedChildIdsFor(selectedSystemId)
+  )]
+    .map(normalizeTransactionRecord)
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const selectedTotals = totalsFor(
+    selectedTransactions
+  );
+  const selectedWorkBudget = selectedWorkParentId
+    ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
+    : 0;
+
+  const financeSections = selectedWorkParentId
+    ? [
+        ["income", "Add Donation"],
+        ["expense", "Add Expense"],
+        ["ledger", "Ledger / Report"],
+      ]
+    : [
+        ["income", "Donations"],
+        ["expense", "Expenses"],
+        ["daily", "Daily Report"],
+        ["monthly", "Monthly Report"],
+      ];
+
+  const allTotals = totalsFor(transactions);
+
+  const sectionRecords = selectedTransactions.filter(
+    (record) => record.type === activeSection
+  );
+
+  const donorRecords = selectedTransactions.filter(
+    (record) => {
+      const search = donorSearch.trim().toLowerCase();
+
+      return (
+        record.type === "income" &&
+        search &&
+        String(record.person)
+          .toLowerCase()
+          .includes(search)
+      );
+    }
+  );
+
+  const donorTotal = donorRecords.reduce(
+    (total, record) =>
+      total + Number(record.amount),
+    0
+  );
+
+  const reportRecords = selectedTransactions.filter(
+    (record) => {
+      if (activeSection === "daily") {
+        return record.date === dailyDate;
+      }
+
+      if (activeSection === "monthly") {
+        return record.date.startsWith(monthlyDate);
+      }
+
+      return true;
+    }
+  );
+
+  const reportTotals = totalsFor(reportRecords);
+
+  async function handleLogin(event) {
+    event.preventDefault();
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
+    if (!error && await isCurrentUserAdmin(data.user)) {
+      setLoggedIn(true);
+      await loadFromDatabase();
+    } else {
+      if (!error) await supabase.auth.signOut();
+      alert(error ? "Incorrect email or password" : "This is a donor account, not an administrator account.");
+    }
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setLoggedIn(false);
+    setDatabaseReady(false);
+    setSelectedSystemId(null);
+    setUsername("");
+    setPassword("");
+  }
+
+  function resetForm() {
+    setEditingRecordId(null);
+    setEntryForm(emptyForm());
+
+    setFileInputKey(
+      (currentKey) => currentKey + 1
+    );
+    setDonorPhotoInputKey(
+      (currentKey) => currentKey + 1
+    );
+  }
+
+  function openSystem(systemId) {
+    const normalizedId = String(systemId ?? "").trim();
+    if (!normalizedId) return;
+
+    setSelectedSystemId(normalizedId);
+    setActiveSection("income");
+    setDonorSearch("");
+    resetForm();
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  async function createWork(parentProjectId, work) {
+    const name = work.name.trim();
+    if (!name) throw new Error("Work name is required.");
+    const description = work.description.trim();
+    const budget = Math.max(0, Number(work.budget) || 0);
+    const id = createWorkItemId(parentProjectId);
+    const nextWork = {
+      id,
+      parentProjectId,
+      name,
+      nameUr: name,
+      description,
+      descriptionUr: description,
+      icon: "🛠️",
+      isActive: true,
+    };
+    const nextSettings = {
+      ...siteSettings,
+      projectProfilesByProject: {
+        ...projectProfiles,
+        [id]: {
+          parentProjectId,
+          nameEn: name,
+          nameUr: name,
+          descriptionEn: description,
+          descriptionUr: description,
+          coverImage: "",
+          galleryUrls: [],
+          status: "in-progress",
+          budget,
+          completionPercent: 0,
+          startDate: "",
+          expectedCompletionDate: "",
+          planEn: "",
+          planUr: "",
+        },
+      },
+    };
+
+    await onSaveSiteSettings(nextSettings);
+    setSystems((current) => normalizeSystems([...current, nextWork]));
+    openSystem(id);
+  }
+
+  async function deleteSystemPermanently(system) {
+    const systemId = String(system?.id || "");
+    if (!systemId) throw new Error("Project ID is missing.");
+
+    const childIds = systems
+      .filter((candidate) => workParentId(candidate, projectProfiles) === systemId)
+      .map((candidate) => String(candidate.id));
+    const deletedIds = new Set([...childIds, systemId]);
+    const relatedRecordCount = transactions.filter(
+      (record) => deletedIds.has(String(record.systemId))
+    ).length;
+    if (relatedRecordCount) {
+      throw new Error(`This project contains ${relatedRecordCount} financial record(s). Delete or move those records first so the accounts remain safe.`);
+    }
+
+    for (const deletedId of [...childIds, systemId]) {
+      await deleteDatabaseProject(deletedId);
+    }
+
+    setTransactions((current) => current.filter(
+      (record) => !deletedIds.has(String(record.systemId))
+    ));
+    setSystems((current) => normalizeSystems(current.filter(
+      (candidate) => !deletedIds.has(String(candidate.id))
+    )));
+
+    if (deletedIds.has(String(selectedSystemId || ""))) {
+      const parentId = workParentId(system, projectProfiles);
+      setSelectedSystemId(parentId && !deletedIds.has(parentId) ? parentId : null);
+    }
+
+    const nextProfiles = { ...projectProfiles };
+    deletedIds.forEach((deletedId) => delete nextProfiles[deletedId]);
+    try {
+      await onSaveSiteSettings({
+        ...siteSettings,
+        projectProfilesByProject: nextProfiles,
+      });
+    } catch (error) {
+      console.warn("Project was deleted, but its unused profile could not be cleaned up.", error);
+    }
+  }
+
+  function openAdminNotification(item) {
+    const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
+    if (notificationType.includes("complaint")) {
+      setSelectedSystemId(null);
+      window.setTimeout(() => document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      return;
+    }
+    if (notificationType.includes("blood")) {
+      const bloodSystem = systems.find((system) => isBloodBankProject(system));
+      if (bloodSystem) openSystem(bloodSystem.id);
+      return;
+    }
+    if (item?.source_id && systems.some((system) => system.id === item.source_id)) {
+      openSystem(item.source_id);
+    }
+  }
+
+  function changeSection(sectionId) {
+    setActiveSection(sectionId);
+    resetForm();
+  }
+
+  function addNewSystem() {
+    const name = window.prompt(
+      "Enter the name of the new management system:"
+    );
+
+    if (!name?.trim()) {
+      return;
+    }
+
+    setSystems((currentSystems) => normalizeSystems([
+      ...currentSystems,
+      {
+        id: Date.now().toString(),
+        name: name.trim(),
+        description: "Community management system",
+        icon: "📁",
+      },
+    ]));
+  }
+
+  function handleFileChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert(
+        "The receipt file must be smaller than 1.5 MB"
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setEntryForm((currentForm) => ({
+        ...currentForm,
+        slipName: file.name,
+        slipData: reader.result,
+      }));
+    };
+
+    reader.onerror = () => {
+      alert("The receipt could not be read");
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function removeFile() {
+    setEntryForm((currentForm) => ({
+      ...currentForm,
+      slipName: "",
+      slipData: "",
+    }));
+
+    setFileInputKey(
+      (currentKey) => currentKey + 1
+    );
+  }
+
+  async function handleDonorPhotoChange(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingDonorPhoto(true);
+    setDatabaseMessage("Uploading donor photo...");
+
+    try {
+      const uploaded = await uploadWebsiteImage(file, "donors");
+      setEntryForm((currentForm) => ({
+        ...currentForm,
+        donorPhoto: uploaded.url,
+        donorPhotoName: uploaded.name,
+      }));
+      setDatabaseMessage("Donor photo uploaded");
+    } catch (error) {
+      console.error(error);
+      alert(error.message || "Donor photo could not be uploaded");
+      setDatabaseMessage(`Donor photo upload failed: ${error.message}`);
+      event.target.value = "";
+    } finally {
+      setUploadingDonorPhoto(false);
+    }
+  }
+
+  function removeDonorPhoto() {
+    setEntryForm((currentForm) => ({
+      ...currentForm,
+      donorPhoto: "",
+      donorPhotoName: "",
+    }));
+    setDonorPhotoInputKey((currentKey) => currentKey + 1);
+  }
+
+  function startEditing(record) {
+    setSelectedSystemId(record.systemId);
+    setActiveSection(record.type);
+    setEditingRecordId(record.id);
+
+    setEntryForm({
+      person: record.person,
+      amount: record.amount,
+      date: record.date,
+      method: record.method,
+      details: record.details || "",
+      slipName: record.slipName || "",
+      slipData: record.slipData || "",
+      donorPhoto: record.donorPhoto || "",
+      donorPhotoName: record.donorPhotoName || "",
+    });
+
+    setFileInputKey(
+      (currentKey) => currentKey + 1
+    );
+    setDonorPhotoInputKey(
+      (currentKey) => currentKey + 1
+    );
+
+    setTimeout(() => {
+      document
+        .getElementById("entry-form")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 50);
+  }
+
+  async function saveRecord(event) {
+    event.preventDefault();
+
+    const amount = Number(entryForm.amount);
+
+    if (!entryForm.person.trim() || amount <= 0) {
+      alert(
+        "Please enter a name or purpose and a valid amount"
+      );
+
+      return;
+    }
+
+    const recordData = {
+      systemId: selectedSystemId,
+      type: activeSection,
+      person: entryForm.person.trim(),
+      amount,
+      date: entryForm.date,
+      method: entryForm.method,
+      details: entryForm.details.trim(),
+      slipName: entryForm.slipName,
+      slipData: entryForm.slipData,
+      donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
+      donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
+    };
+
+    let nextTransactions;
+
+    if (editingRecordId) {
+      nextTransactions = transactions.map((record) =>
+          record.id === editingRecordId
+            ? {
+                ...record,
+                ...recordData,
+              }
+            : record
+      );
+    } else {
+      nextTransactions = [
+        {
+          ...recordData,
+          id: Date.now().toString(),
+        },
+        ...transactions,
+      ];
+    }
+
+    setTransactions(nextTransactions);
+    setDatabaseMessage("Saving record to Supabase...");
+
+    try {
+      await syncDatabaseData(systems, nextTransactions);
+      setDatabaseReady(true);
+      setDatabaseMessage("All changes saved to Supabase");
+
+      alert(
+        editingRecordId
+          ? "Record updated and saved to database"
+          : activeSection === "income"
+            ? "Donation saved to database successfully"
+            : "Expense saved to database successfully"
+      );
+    } catch (error) {
+      console.error(error);
+      setDatabaseMessage(`Database save failed: ${error.message}`);
+      alert(`Database save failed: ${error.message}`);
+    }
+
+    resetForm();
+  }
+
+  async function deleteRecord(recordId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this record?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteDatabaseTransaction(recordId);
+    } catch (error) {
+      console.error(error);
+      alert(`Record could not be deleted: ${error.message}`);
+      return;
+    }
+
+    setTransactions((currentRecords) =>
+      currentRecords.filter(
+        (record) => record.id !== recordId
+      )
+    );
+
+    if (editingRecordId === recordId) {
+      resetForm();
+    }
+  }
+
+  function printRecord(record) {
+    const project = systems.find(
+      (system) => system.id === record.systemId
+    );
+
+    const printWindow = window.open(
+      "",
+      "_blank",
+      "width=900,height=750"
+    );
+
+    if (!printWindow) {
+      alert(
+        "Please allow pop-ups to print the receipt"
+      );
+
+      return;
+    }
+
+    const title =
