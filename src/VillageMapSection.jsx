@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, LayersControl, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./VillageMap.css";
 
@@ -110,10 +110,26 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
         <div className="village-map-layout">
           <div className="village-map-canvas" aria-label={ur ? "سنگراں کا نقشہ" : "Map of Sangran"}>
             <MapContainer center={center} zoom={publicLocations.length ? 15 : 11} scrollWheelZoom={false} className="village-leaflet-map">
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <LayersControl position="topright" collapsed>
+                <LayersControl.BaseLayer checked name={ur ? "سیٹلائٹ" : "Satellite"}>
+                  <TileLayer
+                    attribution="Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  />
+                </LayersControl.BaseLayer>
+                <LayersControl.BaseLayer name={ur ? "سڑکوں کا نقشہ" : "Street map"}>
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                </LayersControl.BaseLayer>
+                <LayersControl.Overlay checked name={ur ? "جگہوں کے نام" : "Place labels"}>
+                  <TileLayer
+                    attribution="Labels &copy; Esri"
+                    url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  />
+                </LayersControl.Overlay>
+              </LayersControl>
               <MapViewport locations={filtered} location={selected} />
               {filtered.map((location) => {
                 const meta = CATEGORY_META[location.category] || CATEGORY_META.other;
