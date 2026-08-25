@@ -12,7 +12,13 @@ export default function MembershipAdmin() {
   const [members, setMembers] = useState([]); const [search, setSearch] = useState(""); const [error, setError] = useState("");
   const [selected, setSelected] = useState(null); const [cardMember, setCardMember] = useState(null); const [editing, setEditing] = useState(false); const [draft, setDraft] = useState(null); const [saving, setSaving] = useState(false);
   const load = () => fetchMemberships().then(setMembers).catch((err) => setError(err.message));
-  useEffect(load, []);
+  useEffect(() => {
+    // An effect may only return a cleanup function. Returning the Promise from
+    // `load()` made React try to call that Promise when this dashboard section
+    // unmounted (for example, when opening a project), which crashed the admin
+    // page with the minified "l is not a function" error.
+    void load();
+  }, []);
   const visible = members.filter((m) => `${m.full_name} ${m.membership_number} ${m.phone}`.toLowerCase().includes(search.toLowerCase()));
   const open = (member, edit = false) => { setSelected(member); setDraft({ ...member, interest_text: (member.interest_areas || []).join(", ") }); setEditing(edit); setError(""); };
   const close = () => { setSelected(null); setDraft(null); setEditing(false); };
