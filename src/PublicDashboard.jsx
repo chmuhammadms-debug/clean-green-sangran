@@ -15,6 +15,7 @@ import MosqueManagementHub from "./MosqueManagementHub";
 import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPublic from "./WelfareOperationsPublic";
+import { InfrastructurePublic } from "./InfrastructureManagement";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import DemographyPublic from "./DemographyPublic";
 import MembershipForm from "./MembershipForm";
@@ -1129,11 +1130,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           </div>
         </header>
 
-        <ProjectFaithSlider
-          slides={faithSlidesFor(selectedSystem)}
-          language={language}
-          projectId={selectedSystem.id}
-        />
+        {!isMosqueChild(selectedSystem)
+          && !isWelfareChild(selectedSystem)
+          && !isWorkItem(selectedSystem, projectProfiles)
+          && (
+            <ProjectFaithSlider
+              slides={faithSlidesFor(selectedSystem)}
+              language={language}
+              projectId={selectedSystem.id}
+            />
+          )}
 
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
@@ -1209,6 +1215,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       settings={settings}
                       language={language}
                     />
+                  )}
+                  {selectedSystem.id === "welfare-infrastructure" && (
+                    <InfrastructurePublic settings={settings} language={language} />
                   )}
                   <div className="project-gallery project-event-gallery reveal is-visible">
                       <div className="section-heading section-heading--compact">

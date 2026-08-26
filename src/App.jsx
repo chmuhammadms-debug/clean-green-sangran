@@ -15,6 +15,7 @@ import MosqueManagementHub from "./MosqueManagementHub";
 import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
 import WelfareOperationsPanel from "./WelfareOperationsPanel";
+import { InfrastructureAdmin } from "./InfrastructureManagement";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import DemographyAdmin from "./DemographyAdmin";
 import { isDemographyProject } from "./demographyService";
@@ -2124,6 +2125,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
                 <WelfareOperationsPanel
                   projectId={selectedSystem.id}
+                  settings={siteSettings}
+                  onSave={onSaveSiteSettings}
+                  saving={savingSiteSettings}
+                />
+              )}
+              {selectedSystem.id === "welfare-infrastructure" && (
+                <InfrastructureAdmin
                   settings={siteSettings}
                   onSave={onSaveSiteSettings}
                   saving={savingSiteSettings}
