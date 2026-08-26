@@ -49,3 +49,7 @@
 .sports-public-records article { overflow: hidden; }
 @media (max-width: 1100px) { .sports-admin-sport-strip, .sports-public-categories { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 700px) { .sports-admin-sport-strip, .sports-public-categories { grid-template-columns: repeat(2, 1fr); } .sports-media-upload { grid-column: auto; } .sports-record-media, .sports-pending-media { grid-template-columns: repeat(2, 1fr); } }
+
+.sports-cancel-edit { align-self: end; min-height: 44px; border: 1px solid #9fbdb5 !important; border-radius: 11px; background: #fff !important; color: #31564d !important; font-weight: 900; cursor: pointer; }
+.sports-record-actions { display: inline-flex; align-items: center; gap: 7px; }
+.welfare-operations__records footer .sports-edit-record { padding: 5px 9px; border-radius: 7px; background: #e0f2fe; color: #075985; }
