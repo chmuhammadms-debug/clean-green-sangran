@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BLOOD_GROUPS,
+  confirmBloodReceived,
   fetchPublicBloodDonors,
   fetchPublicBloodSummary,
   printBloodDonorSlip,
@@ -62,6 +63,16 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
+  const refreshRequest = async (request = bloodRequest) => {
+    if (!request?.id || !request?.phone) return null;
+    const latest = await resumeBloodRequest(request.id, request.phone);
+    const merged = { ...request, ...latest };
+    setBloodRequest(merged);
+    saveActiveBloodRequest(merged);
+    setApprovalVerified(merged.approval_status === "approved");
+    return merged;
+  };
+
   const loadSummary = () => fetchPublicBloodSummary().then(setSummary).catch(() => setSummary([]));
   const loadDonors = async (requestId, code) => {
     setDirectoryLoading(true);
@@ -85,6 +96,14 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
       window.setTimeout(() => document.getElementById("blood-request-result")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
     }
   }, [storedRequest]);
+
+  useEffect(() => {
+    if (!bloodRequest?.id || bloodRequest.status === "fulfilled") return undefined;
+    const interval = window.setInterval(() => {
+      refreshRequest().catch(() => {});
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [bloodRequest?.id, bloodRequest?.phone, bloodRequest?.status]);
 
   useEffect(() => {
     const openSavedRequest = () => {
@@ -197,6 +216,22 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
     setMessage("");
   };
 
+  const confirmReceived = async () => {
+    if (!bloodRequest?.id || !bloodRequest?.selected_donor_id) return;
+    const confirmed = window.confirm(ur
+      ? "کیا آپ تصدیق کرتے ہیں کہ منتخب ڈونر نے مریض کو خون دے دیا ہے؟"
+      : "Do you confirm that the selected donor has given blood to the patient?");
+    if (!confirmed) return;
+    setBusy(true); setMessage("");
+    try {
+      await confirmBloodReceived(bloodRequest.id, bloodRequest.phone);
+      await refreshRequest();
+      setMessage(ur ? "شکریہ، خون ملنے کی تصدیق محفوظ ہوگئی ہے۔" : "Thank you. Blood received confirmation has been saved.");
+      loadSummary();
+    } catch (error) { setMessage(error.message); }
+    finally { setBusy(false); }
+  };
+
   const requestReference = bloodRequest?.id ? bloodRequest.id.slice(0, 8).toUpperCase() : "";
   const managementMessage = bloodRequest
     ? encodeURIComponent(`Blood request ${requestReference}\nPatient: ${bloodRequest.patient_name}\nBlood group: ${bloodRequest.blood_group}\nPlease verify the request and share its approval code.`)
@@ -274,7 +309,12 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
         </div></> : <section className="blood-request-result" id="blood-request-result">
           <div className="blood-request-result__head"><span>{approvalVerified ? "✓" : "⌛"}</span><div><small>{approvalVerified ? (ur ? "MANAGEMENT APPROVAL مکمل" : "MANAGEMENT APPROVED") : (ur ? "MANAGEMENT APPROVAL باقی ہے" : "MANAGEMENT APPROVAL REQUIRED")}</small><h2>{bloodRequest.patient_name}</h2><p>{approvalVerified ? (ur ? `${bloodRequest.blood_group} کے متعلقہ ڈونرز اب دکھائے جارہے ہیں۔` : `Matching ${bloodRequest.blood_group} donors are now visible.`) : (ur ? "Management سے رابطہ کرکے چھ ہندسوں کا approval code حاصل کریں۔" : "Contact management and obtain the six-digit approval code.")}</p></div><b>{bloodRequest.blood_group}</b></div>
           <div className="blood-request-summary"><p><span>{ur ? "رابطہ" : "Contact"}</span><b>{bloodRequest.attendant_name} · {bloodRequest.phone}</b></p><p><span>{ur ? "ہسپتال / پتہ" : "Hospital / address"}</span><b>{bloodRequest.hospital_address}</b></p><p><span>{ur ? "ضرورت" : "Required"}</span><b>{bloodRequest.units} {ur ? "یونٹ" : "unit(s)"} · {bloodRequest.needed_on}</b></p></div>
-          {(bloodRequest.assignment_status || bloodRequest.status === "fulfilled") && <div className={`blood-request-live-status ${bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? "complete" : ""}`}><span>●</span><div><b>{bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? (ur ? "خون کا عطیہ مکمل ہوگیا" : "Blood donation completed") : (ur ? "Management نے ڈونر منتخب کرلیا" : "Management has arranged a donor")}</b><p>{ur ? "یہ تازہ حالت management کی طرف سے اپڈیٹ ہوئی ہے۔" : "This is the latest status updated by management."}</p></div></div>}
+          {(bloodRequest.assignment_status || bloodRequest.status === "fulfilled") && <div className={`blood-request-live-status ${bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? "complete" : ""}`}><span>●</span><div><b>{bloodRequest.assignment_status === "donated" || bloodRequest.status === "fulfilled" ? (ur ? "خون کا عطیہ مکمل ہوگیا" : "Blood donation completed") : (ur ? "Management نے ڈونر منتخب کرلیا" : "Management has arranged a donor")}</b><p>{ur ? "یہ صفحہ خودکار طور پر تازہ ہوتا ہے۔" : "This page refreshes automatically with management updates."}</p></div></div>}
+          {bloodRequest.selected_donor_id && <section className={`blood-selected-donor ${bloodRequest.assignment_status === "donated" ? "blood-selected-donor--complete" : ""}`}>
+            <div className="blood-selected-donor__group">{bloodRequest.blood_group}</div>
+            <div className="blood-selected-donor__details"><span>{ur ? "MANAGEMENT کا منتخب ڈونر" : "DONOR SELECTED BY MANAGEMENT"}</span><h3>{bloodRequest.selected_donor_name}</h3><p>{ur ? "اب آپ اس ڈونر سے براہِ راست رابطہ کرسکتے ہیں۔" : "You can now contact this donor directly."}</p><strong>{bloodRequest.selected_donor_phone}</strong></div>
+            <div className="blood-selected-donor__actions"><a href={`tel:${phoneLink(bloodRequest.selected_donor_phone)}`}>{ur ? "کال کریں" : "Call donor"}</a><a target="_blank" rel="noreferrer" href={`https://wa.me/${whatsAppLink(bloodRequest.selected_donor_phone)}?text=${encodeURIComponent(`Assalam-o-Alaikum, Clean & Green Sangran Blood Bank management selected you for blood request ${requestReference} (${bloodRequest.blood_group}).`)}`}>WhatsApp</a>{bloodRequest.assignment_status !== "donated" && bloodRequest.status !== "fulfilled" && <button type="button" disabled={busy} onClick={confirmReceived}>{busy ? (ur ? "محفوظ ہو رہا ہے…" : "Saving…") : (ur ? "خون مل گیا — تصدیق کریں" : "Blood received — confirm")}</button>}</div>
+          </section>}
           {message && <p className="blood-message">{message}</p>}
           {!approvalVerified && <section className="blood-management-approval">
             <div className="blood-management-approval__contact">

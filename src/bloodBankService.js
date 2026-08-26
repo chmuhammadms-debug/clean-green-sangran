@@ -124,6 +124,17 @@ export async function markBloodRequestDonated(requestId, donorId, accessCode) {
   return assignment;
 }
 
+export async function confirmBloodReceived(requestId, phone) {
+  const { data, error } = await supabase.rpc("confirm_blood_received", {
+    p_request_id: requestId,
+    p_phone: String(phone || "").trim(),
+  });
+  if (error) throw error;
+  const assignment = Array.isArray(data) ? data[0] : data;
+  if (!assignment) throw new Error("Blood receipt confirmation could not be saved.");
+  return assignment;
+}
+
 export async function fetchBloodRequestReport() {
   const { data: report, error: reportError } = await supabase.rpc("admin_blood_request_report");
   if (!reportError) {
