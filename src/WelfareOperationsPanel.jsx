@@ -55,6 +55,7 @@ export default function WelfareOperationsPanel({ projectId, settings, onSave, sa
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [editingId, setEditingId] = useState(null);
   if (!config) return null;
 
   const records = Array.isArray(settings?.welfareOperationsByProject?.[projectId])
@@ -80,16 +81,21 @@ export default function WelfareOperationsPanel({ projectId, settings, onSave, sa
   function addRecord(event) {
     event.preventDefault();
     if (!form.title.trim() || uploading) return;
-    persist([{
+    const savedRecord = {
       ...form,
-      id: `${projectId}-${Date.now()}`,
+      id: editingId || `${projectId}-${Date.now()}`,
       title: form.title.trim(),
       venue: form.venue.trim(),
       teams: form.teams.trim(),
       result: form.result.trim(),
       details: form.details.trim(),
-      createdAt: new Date().toISOString(),
-    }, ...records]);
+      createdAt: editingId ? (records.find((record) => record.id === editingId)?.createdAt || new Date().toISOString()) : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    persist(editingId
+      ? records.map((record) => record.id === editingId ? savedRecord : record)
+      : [savedRecord, ...records]);
+    setEditingId(null);
     setForm(emptyForm(config, projectId));
   }
 
@@ -120,9 +126,21 @@ export default function WelfareOperationsPanel({ projectId, settings, onSave, sa
     setForm((current) => ({ ...current, media: current.media.filter((_, mediaIndex) => mediaIndex !== index) }));
   }
 
+  function startEditing(record) {
+    setEditingId(record.id);
+    setForm({ ...emptyForm(config, projectId), ...record, media: Array.isArray(record.media) ? record.media : [] });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setForm(emptyForm(config, projectId));
+  }
+
   function deleteRecord(id) {
     if (!window.confirm("Delete this sports/event record?")) return;
     persist(records.filter((record) => record.id !== id));
+    if (editingId === id) cancelEditing();
   }
 
   return (
@@ -148,7 +166,8 @@ export default function WelfareOperationsPanel({ projectId, settings, onSave, sa
         {sportsMode && <label className="sports-media-upload">Photos & videos<input type="file" accept="image/*,video/*" multiple onChange={addMedia} disabled={uploading} /><small>Multiple photos/videos can be selected together.</small></label>}
         {sportsMode && form.media.length > 0 && <div className="sports-pending-media">{form.media.map((asset, index) => <div key={`${asset.url}-${index}`}>{asset.type === "video" ? <video src={asset.url} /> : <img src={asset.url} alt="" />}<button type="button" onClick={() => removePendingMedia(index)}>×</button></div>)}</div>}
         {uploadError && <p className="sports-upload-error">{uploadError}</p>}
-        <button disabled={saving || uploading} type="submit">{uploading ? "Uploading media..." : saving ? "Saving..." : sportsMode ? "Save sports event" : "Add to project register"}</button>
+        <button disabled={saving || uploading} type="submit">{uploading ? "Uploading media..." : saving ? "Saving..." : editingId ? "Update sports event" : sportsMode ? "Save sports event" : "Add to project register"}</button>
+        {editingId && <button className="sports-cancel-edit" type="button" onClick={cancelEditing}>Cancel editing</button>}
       </form>
 
       {sportsMode && <div className="sports-record-filter"><button type="button" className={sportFilter === "all" ? "active" : ""} onClick={() => setSportFilter("all")}>All sports</button>{SPORTS.map((sport) => <button type="button" className={sportFilter === sport.id ? "active" : ""} onClick={() => setSportFilter(sport.id)} key={sport.id}>{sport.icon} {sport.en}</button>)}</div>}
@@ -162,7 +181,7 @@ export default function WelfareOperationsPanel({ projectId, settings, onSave, sa
             {sportsMode && <div className="sports-record-facts">{record.venue && <b>📍 {record.venue}</b>}{record.teams && <b>👥 {record.teams}</b>}{record.result && <b>🏆 {record.result}</b>}</div>}
             <p>{record.details || "No additional details"}</p>
             {Array.isArray(record.media) && record.media.length > 0 && <div className="sports-record-media">{record.media.slice(0, 4).map((asset, index) => asset.type === "video" ? <video key={index} src={asset.url} controls /> : <img key={index} src={asset.url} alt={record.title} />)}</div>}
-            <footer><time>{record.date}</time>{record.nextDue && <em>Next: {record.nextDue}</em>}<button type="button" onClick={() => deleteRecord(record.id)}>Delete</button></footer>
+            <footer><time>{record.date}</time>{record.nextDue && <em>Next: {record.nextDue}</em>}<span className="sports-record-actions"><button className="sports-edit-record" type="button" onClick={() => startEditing(record)}>Edit</button><button type="button" onClick={() => deleteRecord(record.id)}>Delete</button></span></footer>
           </article>;
         })}
         {!visibleRecords.length && <p className="welfare-operations__empty">No record added for this sport yet.</p>}
