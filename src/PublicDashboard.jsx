@@ -1055,7 +1055,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     : null;
   const galleryEvents = selectedSystem ? galleryEventsFor(selectedSystem) : [];
   const selectedGalleryEvent = galleryEvents.find((entry) => entry.id === selectedEventId) || null;
-  const activeGallery = selectedGalleryEvent?.media || [];
+  // Keep the first available album visible by default so parent projects (including Mosque Management)\n  // never lose their photo reel when no event album has been opened yet.\n  const activeGallery = selectedGalleryEvent?.media || galleryEvents[0]?.media || [];
   const shareGalleryEvent = async (galleryEvent) => {
     const url = `${window.location.origin}${window.location.pathname}?project=${encodeURIComponent(selectedSystem.id)}&event=${encodeURIComponent(galleryEvent.id)}`;
     const title = `${systemName(selectedSystem)} — ${galleryEvent.title}`;
