@@ -198,6 +198,29 @@ function totalsFor(records) {
   };
 }
 
+function donorSummaryFor(records = []) {
+  const donors = new Map();
+
+  (Array.isArray(records) ? records : [])
+    .filter((record) => record?.type === "income")
+    .forEach((record) => {
+      const displayName = String(record?.person || "Anonymous").trim().replace(/\s+/g, " ") || "Anonymous";
+      const key = displayName.toLocaleLowerCase("en");
+      const current = donors.get(key) || { name: displayName, entries: 0, amount: 0 };
+      current.entries += 1;
+      current.amount += Number(record?.amount) || 0;
+      donors.set(key, current);
+    });
+
+  const people = [...donors.values()].sort((a, b) => b.amount - a.amount);
+  return {
+    people,
+    uniquePeople: people.length,
+    singleEntryPeople: people.filter((person) => person.entries === 1).length,
+    repeatEntryPeople: people.filter((person) => person.entries > 1).length,
+  };
+}
+
 function safeRecordText(value, fallback = "") {
   if (value === null || value === undefined) return fallback;
   if (typeof value === "string") return value;
@@ -728,6 +751,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     (total, record) => total + (Number(record?.amount) || 0),
     0
   );
+  const combinedDonorSummary = donorSummaryFor(combinedDonationRecords);
 
   const combinedDonationReportTitle = combinedReportPeriod === "daily"
     ? `Combined Daily Donation Report (${combinedReportDate})`
@@ -1457,6 +1481,18 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     }
 
     const totals = totalsFor(records);
+    const donorSummary = donorSummaryFor(records);
+    const donationsOnly = records.every((record) => record.type === "income");
+    const donorSummaryRows = donorSummary.people
+      .map((person, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${escapeHtml(person.name)}</td>
+          <td>${person.entries}</td>
+          <td>${person.entries === 1 ? "Single entry" : "Repeat entries"}</td>
+          <td class="amount-cell">Rs. ${person.amount.toLocaleString()}</td>
+        </tr>`)
+      .join("");
     const rows = records
       .map((record, index) => {
         const project = systems.find((system) => system.id === record.systemId);
@@ -1513,6 +1549,19 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             <div><span>TOTAL EXPENSES</span><strong>Rs. ${totals.expenses.toLocaleString()}</strong></div>
             <div><span>BALANCE</span><strong>Rs. ${totals.balance.toLocaleString()}</strong></div>
           </div>
+          ${donationsOnly ? `
+            <h2 style="margin: 18px 0 10px; color: #14532d;">Donor Summary</h2>
+            <div class="summary">
+              <div><span>TOTAL DONATION ENTRIES</span><strong>${records.length}</strong></div>
+              <div><span>UNIQUE DONORS</span><strong>${donorSummary.uniquePeople}</strong></div>
+              <div><span>SINGLE / REPEAT DONORS</span><strong>${donorSummary.singleEntryPeople} / ${donorSummary.repeatEntryPeople}</strong></div>
+            </div>
+            <table style="margin-bottom: 22px;">
+              <thead><tr><th>#</th><th>Donor Name</th><th>Entries</th><th>Status</th><th>Total Donation</th></tr></thead>
+              <tbody>${donorSummaryRows}</tbody>
+            </table>
+            <h2 style="margin: 18px 0 10px; color: #14532d;">Donation Entry Details</h2>
+          ` : ""}
           <table>
             <thead><tr><th>#</th><th>Receipt No.</th><th>Date</th><th>Type</th><th>Name / Purpose</th><th>Project</th><th>Method</th><th>Details</th><th>Amount</th></tr></thead>
             <tbody>${rows}</tbody>
@@ -2300,6 +2349,45 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 >
                   Print Report / Save PDF
                 </button>
+              </div>
+
+              <div className="summary-grid" style={{ marginTop: "18px" }}>
+                {[
+                  ["Total Donation Entries", combinedDonationRecords.length],
+                  ["Unique Donors", combinedDonorSummary.uniquePeople],
+                  ["Single Entry Donors", combinedDonorSummary.singleEntryPeople],
+                  ["Repeat Entry Donors", combinedDonorSummary.repeatEntryPeople],
+                ].map(([label, value]) => (
+                  <div className="summary-card" key={label}>
+                    <p>{label}</p>
+                    <h2>{value}</h2>
+                  </div>
+                ))}
+              </div>
+
+              <div className="table-wrapper" style={{ marginTop: "18px", maxHeight: "420px", overflowY: "auto" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Donor Name</th>
+                      <th>Entries</th>
+                      <th>Status</th>
+                      <th>Total Donation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {combinedDonorSummary.people.map((person, index) => (
+                      <tr key={`${person.name}-${index}`}>
+                        <td>{index + 1}</td>
+                        <td>{person.name}</td>
+                        <td>{person.entries}</td>
+                        <td>{person.entries === 1 ? "Single entry" : "Repeat entries"}</td>
+                        <td><strong>Rs. {person.amount.toLocaleString("en-PK")}</strong></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </section>
 
