@@ -2192,6 +2192,28 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               ]}
             />
 
+            <section className="panel" style={{ marginTop: "22px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+                <div>
+                  <h3 style={{ marginBottom: "6px" }}>Combined Donation Report</h3>
+                  <p style={{ margin: 0, color: "#6b7280" }}>
+                    Complete donation report for all projects with donor, date, project and amount details.
+                  </p>
+                </div>
+                <button
+                  className="primary-button"
+                  type="button"
+                  style={{ width: "auto", marginTop: 0, padding: "11px 18px" }}
+                  onClick={() => printCombinedReport(
+                    safeTransactions.filter((record) => record.type === "income"),
+                    "Combined Donation Report - All Projects"
+                  )}
+                >
+                  Print Report / Save PDF
+                </button>
+              </div>
+            </section>
+
             <ComplaintAdmin />
             <MembershipAdmin />
 
