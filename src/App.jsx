@@ -515,6 +515,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   const [dailyDate, setDailyDate] = useState(getToday());
   const [monthlyDate, setMonthlyDate] =
     useState(getCurrentMonth());
+  const [combinedReportPeriod, setCombinedReportPeriod] = useState("all");
+  const [combinedReportDate, setCombinedReportDate] = useState(getToday());
+  const [combinedReportMonth, setCombinedReportMonth] = useState(getCurrentMonth());
+  const [combinedReportYear, setCombinedReportYear] = useState(String(new Date().getFullYear()));
 
   useEffect(() => {
     if (!selectedSystemId) return undefined;
@@ -710,6 +714,28 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       ];
 
   const allTotals = totalsFor(safeTransactions);
+
+  const combinedDonationRecords = safeTransactions.filter((record) => {
+    if (record?.type !== "income") return false;
+    const recordDate = String(record?.date || "");
+    if (combinedReportPeriod === "daily") return recordDate === combinedReportDate;
+    if (combinedReportPeriod === "monthly") return recordDate.startsWith(combinedReportMonth);
+    if (combinedReportPeriod === "yearly") return recordDate.startsWith(`${combinedReportYear}-`);
+    return true;
+  });
+
+  const combinedDonationTotal = combinedDonationRecords.reduce(
+    (total, record) => total + (Number(record?.amount) || 0),
+    0
+  );
+
+  const combinedDonationReportTitle = combinedReportPeriod === "daily"
+    ? `Combined Daily Donation Report (${combinedReportDate})`
+    : combinedReportPeriod === "monthly"
+      ? `Combined Monthly Donation Report (${combinedReportMonth})`
+      : combinedReportPeriod === "yearly"
+        ? `Combined Yearly Donation Report (${combinedReportYear})`
+        : "Combined Complete Donation Report - All Projects";
 
   const sectionRecords = selectedTransactions.filter(
     (record) => record.type === activeSection
@@ -2193,20 +2219,83 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             />
 
             <section className="panel" style={{ marginTop: "22px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px", flexWrap: "wrap" }}>
                 <div>
                   <h3 style={{ marginBottom: "6px" }}>Combined Donation Report</h3>
                   <p style={{ margin: 0, color: "#6b7280" }}>
-                    Complete donation report for all projects with donor, date, project and amount details.
+                    Daily, monthly, yearly or complete donation report for all projects.
                   </p>
+                </div>
+              </div>
+
+              <div className="section-tabs" style={{ marginTop: "18px" }}>
+                {[
+                  ["daily", "Daily"],
+                  ["monthly", "Monthly"],
+                  ["yearly", "Yearly"],
+                  ["all", "Complete"],
+                ].map(([period, label]) => (
+                  <button
+                    key={period}
+                    type="button"
+                    className={combinedReportPeriod === period ? "active" : ""}
+                    onClick={() => setCombinedReportPeriod(period)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {combinedReportPeriod !== "all" && (
+                <div className="form-field" style={{ maxWidth: "350px", marginTop: "16px" }}>
+                  <label>
+                    {combinedReportPeriod === "daily"
+                      ? "Select report date"
+                      : combinedReportPeriod === "monthly"
+                        ? "Select report month"
+                        : "Select report year"}
+                  </label>
+                  {combinedReportPeriod === "daily" ? (
+                    <input
+                      type="date"
+                      value={combinedReportDate}
+                      onChange={(event) => setCombinedReportDate(event.target.value)}
+                    />
+                  ) : combinedReportPeriod === "monthly" ? (
+                    <input
+                      type="month"
+                      value={combinedReportMonth}
+                      onChange={(event) => setCombinedReportMonth(event.target.value)}
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      min="2000"
+                      max="2100"
+                      value={combinedReportYear}
+                      onChange={(event) => setCombinedReportYear(event.target.value)}
+                    />
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "14px", flexWrap: "wrap", marginTop: "18px" }}>
+                <div>
+                  <div style={{ color: "#6b7280", marginBottom: "4px" }}>Donations in selected report</div>
+                  <strong style={{ fontSize: "1.45rem", color: "#14532d" }}>
+                    Rs. {combinedDonationTotal.toLocaleString("en-PK")}
+                  </strong>
+                  <div style={{ color: "#6b7280", marginTop: "4px" }}>
+                    {combinedDonationRecords.length} donation record{combinedDonationRecords.length === 1 ? "" : "s"}
+                  </div>
                 </div>
                 <button
                   className="primary-button"
                   type="button"
                   style={{ width: "auto", marginTop: 0, padding: "11px 18px" }}
                   onClick={() => printCombinedReport(
-                    safeTransactions.filter((record) => record.type === "income"),
-                    "Combined Donation Report - All Projects"
+                    combinedDonationRecords,
+                    combinedDonationReportTitle
                   )}
                 >
                   Print Report / Save PDF
