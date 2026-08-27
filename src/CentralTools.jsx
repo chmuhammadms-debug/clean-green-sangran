@@ -20,9 +20,21 @@ function CentralTools({
   const [deletingSystemId, setDeletingSystemId] = useState("");
   const restoreInputRef = useRef(null);
 
+  const safeSystems = Array.isArray(systems) ? systems : [];
+  const safeTransactions = Array.isArray(transactions) ? transactions : [];
+
+  function donationAmount(record) {
+    const rawAmount = record?.amount;
+    const normalizedAmount = typeof rawAmount === "string"
+      ? rawAmount.replace(/,/g, "").trim()
+      : rawAmount;
+    const amount = Number(normalizedAmount);
+    return Number.isFinite(amount) ? amount : 0;
+  }
+
   const searchedName = search.trim().toLowerCase();
 
-  const donorRecords = transactions
+  const donorRecords = safeTransactions
     .filter(
       (record) =>
         record.type === "income" &&
@@ -35,7 +47,7 @@ function CentralTools({
 
   const totalDonation = donorRecords.reduce(
     (total, record) =>
-      total + Number(record.amount),
+      total + donationAmount(record),
     0
   );
 
@@ -47,7 +59,7 @@ function CentralTools({
 
   function getSystemName(systemId) {
     return (
-      systems.find(
+      safeSystems.find(
         (system) => system.id === systemId
       )?.name || "Unknown Project"
     );
@@ -58,8 +70,8 @@ function CentralTools({
       version: 1,
       website: "Clean & Green Sangran",
       exportedAt: new Date().toISOString(),
-      systems,
-      transactions,
+      systems: safeSystems,
+      transactions: safeTransactions,
     };
 
     const backupFile = new Blob(
@@ -169,7 +181,7 @@ function CentralTools({
   }
 
   async function deleteCustomSystem(system) {
-    const relatedRecords = transactions.filter(
+    const relatedRecords = safeTransactions.filter(
       (record) => record.systemId === system.id
     );
 
@@ -295,9 +307,7 @@ function CentralTools({
 
                           <td>
                             Rs.{" "}
-                            {Number(
-                              record.amount
-                            ).toLocaleString()}
+                            {donationAmount(record).toLocaleString()}
                           </td>
 
                           <td>{record.method}</td>
