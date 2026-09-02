@@ -742,6 +742,44 @@ function currentDonationMonthKey() {
   return donationMonthKey(new Date());
 }
 
+function rankedDonorsForMonth(records, monthKey) {
+  const donors = new Map();
+
+  records
+    .filter(
+      (record) =>
+        isPersonalDonorRecord(record) &&
+        Number(record.amount) > 0 &&
+        String(record.person || "").trim() &&
+        donationMonthKey(record.date) === monthKey,
+    )
+    .forEach((record) => {
+      const displayName = String(record.person).trim();
+      const key = displayName.toLocaleLowerCase();
+      const current = donors.get(key) || {
+        displayName,
+        total: 0,
+        donations: 0,
+        donorPhoto: "",
+        systemId: "",
+        latestDate: "",
+      };
+
+      current.total += Number(record.amount) || 0;
+      current.donations += 1;
+      if (record.donorPhoto) current.donorPhoto = record.donorPhoto;
+      if (!current.latestDate || String(record.date || "") >= current.latestDate) {
+        current.latestDate = String(record.date || "");
+        current.systemId = record.systemId || current.systemId;
+      }
+      donors.set(key, current);
+    });
+
+  return [...donors.values()]
+    .sort((a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate))
+    .slice(0, 5);
+}
+
 function publicMediaUrl(value) {
   if (typeof value === "string") return value.trim();
   if (!value || typeof value !== "object") return "";
@@ -921,42 +959,21 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const donorCount = new Set(
     transactions.filter(isPersonalDonorRecord).map((record) => String(record.person).trim().toLowerCase()),
   ).size;
-  const topDonors = useMemo(() => {
-    const donors = new Map();
+  const topDonors = useMemo(
+    () => rankedDonorsForMonth(transactions, donorMonthKey),
+    [transactions, donorMonthKey],
+  );
+  const monthlyDonorHistory = useMemo(() => {
+    const monthKeys = [...new Set(
+      transactions
+        .filter(isPersonalDonorRecord)
+        .map((record) => donationMonthKey(record.date))
+        .filter((monthKey) => monthKey && monthKey < donorMonthKey),
+    )].sort((a, b) => b.localeCompare(a));
 
-    transactions
-      .filter(
-        (record) =>
-          isPersonalDonorRecord(record) &&
-          Number(record.amount) > 0 &&
-          String(record.person || "").trim() &&
-          donationMonthKey(record.date) === donorMonthKey,
-      )
-      .forEach((record) => {
-        const displayName = String(record.person).trim();
-        const key = displayName.toLocaleLowerCase();
-        const current = donors.get(key) || {
-          displayName,
-          total: 0,
-          donations: 0,
-          donorPhoto: "",
-          systemId: "",
-          latestDate: "",
-        };
-
-        current.total += Number(record.amount) || 0;
-        current.donations += 1;
-        if (record.donorPhoto) current.donorPhoto = record.donorPhoto;
-        if (!current.latestDate || String(record.date || "") >= current.latestDate) {
-          current.latestDate = String(record.date || "");
-          current.systemId = record.systemId || current.systemId;
-        }
-        donors.set(key, current);
-      });
-
-    return [...donors.values()]
-      .sort((a, b) => b.total - a.total || b.latestDate.localeCompare(a.latestDate))
-      .slice(0, 5);
+    return monthKeys
+      .map((monthKey) => ({ monthKey, donors: rankedDonorsForMonth(transactions, monthKey) }))
+      .filter((month) => month.donors.length);
   }, [transactions, donorMonthKey]);
   const topDonor = topDonors[0] || null;
 
@@ -1563,6 +1580,50 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   </div>
                 )}
               </div>
+            )}
+            {monthlyDonorHistory.length > 0 && (
+              <section className="donor-history reveal is-visible" dir={ur ? "rtl" : "ltr"}>
+                <div className="donor-history__heading">
+                  <div>
+                    <span>{ur ? "سابقہ اعزاز" : "PAST RECOGNITION"}</span>
+                    <h3>{ur ? "ماہانہ سرفہرست عطیہ دہندگان" : "Monthly Top Donors History"}</h3>
+                  </div>
+                  <p>{ur ? "ہر مہینے کے پانچ نمایاں عطیہ دہندگان" : "The five leading personal donors from each completed month."}</p>
+                </div>
+                <div className="donor-history__grid">
+                  {monthlyDonorHistory.map(({ monthKey, donors }) => {
+                    const [year, month] = monthKey.split("-").map(Number);
+                    const label = new Intl.DateTimeFormat(ur ? "ur-PK" : "en-US", {
+                      timeZone: PAKISTAN_TIME_ZONE,
+                      month: "long",
+                      year: "numeric",
+                    }).format(new Date(Date.UTC(year, month - 1, 1)));
+
+                    return (
+                      <article className="donor-history-card" key={monthKey}>
+                        <div className="donor-history-card__title">
+                          <span>{ur ? "سرفہرست 5" : "TOP 5"}</span>
+                          <strong>{label}</strong>
+                        </div>
+                        <ol>
+                          {donors.map((donor, index) => (
+                            <li className={index === 0 ? "winner" : ""} key={donor.displayName.toLocaleLowerCase()}>
+                              <b>#{index + 1}</b>
+                              <span className="donor-history-card__avatar">
+                                {donor.donorPhoto
+                                  ? <img src={donor.donorPhoto} alt={donor.displayName} />
+                                  : donorInitials(donor)}
+                              </span>
+                              <span className="donor-history-card__name">{donor.displayName}</span>
+                              <strong>Rs. {donor.total.toLocaleString()}</strong>
+                            </li>
+                          ))}
+                        </ol>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
             )}
             <div className="impact-numbers reveal"><div><strong>{topLevelSystems(systems).length}</strong><span>{ur ? "فعال منصوبے" : "Active Projects"}</span></div><div><strong>{donorCount}</strong><span>{ur ? "عطیہ دہندگان" : "Community Donors"}</span></div><div><strong>{transactions.length}</strong><span>{ur ? "تصدیق شدہ ریکارڈ" : "Verified Records"}</span></div><div><strong>24/7</strong><span>{ur ? "عوامی رسائی" : "Public Access"}</span></div></div>
           </div>
