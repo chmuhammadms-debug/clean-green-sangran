@@ -101,10 +101,30 @@ function ensurePublicSystems(systems = []) {
 }
 
 const legacyTransactionIds = new Set(["cemetery-first-record"]);
+// Project/committee income remains part of the public ledger and balance, but
+// it must never be presented as a personal donor contribution.
+const nonDonorIncomeIds = new Set(["1787351248636"]);
 const fallbackTransactions = [];
 
 function withoutLegacyTransactions(records = []) {
   return records.filter((record) => !legacyTransactionIds.has(String(record.id)));
+}
+
+function isPersonalDonorRecord(record) {
+  if (record?.type !== "income" || nonDonorIncomeIds.has(String(record?.id))) return false;
+
+  const label = `${record?.person || ""} ${record?.details || ""}`.toLocaleLowerCase("en");
+  return ![
+    "committee fund",
+    "committee funds",
+    "committee money",
+    "project income",
+    "tree sale",
+    "darakht sale",
+    "darakht sale kiay",
+    "کمیٹی کے پیسے",
+    "درخت فروخت",
+  ].some((term) => label.includes(term));
 }
 
 const projectUrdu = {
@@ -899,7 +919,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
   const donorCount = new Set(
-    transactions.filter((record) => record.type === "income").map((record) => String(record.person).trim().toLowerCase()),
+    transactions.filter(isPersonalDonorRecord).map((record) => String(record.person).trim().toLowerCase()),
   ).size;
   const topDonors = useMemo(() => {
     const donors = new Map();
@@ -907,7 +927,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     transactions
       .filter(
         (record) =>
-          record.type === "income" &&
+          isPersonalDonorRecord(record) &&
           Number(record.amount) > 0 &&
           String(record.person || "").trim() &&
           donationMonthKey(record.date) === donorMonthKey,
