@@ -13,8 +13,10 @@ import {
   regenerateBloodRequestCode,
   registerPublicBloodDonor,
   setBloodDonorAvailability,
+  updateBloodDonorShowcase,
   updateBloodAssignmentStatus,
 } from "./bloodBankService";
+import { uploadWebsiteImage } from "./mediaUpload";
 import "./BloodBank.css";
 
 function searchable(value) {
@@ -46,6 +48,7 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
     bloodGroup: "A+",
   });
   const [addingDonor, setAddingDonor] = useState(false);
+  const [uploadingPhotoId, setUploadingPhotoId] = useState("");
 
   useEffect(() => {
     setManagementPhone(settings?.bloodBankManagementPhone || "03269042000");
@@ -134,6 +137,28 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
       await loadData();
       setMessage(isAvailable ? "Donor is active and available again." : "Donor has been marked unavailable.");
     } catch (error) { setMessage(error.message); }
+    finally { setBusyId(""); }
+  };
+
+  const changeDonorPhoto = async (donor, file) => {
+    if (!file) return;
+    setUploadingPhotoId(donor.id); setMessage("");
+    try {
+      const uploaded = await uploadWebsiteImage(file, `blood-donors/${donor.id}`);
+      await updateBloodDonorShowcase(donor.id, uploaded.url, true);
+      await loadData();
+      setMessage("Donor photo uploaded and added to the public Blood Bank reel.");
+    } catch (error) { setMessage(error.message || "Donor photo could not be uploaded."); }
+    finally { setUploadingPhotoId(""); }
+  };
+
+  const toggleDonorReel = async (donor) => {
+    setBusyId(donor.id); setMessage("");
+    try {
+      await updateBloodDonorShowcase(donor.id, donor.photo_url, !donor.show_in_public_reel);
+      await loadData();
+      setMessage(donor.show_in_public_reel ? "Donor removed from the public reel." : "Donor added to the public Blood Bank reel.");
+    } catch (error) { setMessage(error.message || "Public reel setting could not be changed."); }
     finally { setBusyId(""); }
   };
 
@@ -284,7 +309,7 @@ export default function BloodBankAdmin({ settings, onSaveSettings, savingSetting
           <button className="blood-report-print" type="button" onClick={() => printAllBloodDonorsSlip(donors)}>Print all donors in one slip / تمام ڈونرز کی ایک سلپ</button>
         </div>
         {filteredDonors.length === 0 ? <p className="blood-empty">No matching donor found.</p> : <div className="blood-admin-card-grid">
-          {filteredDonors.map((donor) => <article className={`blood-donor ${donor.is_available === false ? "blood-donor--inactive" : ""}`} key={donor.id}><div className="blood-donor__main"><strong>{donor.blood_group}</strong><span><b>{donor.full_name}</b><small>{donor.phone}</small><small>{donor.address}</small>{donor.last_donated_at && <small className="blood-donor__last-date">Last donated: {new Date(donor.last_donated_at).toLocaleString()}</small>}{donor.next_available_on && <small>Next eligible date: {donor.next_available_on}</small>}</span><em className={donor.is_available === false ? "unavailable" : "available"}>{donor.is_available === false ? "INACTIVE" : "ACTIVE"}</em></div><div className="blood-donor__actions"><button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button type="button" disabled={busyId === donor.id} onClick={() => changeDonorAvailability(donor, donor.is_available === false)}>{donor.is_available === false ? "Reactivate donor" : "Mark unavailable"}</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Working…" : "Delete donor card"}</button></div></article>)}
+          {filteredDonors.map((donor) => <article className={`blood-donor ${donor.is_available === false ? "blood-donor--inactive" : ""}`} key={donor.id}><div className="blood-donor__main">{donor.photo_url ? <img className="blood-donor__photo" src={donor.photo_url} alt={donor.full_name} /> : <strong>{donor.blood_group}</strong>}<span><b>{donor.full_name}</b><small>{donor.blood_group} · {donor.phone}</small><small>{donor.address}</small>{donor.last_donated_at && <small className="blood-donor__last-date">Last donated: {new Date(donor.last_donated_at).toLocaleString()}</small>}{donor.next_available_on && <small>Next eligible date: {donor.next_available_on}</small>}</span><em className={donor.is_available === false ? "unavailable" : "available"}>{donor.is_available === false ? "INACTIVE" : "ACTIVE"}</em></div><div className="blood-donor__actions"><label className="blood-photo-upload"><input type="file" accept="image/*" disabled={uploadingPhotoId === donor.id} onChange={(event) => changeDonorPhoto(donor, event.target.files?.[0])} />{uploadingPhotoId === donor.id ? "Uploading…" : donor.photo_url ? "Change photo" : "Add photo"}</label>{donor.photo_url && <button type="button" disabled={busyId === donor.id} onClick={() => toggleDonorReel(donor)}>{donor.show_in_public_reel ? "Remove from public reel" : "Show in public reel"}</button>}<button type="button" onClick={() => printBloodDonorSlip(donor)}>Print donor slip</button><button type="button" disabled={busyId === donor.id} onClick={() => changeDonorAvailability(donor, donor.is_available === false)}>{donor.is_available === false ? "Reactivate donor" : "Mark unavailable"}</button><button className="blood-delete-button" disabled={busyId === donor.id} type="button" onClick={() => removeDonor(donor)}>{busyId === donor.id ? "Working…" : "Delete donor card"}</button></div></article>)}
         </div>}
       </div>
       </>}

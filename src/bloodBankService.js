@@ -295,7 +295,7 @@ export async function saveMyBloodDonorProfile(profile) {
 export async function fetchBloodDonors() {
   const { data, error } = await supabase
     .from("blood_donors")
-    .select("id,user_id,email,full_name,phone,address,blood_group,is_available,last_donated_at,next_available_on,created_at,updated_at")
+    .select("id,user_id,email,full_name,phone,address,blood_group,is_available,last_donated_at,next_available_on,photo_url,show_in_public_reel,created_at,updated_at")
     .order("full_name");
   if (error) throw error;
   return data || [];
@@ -346,6 +346,12 @@ export async function setBloodDonorAvailability(donorId, isAvailable) {
   return data;
 }
 
+export async function updateBloodDonorShowcase(donorId, photoUrl, showInPublicReel) {
+  const { data, error } = await supabase.from("blood_donors").update({ photo_url: photoUrl || null, show_in_public_reel: Boolean(photoUrl && showInPublicReel), updated_at: new Date().toISOString() }).eq("id", donorId).select().single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteBloodDonor(donorId) {
   const { error } = await supabase.from("blood_donors").delete().eq("id", donorId);
   if (error) throw error;
@@ -354,6 +360,12 @@ export async function deleteBloodDonor(donorId) {
 
 export async function fetchPublicBloodSummary() {
   const { data, error } = await supabase.rpc("public_blood_group_summary");
+  if (error) throw error;
+  return data || [];
+}
+
+export async function fetchPublicBloodDonorReel() {
+  const { data, error } = await supabase.rpc("public_blood_donor_reel");
   if (error) throw error;
   return data || [];
 }
