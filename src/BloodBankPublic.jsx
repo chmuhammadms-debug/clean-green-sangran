@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   BLOOD_GROUPS,
   confirmBloodReceived,
+  fetchPublicBloodDonorReel,
   fetchPublicBloodDonors,
   fetchPublicBloodSummary,
   printBloodDonorSlip,
@@ -58,6 +59,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
   const [recoveryMessage, setRecoveryMessage] = useState("");
   const [summary, setSummary] = useState([]);
   const [donors, setDonors] = useState([]);
+  const [donorReel, setDonorReel] = useState([]);
   const [directoryLoading, setDirectoryLoading] = useState(false);
   const [directoryError, setDirectoryError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -84,6 +86,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
 
   useEffect(() => {
     loadSummary();
+    fetchPublicBloodDonorReel().then(setDonorReel).catch(() => setDonorReel([]));
     if (storedRequest) {
       resumeBloodRequest(storedRequest.id, storedRequest.phone)
         .then((latest) => {
@@ -341,6 +344,7 @@ export default function BloodBankPublic({ language = "en", managementPhone = "03
         </section>}
       </div>}
 
+      {donorReel.length > 0 && <section className="blood-donor-reel" dir={ur ? "rtl" : "ltr"}><div className="blood-donor-reel__heading"><span>OUR BLOOD HEROES</span><h2>{ur ? "خون عطیہ کرنے والے ہمارے ہیروز" : "Blood Donor Heroes"}</h2><p>{ur ? "یہ وہ رضاکار ہیں جنہوں نے اپنی تصویر عوامی طور پر دکھانے کی اجازت دی ہے۔" : "Volunteers who have allowed their donor photo to be shown publicly."}</p></div><div className="blood-donor-reel__viewport"><div className="blood-donor-reel__track">{[...donorReel, ...donorReel].map((donor, index) => <article key={`${donor.id}-${index}`}><img src={donor.photo_url} alt={donor.full_name} /><div><strong>{donor.full_name}</strong><span>{donor.blood_group}</span></div></article>)}</div></div></section>}
       <p className="blood-privacy">✚ {ur ? "ڈونر کی معلومات صرف حقیقی بلڈ ایمرجنسی کے لیے استعمال کریں۔" : "Use donor details only for a genuine blood emergency."}</p>
     </section>
   );
