@@ -94,7 +94,10 @@ function normalizeSystems(systems = []) {
     : [];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      ensureSingleBloodBankSystem(safeSystems, defaultSystems[0])
+      ensureSingleBloodBankSystem(
+        safeSystems,
+        defaultSystems.find((system) => isBloodBankProject(system))
+      )
     )
   );
 }
