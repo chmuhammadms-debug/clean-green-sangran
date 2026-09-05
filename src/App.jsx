@@ -44,8 +44,10 @@ import {
   recordsForProject,
   workParentId,
 } from "./workItems";
+import { CENTRAL_FUND_ID, centralFundRecords, centralFundSystem, isCentralFund, isMosqueAccountId, projectExpenseRecords } from "./centralFund";
 
 const defaultSystems = [
+  centralFundSystem,
   {
     id: "blood-bank",
     name: "Blood Bank",
@@ -705,7 +707,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             (record) => String(record?.systemId || "") === String(selectedSystemId || "")
           );
 
-      return (Array.isArray(projectRecords) ? projectRecords : [])
+      const scopedRecords = isCentralFund(selectedSystemId)
+        ? centralFundRecords(safeTransactions)
+        : isMosqueAccountId(selectedSystemId)
+          ? projectRecords
+          : projectExpenseRecords(projectRecords);
+
+      return (Array.isArray(scopedRecords) ? scopedRecords : [])
         .map((record, index) => normalizeTransactionRecord(record, index))
         .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
     } catch (error) {
@@ -723,23 +731,28 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
     : 0;
 
-  const financeSections = selectedWorkParentId
-    ? [
+  const financeSections = isCentralFund(selectedSystem)
+    ? [["income", "Add Donation"], ["ledger", "Central Ledger / Report"]]
+    : !isMosqueAccountId(selectedSystemId)
+      ? [["expense", "Add Expense"], ["daily", "Daily Expenses"], ["monthly", "Monthly Expenses"]]
+      : selectedWorkParentId
+        ? [
         ["income", "Add Donation"],
         ["expense", "Add Expense"],
         ["ledger", "Ledger / Report"],
       ]
-    : [
+        : [
         ["income", "Donations"],
         ["expense", "Expenses"],
         ["daily", "Daily Report"],
         ["monthly", "Monthly Report"],
       ];
 
-  const allTotals = totalsFor(safeTransactions);
+  const allTotals = totalsFor(centralFundRecords(safeTransactions));
 
   const combinedDonationRecords = safeTransactions.filter((record) => {
     if (record?.type !== "income") return false;
+    if (!isCentralFund(record.systemId)) return false;
     const recordDate = String(record?.date || "");
     if (combinedReportPeriod === "daily") return recordDate === combinedReportDate;
     if (combinedReportPeriod === "monthly") return recordDate.startsWith(combinedReportMonth);
@@ -840,7 +853,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     if (!normalizedId) return;
 
     setSelectedSystemId(normalizedId);
-    setActiveSection("income");
+    setActiveSection(isCentralFund(normalizedId) || isMosqueAccountId(normalizedId) ? "income" : "expense");
     setDonorSearch("");
     resetForm();
     if (typeof window.scrollTo === "function") {
@@ -1104,7 +1117,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     }
 
     const recordData = {
-      systemId: selectedSystemId,
+      systemId: activeSection === "income" && !isMosqueAccountId(selectedSystemId)
+        ? CENTRAL_FUND_ID
+        : selectedSystemId,
       type: activeSection,
       person: entryForm.person.trim(),
       amount,
@@ -1718,7 +1733,12 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 adminMode
               />
             ) : <>
-            {selectedWorkParentId ? (
+            {!isMosqueAccountId(selectedSystemId) && !isCentralFund(selectedSystem) ? (
+              <div className="summary-grid">
+                <div className="summary-card"><p>Project Expenses</p><h2>Rs. {selectedTotals.expenses.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>Funding Source</p><h2>Central Fund</h2></div>
+              </div>
+            ) : selectedWorkParentId ? (
               <div className="summary-grid">
                 <div className="summary-card"><p>Work Budget</p><h2>Rs. {selectedWorkBudget.toLocaleString()}</h2></div>
                 <div className="summary-card"><p>Work Donations</p><h2>Rs. {selectedTotals.income.toLocaleString()}</h2></div>
@@ -2253,17 +2273,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               Central Dashboard
             </h1>
 
-            <p>
-              Combined summary of all management
-              systems
-            </p>
+            <p>مساجد کے علاوہ تمام منصوبوں کا مشترکہ مرکزی حساب</p>
 
             <SummaryCards
               totals={allTotals}
               labels={[
-                "Total Donations for All Projects",
-                "Total Expenses for All Projects",
-                "Combined Current Balance",
+                "Central Fund Donations",
+                "All Non-Mosque Expenses",
+                "Central Fund Balance",
               ]}
             />
 
@@ -2470,12 +2487,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
                     {isDemographyProject(system) ? (
                       <strong>Population Census</strong>
-                    ) : !isBloodBankProject(system) && (
+                    ) : !isBloodBankProject(system) && isMosqueAccountId(system.id) ? (
                       <strong>
                         Balance: Rs.{" "}
                         {systemTotals.balance.toLocaleString()}
                       </strong>
-                    )}
+                    ) : !isBloodBankProject(system) && isCentralFund(system) ? (
+                      <strong>Balance: Rs. {allTotals.balance.toLocaleString()}</strong>
+                    ) : !isBloodBankProject(system) ? (
+                      <strong>Expenses: Rs. {systemTotals.expenses.toLocaleString()}</strong>
+                    ) : null}
                   </button>
                 );
               })}

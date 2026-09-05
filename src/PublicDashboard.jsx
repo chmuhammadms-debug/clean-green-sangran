@@ -41,6 +41,7 @@ import {
   isWelfareParent,
   welfareChildSystems,
 } from "./welfareManagement";
+import { centralFundRecords, centralFundSystem, isCentralFund, isMosqueAccountId, projectExpenseRecords } from "./centralFund";
 import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import cemeteryTeamImage from "./assets/projects/cemetery/team.webp";
 import plantationImage from "./assets/projects/plantation/main.webp";
@@ -83,6 +84,7 @@ const defaultBloodBankSystem = {
 };
 
 const fallbackSystems = [
+  centralFundSystem,
   defaultBloodBankSystem,
   { id: "cemetery", name: "Cemetery Management", description: "Respectful care, restoration and transparent cemetery funding.", icon: "🌿" },
   { id: "plantation", name: "Plantation Management", description: "Greener roads, healthier spaces and a better future for Sangran.", icon: "🌳" },
@@ -93,9 +95,12 @@ const fallbackSystems = [
 ];
 
 function ensurePublicSystems(systems = []) {
+  const withCentralFund = systems.some((system) => isCentralFund(system))
+    ? systems
+    : [centralFundSystem, ...systems];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      ensureSingleBloodBankSystem(systems, defaultBloodBankSystem)
+      ensureSingleBloodBankSystem(withCentralFund, defaultBloodBankSystem)
     )
   );
 }
@@ -917,7 +922,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     return () => observer.disconnect();
   }, [selectedSystemId]);
 
-  const totals = useMemo(() => totalsFor(transactions), [transactions]);
+  const totals = useMemo(() => totalsFor(centralFundRecords(transactions)), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
   const projectProfiles = settings.projectProfilesByProject || {};
   const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
@@ -935,8 +940,16 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     projectProfiles,
     relatedChildIdsFor(systemOrId)
   );
-  const selectedAllRecords = publicRecordsFor(selectedSystemId);
+  const selectedProjectRecords = publicRecordsFor(selectedSystemId);
+  const selectedAllRecords = isCentralFund(selectedSystemId)
+    ? centralFundRecords(transactions)
+    : isMosqueAccountId(selectedSystemId)
+      ? selectedProjectRecords
+      : projectExpenseRecords(selectedProjectRecords);
   const selectedTotals = totalsFor(selectedAllRecords);
+  const ledgerFilterOptions = isCentralFund(selectedSystemId) || isMosqueAccountId(selectedSystemId)
+    ? [["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]]
+    : [["expense", ur ? "اخراجات" : "Expenses"]];
   const filteredRecords = selectedAllRecords
     .filter((record) => recordType === "all" || record.type === recordType)
     .filter((record) => String(record.person || "").toLowerCase().includes(search.trim().toLowerCase()))
@@ -946,7 +959,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
       <div className="ledger-toolbar">
         <div className="filter-tabs">
-          {[["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]].map(([id, label]) => (
+          {ledgerFilterOptions.map(([id, label]) => (
             <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
           ))}
         </div>
@@ -1235,8 +1248,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 <>
                   {isBloodBankProject(selectedSystem) ? (
                     <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} />
-                  ) : !isWelfareChild(selectedSystem) ? (
+                  ) : isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
                     <MoneyCards totals={selectedTotals} language={language} />
+                  ) : !isWelfareChild(selectedSystem) ? (
+                    <div className="welfare-central-fund-note">
+                      <b>{ur ? "مرکزی فنڈ سے منسلک" : "Connected to the Central Fund"}</b>
+                      <p>{ur ? "اس منصوبے میں صرف اسی منصوبے کے اخراجات دکھائے جاتے ہیں۔ عطیات اور مجموعی بیلنس مرکزی فنڈ میں موجود ہیں۔" : "This page shows only this project's expenses. Donations and the shared balance are kept in the Central Fund."}</p>
+                    </div>
                   ) : (
                     <div className="welfare-central-fund-note">
                       <b>{ur ? "مرکزی فلاحی فنڈ سے منسلک" : "Connected to the central welfare fund"}</b>
@@ -1317,7 +1335,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
                   <div className="ledger-toolbar">
                     <div className="filter-tabs">
-                      {[["all", ur ? "تمام ریکارڈ" : "All Records"], ["income", ur ? "عطیات" : "Donations"], ["expense", ur ? "اخراجات" : "Expenses"]].map(([id, label]) => (
+                      {ledgerFilterOptions.map(([id, label]) => (
                         <button className={recordType === id ? "active" : ""} key={id} onClick={() => setRecordType(id)}>{label}</button>
                       ))}
                     </div>
@@ -1482,9 +1500,13 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     <p>{systemDescription(system)}</p>
                     {isDemographyProject(system) ? (
                       <div><b>{ur ? "نظام" : "System"}</b><strong>{ur ? "مردم شماری" : "Population Census"}</strong></div>
-                    ) : !isBloodBankProject(system) && (
+                    ) : !isBloodBankProject(system) && isMosqueAccountId(system) ? (
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
-                    )}
+                    ) : !isBloodBankProject(system) && isCentralFund(system) ? (
+                      <div><b>{ur ? "مرکزی بیلنس" : "Central Balance"}</b><strong>Rs. {totals.balance.toLocaleString()}</strong></div>
+                    ) : !isBloodBankProject(system) ? (
+                      <div><b>{ur ? "اخراجات" : "Expenses"}</b><strong>Rs. {projectTotals.expenses.toLocaleString()}</strong></div>
+                    ) : null}
                     <button>{ur ? "منصوبے کا ریکارڈ دیکھیں" : "View project record"} →</button>
                   </div>
                 </article>
