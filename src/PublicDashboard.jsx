@@ -1204,11 +1204,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
         <main>
           <section className="content-section project-finance">
-            <ProjectProgressOverview
-              profile={profileFor(selectedSystem)}
-              language={language}
-              showBudget={!isBloodBankProject(selectedSystem) && !isDemographyProject(selectedSystem)}
-            />
             <ProjectPhotoReel
               photos={activeGallery}
               projectName={systemName(selectedSystem)}
