@@ -95,9 +95,12 @@ const fallbackSystems = [
 ];
 
 function ensurePublicSystems(systems = []) {
-  const withCentralFund = systems.some((system) => isCentralFund(system))
-    ? systems
-    : [centralFundSystem, ...systems];
+  const repairedSystems = systems.map((system) => (
+    isCentralFund(system?.id) ? { ...system, ...centralFundSystem } : system
+  ));
+  const withCentralFund = repairedSystems.some((system) => isCentralFund(system))
+    ? repairedSystems
+    : [centralFundSystem, ...repairedSystems];
   return ensureWelfareSystems(
     ensureMosqueSystems(
       ensureSingleBloodBankSystem(withCentralFund, defaultBloodBankSystem)

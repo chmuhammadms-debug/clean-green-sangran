@@ -88,7 +88,9 @@ const defaultSystems = [
 
 function normalizeSystems(systems = []) {
   const safeSystems = Array.isArray(systems)
-    ? systems.filter((system) => system && typeof system === "object")
+    ? systems
+        .filter((system) => system && typeof system === "object")
+        .map((system) => isCentralFund(system.id) ? { ...system, ...centralFundSystem } : system)
     : [];
   return ensureWelfareSystems(
     ensureMosqueSystems(
