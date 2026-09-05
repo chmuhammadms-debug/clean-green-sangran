@@ -69,6 +69,7 @@ export async function fetchDatabaseData() {
       slipData: decodeStoredMedia(record.receipt_url),
       donorPhoto: decodeStoredMedia(record.donor_photo_url),
       paymentStatus: record.payment_status,
+      isPublic: record.is_public !== false,
     })).filter((record) => record.systemId),
   };
 }
@@ -174,7 +175,7 @@ export async function syncDatabaseData(systems, transactions) {
     receipt_name: record.slipName || "",
     receipt_url: encodeStoredMedia(record.slipData),
     donor_photo_url: record.type === "income" ? encodeStoredMedia(record.donorPhoto) : null,
-    is_public: true,
+    is_public: record.isPublic !== false,
     transaction_date: record.date,
   })).filter((record) => record.project_id);
 
