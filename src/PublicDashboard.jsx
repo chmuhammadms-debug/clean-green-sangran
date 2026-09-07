@@ -1132,6 +1132,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   useEffect(() => {
     setGalleryIndex(null);
+    setRecordType("all");
+    setSearch("");
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [selectedSystemId]);
 
@@ -1251,7 +1253,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   {isBloodBankProject(selectedSystem) ? (
                     <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} />
                   ) : isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
-                    <MoneyCards totals={selectedTotals} language={language} />
+                    <>
+                      <MoneyCards totals={selectedTotals} language={language} />
+                      {isCentralFund(selectedSystem) && projectLedger}
+                    </>
                   ) : !isWelfareChild(selectedSystem) ? (
                     <div className="welfare-central-fund-note">
                       <b>{ur ? "مرکزی فنڈ سے منسلک" : "Connected to the Central Fund"}</b>
@@ -1332,7 +1337,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   getDescription={systemDescription}
                 />
               )}
-              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && selectedSystem.id !== "cemetery" && (
+              {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && !isCentralFund(selectedSystem) && selectedSystem.id !== "cemetery" && (
                 <div className="ledger-card reveal">
                   <div className="section-heading section-heading--compact"><div><span className="section-kicker">LIVE TRANSPARENCY</span><h2>{ur ? "عوامی مالی ریکارڈ" : "Public financial records"}</h2></div><p>{ur ? "رسیدیں اور انتظامی کنٹرول نجی رہتے ہیں۔" : "Attachments and administrative controls remain private."}</p></div>
                   <div className="ledger-toolbar">
