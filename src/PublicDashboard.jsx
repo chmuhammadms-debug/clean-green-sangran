@@ -838,6 +838,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
   const [showPublicRecords, setShowPublicRecords] = useState(false);
+  const [publicRecordsSearch, setPublicRecordsSearch] = useState("");
   const [showDonationDetails, setShowDonationDetails] = useState(false);
   const [showMembership, setShowMembership] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(null);
@@ -972,6 +973,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     </div>
   );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
+  const filteredRecentRecords = recentRecords.filter((record) =>
+    String(record.person || "").toLowerCase().includes(publicRecordsSearch.trim().toLowerCase())
+  );
   const donorCount = new Set(
     transactions.filter(isPersonalDonorRecord).map((record) => String(record.person).trim().toLowerCase()),
   ).size;
@@ -1501,7 +1505,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     ) : !isBloodBankProject(system) && isMosqueAccountId(system) ? (
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
                     ) : !isBloodBankProject(system) && isCentralFund(system) ? (
-                      <div><b>{ur ? "مرکزی بیلنس" : "Central Balance"}</b><strong>Rs. {totals.balance.toLocaleString()}</strong></div>
+                      <div><b>{ur ? "کل عطیات" : "Total Donations"}</b><strong>Rs. {totals.income.toLocaleString()}</strong></div>
                     ) : !isBloodBankProject(system) ? (
                       <div><b>{ur ? "اخراجات" : "Expenses"}</b><strong>Rs. {projectTotals.expenses.toLocaleString()}</strong></div>
                     ) : null}
@@ -1672,7 +1676,19 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               <div><span className="section-kicker">{ur ? "شفاف عوامی حساب" : "PUBLIC TRANSPARENCY"}</span><h2>{ur ? "عطیات اور اخراجات کا ریکارڈ" : "Donation & Expense Records"}</h2><p>{ur ? "تمام تصدیق شدہ عوامی ریکارڈ ایک جگہ۔" : "All verified public records in one place."}</p></div>
               <button onClick={() => setShowPublicRecords(false)} aria-label="Close">×</button>
             </div>
-            <div className="records-modal__body"><RecordsTable records={recentRecords} systems={systems} language={language} /></div>
+            <div className="records-modal__body">
+              <label className="records-modal__search" dir={ur ? "rtl" : "ltr"}>
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={publicRecordsSearch}
+                  onChange={(event) => setPublicRecordsSearch(event.target.value)}
+                  placeholder={ur ? "عطیہ دہندہ کے نام سے تلاش کریں" : "Search by donor name"}
+                  aria-label={ur ? "عطیہ دہندہ کے نام سے تلاش کریں" : "Search by donor name"}
+                />
+              </label>
+              <RecordsTable records={filteredRecentRecords} systems={systems} language={language} />
+            </div>
           </div>
         </div>
       )}

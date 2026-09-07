@@ -310,6 +310,10 @@ button { cursor: pointer; }
 .records-modal__header p { margin: 0; color: var(--muted); }
 .records-modal__header > button { flex: 0 0 auto; width: 40px; height: 40px; border: 0; border-radius: 50%; color: #173d2c; background: #deebe2; font-size: 26px; cursor: pointer; }
 .records-modal__body { max-height: calc(90vh - 116px); overflow: auto; padding: 12px 22px 24px; }
+.records-modal__search { position: sticky; top: 0; z-index: 3; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 10px 12px; border: 1px solid #d7e3d9; border-radius: 14px; color: #48705d; background: rgba(247,250,247,.97); box-shadow: 0 5px 18px rgba(10,54,32,.07); }
+.records-modal__search span { font-size: 22px; line-height: 1; }
+.records-modal__search input { width: 100%; min-width: 0; min-height: 42px; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 16px; }
+.records-modal__search input::placeholder { color: #708579; }
 
 .impact-ticker { padding: 17px 0; color: #d7f8df; background: var(--forest); overflow: hidden; }
 .impact-ticker__track { display: flex; width: max-content; animation: tickerEnglish 48s linear infinite; }
@@ -1208,6 +1212,8 @@ body.gallery-open { overflow: hidden; }
   .records-modal__header h2 { font-size: 20px; }
   .records-modal__header p { font-size: 11px; }
   .records-modal__body { max-height: calc(94vh - 100px); padding: 8px; }
+  .records-modal__search { margin-bottom: 8px; padding: 7px 10px; border-radius: 12px; }
+  .records-modal__search input { min-height: 40px; }
 
   .impact-ticker { padding: 10px 0; }
   .impact-ticker .ticker-urdu { font-size: 13px; }
