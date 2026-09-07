@@ -1573,6 +1573,24 @@ body.gallery-open { overflow: hidden; }
   gap: 3px;
 }
 
+.public-record-person--pending .public-record-donor-photo {
+  color: #fff;
+  border-color: #111;
+  background: #111;
+  filter: grayscale(1) brightness(.48);
+}
+
+.public-record-person--pending .public-record-person__copy strong { color: #111; }
+
+.public-record-person--current .public-record-donor-photo {
+  color: #fff;
+  border-color: #1f9d55;
+  background: #1f9d55;
+  box-shadow: 0 0 0 4px rgba(31,157,85,.14);
+}
+
+.public-record-person--current .public-record-person__copy strong { color: #168246; }
+
 /* Real social-media icons in the public header and footer */
 .social-media-links {
   --social-brand: #23884d;

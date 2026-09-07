@@ -581,9 +581,16 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
   );
 }
 
-function RecordsTable({ records, systems, limit, language = "en", scrollable = false }) {
+function RecordsTable({ records, systems, limit, language = "en", scrollable = false, donorStatusRecords = records }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
+  const currentMonth = currentDonationMonthKey();
+  const activeDonorNames = new Set(
+    donorStatusRecords
+      .filter((record) => isPersonalDonorRecord(record) && donationMonthKey(record.date) === currentMonth)
+      .map((record) => String(record.person || "").trim().toLocaleLowerCase("en"))
+      .filter(Boolean),
+  );
   const projectName = (id) => language === "ur"
     ? (projectUrdu[id]?.name || systems.find((system) => system.id === id)?.name || "عوامی منصوبہ")
     : (systems.find((system) => system.id === id)?.name || "Community Project");
@@ -605,12 +612,18 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
           <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
         </thead>
         <tbody>
-          {rows.map((record) => (
+          {rows.map((record) => {
+            const donorNameKey = String(record.person || "").trim().toLocaleLowerCase("en");
+            const showsMonthlyStatus = isPersonalDonorRecord(record) && !["unknown", "anonymous"].includes(donorNameKey);
+            const donorStatus = showsMonthlyStatus
+              ? (activeDonorNames.has(donorNameKey) ? "current" : "pending")
+              : "";
+            return (
             <tr key={record.id}>
               <td>{record.date}</td>
               <td><span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? (language === "ur" ? "عطیہ" : "Donation") : (language === "ur" ? "خرچ" : "Expense")}</span></td>
               <td>
-                <div className="public-record-person">
+                <div className={`public-record-person${donorStatus ? ` public-record-person--${donorStatus}` : ""}`}>
                   {record.type === "income" && (
                     record.donorPhoto ? (
                       <a href={record.donorPhoto} target="_blank" rel="noreferrer" title={language === "ur" ? "ڈونر کی تصویر دیکھیں" : "View donor photo"}>
@@ -641,7 +654,8 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
                 )}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -969,7 +983,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         </div>
         <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
       </div>
-      <RecordsTable records={filteredRecords} systems={systems} language={language} scrollable />
+      <RecordsTable records={filteredRecords} donorStatusRecords={selectedAllRecords} systems={systems} language={language} scrollable />
     </div>
   );
   const recentRecords = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
@@ -1348,7 +1362,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     </div>
                     <label className="record-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={ur ? "عوامی ریکارڈ تلاش کریں" : "Search public records"} /></label>
                   </div>
-                  <RecordsTable records={filteredRecords} systems={systems} language={language} />
+                  <RecordsTable records={filteredRecords} donorStatusRecords={selectedAllRecords} systems={systems} language={language} />
                 </div>
               )}
             </>}
@@ -1692,7 +1706,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   aria-label={ur ? "عطیہ دہندہ کے نام سے تلاش کریں" : "Search by donor name"}
                 />
               </label>
-              <RecordsTable records={filteredRecentRecords} systems={systems} language={language} />
+              <RecordsTable records={filteredRecentRecords} donorStatusRecords={transactions} systems={systems} language={language} />
             </div>
           </div>
         </div>
