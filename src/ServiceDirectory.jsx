@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { uploadWebsiteImage } from "./mediaUpload";
+import serviceDirectoryCover from "./assets/projects/service-directory-cover.webp";
 import "./ServiceDirectory.css";
 
 export const SERVICE_DIRECTORY_ID = "service-directory";
@@ -15,6 +16,7 @@ export const serviceDirectorySystem = {
   nameUr: "سنگراں سروس ڈائریکٹری",
   description: "Verified local contacts for doctors, electricians, plumbers and other essential services.",
   descriptionUr: "ڈاکٹر، الیکٹریشن، پلمبر اور دیگر ضروری مقامی خدمات کے تصدیق شدہ رابطے۔",
+  coverImage: serviceDirectoryCover,
   icon: "☎️",
 };
 
