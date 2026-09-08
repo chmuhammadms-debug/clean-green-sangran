@@ -18,6 +18,7 @@ import WelfareOperationsPanel from "./WelfareOperationsPanel";
 import { InfrastructureAdmin } from "./InfrastructureManagement";
 import PlantationSurveyAdmin from "./PlantationSurveyAdmin";
 import DemographyAdmin from "./DemographyAdmin";
+import { isServiceDirectory, serviceDirectorySystem, ServiceDirectoryAdmin } from "./ServiceDirectory";
 import { isDemographyProject } from "./demographyService";
 import {
   defaultMosqueSystems,
@@ -82,6 +83,7 @@ const defaultSystems = [
     descriptionUr: "صاف پانی، اجتماعی معاونت، کھیل اور نوجوانوں کی ترقی کے منصوبے",
     icon: "🤝",
   },
+  serviceDirectorySystem,
   ...defaultMosqueSystems,
   ...defaultWelfareSystems,
 ];
@@ -92,10 +94,13 @@ function normalizeSystems(systems = []) {
         .filter((system) => system && typeof system === "object")
         .map((system) => isCentralFund(system.id) ? { ...system, ...centralFundSystem } : system)
     : [];
+  const withServiceDirectory = safeSystems.some((system) => isServiceDirectory(system))
+    ? safeSystems.map((system) => isServiceDirectory(system) ? { ...system, ...serviceDirectorySystem } : system)
+    : [...safeSystems, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
       ensureSingleBloodBankSystem(
-        safeSystems,
+        withServiceDirectory,
         defaultSystems.find((system) => isBloodBankProject(system))
       )
     )
@@ -678,6 +683,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     }
   };
   const selectedIsDemography = safeProjectCheck(isDemographyProject, selectedSystem);
+  const selectedIsServiceDirectory = safeProjectCheck(isServiceDirectory, selectedSystem);
   const selectedIsBloodBank = safeProjectCheck(isBloodBankProject, selectedSystem);
   const selectedIsMosqueParent = safeProjectCheck(isMosqueParent, selectedSystem);
   const selectedIsMosqueChild = safeProjectCheck(isMosqueChild, selectedSystem);
@@ -1725,7 +1731,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 selectedSystem.englishName}
             </p>
 
-            {selectedIsDemography ? (
+            {selectedIsServiceDirectory ? (
+              <ServiceDirectoryAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
+            ) : selectedIsDemography ? (
               <DemographyAdmin />
             ) : selectedIsBloodBank ? (
               <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />

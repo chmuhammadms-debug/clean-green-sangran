@@ -19,6 +19,7 @@ import { InfrastructurePublic } from "./InfrastructureManagement";
 import PlantationSurveyPublic from "./PlantationSurveyPublic";
 import DemographyPublic from "./DemographyPublic";
 import MembershipForm from "./MembershipForm";
+import { isServiceDirectory, serviceDirectorySystem, ServiceDirectoryPublic } from "./ServiceDirectory";
 import { isDemographyProject } from "./demographyService";
 import VillageMapSection from "./VillageMapSection";
 import {
@@ -90,6 +91,7 @@ const fallbackSystems = [
   { id: "plantation", name: "Plantation Management", description: "Greener roads, healthier spaces and a better future for Sangran.", icon: "🌳" },
   { id: "mosque", name: "Mosque Management", description: "Community-supported maintenance, improvements and transparent records.", icon: "🕌" },
   { id: "welfare", name: "Community Welfare", description: "Dignified support for families and shared village initiatives.", icon: "🤝" },
+  serviceDirectorySystem,
   ...defaultMosqueSystems,
   ...defaultWelfareSystems,
 ];
@@ -101,9 +103,12 @@ function ensurePublicSystems(systems = []) {
   const withCentralFund = repairedSystems.some((system) => isCentralFund(system))
     ? repairedSystems
     : [centralFundSystem, ...repairedSystems];
+  const withServiceDirectory = withCentralFund.some((system) => isServiceDirectory(system))
+    ? withCentralFund.map((system) => isServiceDirectory(system) ? { ...system, ...serviceDirectorySystem } : system)
+    : [...withCentralFund, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      ensureSingleBloodBankSystem(withCentralFund, defaultBloodBankSystem)
+      ensureSingleBloodBankSystem(withServiceDirectory, defaultBloodBankSystem)
     )
   );
 }
@@ -140,6 +145,7 @@ const projectUrdu = {
   plantation: { name: "شجرکاری مینجمنٹ", description: "سرسبز سڑکیں، صاف فضا اور سنگراں کا بہتر مستقبل۔" },
   mosque: { name: "مسجد مینجمنٹ", description: "مسجد کی دیکھ بھال، بہتری اور شفاف عوامی حساب۔" },
   welfare: { name: "فلاحی منصوبے", description: "گاؤں کی اجتماعی فلاح اور ضرورت مند خاندانوں کی مدد۔" },
+  "service-directory": { name: "سنگراں سروس ڈائریکٹری", description: "ڈاکٹر، الیکٹریشن، پلمبر اور دیگر ضروری مقامی خدمات کے تصدیق شدہ رابطے۔" },
   "welfare-general": { name: "اجتماعی فلاح و معاونت", description: "مستحق خاندانوں اور اجتماعی ضروریات کے لیے شفاف معاونت۔" },
   "welfare-filtration": { name: "واٹر فلٹریشن پلانٹ", description: "سنگراں کے لیے صاف اور محفوظ پینے کے پانی کا منصوبہ۔" },
   "welfare-sports": { name: "کھیل اور نوجوانوں کی سرگرمیاں", description: "صحت مند کھیل اور نوجوانوں کی مثبت اجتماعی سرگرمیاں۔" },
@@ -1206,6 +1212,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         {!isMosqueChild(selectedSystem)
           && !isWelfareChild(selectedSystem)
           && !isWorkItem(selectedSystem, projectProfiles)
+          && !isServiceDirectory(selectedSystem)
           && (
             <ProjectFaithSlider
               slides={faithSlidesFor(selectedSystem)}
@@ -1230,7 +1237,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               language={language}
               onOpen={setGalleryIndex}
             />
-            {isDemographyProject(selectedSystem) ? (
+            {isServiceDirectory(selectedSystem) ? (
+              <ServiceDirectoryPublic entries={settings.serviceDirectoryEntries} language={language} />
+            ) : isDemographyProject(selectedSystem) ? (
               <DemographyPublic language={language} />
             ) : isMosqueParent(selectedSystem) ? (
               <MosqueManagementHub
@@ -1519,7 +1528,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     <span><ProjectIcon project={isDemographyProject(system) ? { ...system, icon: "👥" } : system} size={26} /> {ur ? "عوامی منصوبہ" : "COMMUNITY PROJECT"}</span>
                     <h3>{systemName(system)}</h3>
                     <p>{systemDescription(system)}</p>
-                    {isDemographyProject(system) ? (
+                    {isServiceDirectory(system) ? (
+                      <div><b>{ur ? "دستیاب رابطے" : "Available Contacts"}</b><strong>{(settings.serviceDirectoryEntries || []).filter((entry) => entry.enabled !== false).length}</strong></div>
+                    ) : isDemographyProject(system) ? (
                       <div><b>{ur ? "نظام" : "System"}</b><strong>{ur ? "مردم شماری" : "Population Census"}</strong></div>
                     ) : !isBloodBankProject(system) && isMosqueAccountId(system) ? (
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
