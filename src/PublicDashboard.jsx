@@ -1535,7 +1535,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     ) : !isBloodBankProject(system) && isMosqueAccountId(system) ? (
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
                     ) : !isBloodBankProject(system) && isCentralFund(system) ? (
-                      <div><b>{ur ? "کل عطیات" : "Total Donations"}</b><strong>Rs. {totals.income.toLocaleString()}</strong></div>
+                      <div><b>{ur ? "موجودہ بیلنس" : "Current Balance"}</b><strong>Rs. {totals.balance.toLocaleString()}</strong></div>
                     ) : !isBloodBankProject(system) ? (
                       <div><b>{ur ? "اخراجات" : "Expenses"}</b><strong>Rs. {projectTotals.expenses.toLocaleString()}</strong></div>
                     ) : null}
