@@ -1245,6 +1245,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
         ? "Received From"
         : "Paid To / Purpose";
 
+    const attachmentSource = String(record.slipData || "");
+    const attachmentName = String(record.slipName || "");
+    const attachmentIsImage = Boolean(attachmentSource) && (
+      /^data:image\//i.test(attachmentSource) ||
+      /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(attachmentSource) ||
+      /\.(?:avif|gif|jpe?g|png|webp)$/i.test(attachmentName)
+    );
+
     printWindow.document.write(`
       <!doctype html>
       <html lang="en">
@@ -1359,6 +1367,30 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               border-top: 1px solid #374151;
             }
 
+            .attachment-proof {
+              margin-top: 28px;
+              padding: 16px;
+              text-align: center;
+              border: 1px solid #d1d5db;
+              border-radius: 12px;
+              page-break-inside: avoid;
+            }
+
+            .attachment-proof h3 {
+              margin: 0 0 12px;
+              color: #14532d;
+              font-size: 15px;
+            }
+
+            .attachment-proof img {
+              display: block;
+              width: auto;
+              max-width: 100%;
+              max-height: 430px;
+              margin: auto;
+              object-fit: contain;
+            }
+
             .footer {
               margin-top: 35px;
               color: #6b7280;
@@ -1467,6 +1499,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               </div>
             </div>
 
+            ${attachmentIsImage ? `
+              <div class="attachment-proof">
+                <h3>Attached Original Receipt / اصل رسید</h3>
+                <img src="${escapeHtml(attachmentSource)}" alt="${escapeHtml(attachmentName || "Attached receipt")}" />
+              </div>
+            ` : ""}
+
             <div class="signatures">
               <div class="signature">
                 Received / Paid By
@@ -1487,11 +1526,22 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     `);
 
     printWindow.document.close();
-    printWindow.focus();
-
-    setTimeout(() => {
+    const attachmentImage = printWindow.document.querySelector(".attachment-proof img");
+    let printStarted = false;
+    const startPrint = () => {
+      if (printStarted) return;
+      printStarted = true;
+      printWindow.focus();
       printWindow.print();
-    }, 300);
+    };
+
+    if (attachmentImage && !attachmentImage.complete) {
+      attachmentImage.addEventListener("load", startPrint, { once: true });
+      attachmentImage.addEventListener("error", startPrint, { once: true });
+      setTimeout(startPrint, 3000);
+    } else {
+      setTimeout(startPrint, 300);
+    }
   }
 
   function printCombinedReport(records, reportTitle) {
