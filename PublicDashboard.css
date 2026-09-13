@@ -1113,3 +1113,28 @@ body.gallery-open { overflow: hidden; }
   .project-faith-slider__arrow--next { right: 7px; }
   .project-faith-slider__dots { bottom: 10px; }
 }
+
+
+/* Keep the featured donor portrait fully visible on every screen. */
+.top-donor-spotlight__portrait {
+  display: grid;
+  place-items: center;
+  background: #063d25;
+}
+
+.top-donor-spotlight__portrait img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 600px) {
+  .top-donor-spotlight__portrait img {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    object-fit: contain;
+  }
+}
