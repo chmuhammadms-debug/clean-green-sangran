@@ -78,9 +78,7 @@ export async function fetchPublicDatabaseData() {
   const [{ data: projects, error: projectError }, { data: records, error: recordError }] = await Promise.all([
     supabase.from("projects").select("id, slug, name, description, icon").eq("is_active", true).order("created_at"),
     supabase.from("transactions")
-      // Public records show verified receipt attachments, while donor photos
-      // remain private and are not selected here.
-      .select("id, app_id, project_id, transaction_type, donor_name, amount, payment_method, purpose, transaction_date, receipt_name, receipt_url")
+      .select("id, app_id, project_id, transaction_type, donor_name, amount, payment_method, purpose, transaction_date, receipt_name, receipt_url, donor_photo_url")
       .eq("is_public", true)
       .eq("payment_status", "verified")
       .order("transaction_date", { ascending: false }),
@@ -103,7 +101,7 @@ export async function fetchPublicDatabaseData() {
       details: record.purpose || "",
       slipName: record.receipt_name || "",
       slipData: decodeStoredMedia(record.receipt_url),
-      donorPhoto: "",
+      donorPhoto: decodeStoredMedia(record.donor_photo_url),
     })).filter((record) => record.systemId),
   };
 }
