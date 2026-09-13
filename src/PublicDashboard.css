@@ -1244,8 +1244,9 @@ body.gallery-open { overflow: hidden; }
   .top-donors-month__heading span { font-size: 9px; letter-spacing: .7px; }
   .top-donors-month__heading small { font-size: 9px; }
   .top-donor-spotlight { grid-template-columns: 1fr; min-height: 0; margin-top: 0; border-radius: 18px; }
-  .top-donor-spotlight__portrait { grid-row: 1; min-height: 220px; }
-  .top-donor-spotlight__portrait img, .top-donor-spotlight__fallback { min-height: 220px; height: 220px; }
+  .top-donor-spotlight__portrait { grid-row: 1; min-height: 0; aspect-ratio: 2 / 3; }
+  .top-donor-spotlight__portrait img { min-height: 0; height: 100%; object-fit: contain; object-position: center; }
+  .top-donor-spotlight__fallback { min-height: 220px; height: 220px; }
   .top-donor-spotlight__fallback { font-size: 54px; }
   .top-donor-spotlight__copy { padding: 21px 18px 19px; }
   .top-donor-spotlight__eyebrow { font-size: 8px; letter-spacing: 1px; }
