@@ -82,9 +82,59 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     item.id === projectId ? { ...item, galleryEvents: updater(item.galleryEvents || []) } : item
   )));
 
-  const addGalleryEvent = (item) => {
+  const profilesFromItems = (nextItems) => nextItems.reduce((profiles, item) => ({
+    ...profiles,
+    [item.id]: {
+      ...(profiles[item.id] || {}),
+      nameEn: item.nameEn.trim(),
+      nameUr: item.nameUr.trim(),
+      descriptionEn: item.descriptionEn.trim(),
+      descriptionUr: item.descriptionUr.trim(),
+      coverImage: item.coverImage.trim(),
+      galleryUrls: item.galleryText.split(/\r?\n/).map((url) => url.trim()).filter(Boolean),
+      galleryEvents: (item.galleryEvents || []).map((entry) => ({
+        id: entry.id,
+        titleEn: String(entry.titleEn || "Event").trim(),
+        titleUr: String(entry.titleUr || "").trim(),
+        date: entry.date || "",
+        description: String(entry.description || "").trim(),
+        media: (entry.media || []).filter((asset) => asset?.url).map((asset) => ({
+          url: asset.url,
+          type: asset.type === "video" ? "video" : "image",
+          title: asset.title || "",
+        })),
+      })),
+      status: item.status || "proposed",
+      budget: Math.max(0, Number(item.budget) || 0),
+      completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
+      startDate: item.startDate || "",
+      expectedCompletionDate: item.expectedCompletionDate || "",
+      planEn: item.planEn.trim(),
+      planUr: item.planUr.trim(),
+    },
+  }), { ...(settings.projectProfilesByProject || {}) });
+
+  const persistItems = async (nextItems, successMessage) => {
+    setItems(nextItems);
+    await onSaveSettings({
+      ...settings,
+      projectProfilesByProject: profilesFromItems(nextItems),
+    });
+    setMessage(successMessage);
+  };
+
+  const addGalleryEvent = async (item) => {
     const eventId = `event-${Date.now()}`;
-    updateEvents(item.id, (events) => [...events, { id: eventId, titleEn: "New Event", titleUr: "نیا ایونٹ", date: "", description: "", media: [] }]);
+    const nextItems = items.map((entry) => entry.id === item.id ? {
+      ...entry,
+      galleryEvents: [...(entry.galleryEvents || []), { id: eventId, titleEn: "New Event", titleUr: "نیا ایونٹ", date: "", description: "", media: [] }],
+    } : entry);
+    setMessage("");
+    try {
+      await persistItems(nextItems, "نیا Event Album بن گیا اور خودکار طور پر محفوظ ہوگیا۔");
+    } catch (error) {
+      setMessage(`Event محفوظ نہیں ہوسکا: ${error.message}`);
+    }
   };
 
   const updateGalleryEvent = (projectId, eventId, key, value) => updateEvents(projectId, (events) => events.map((entry) => (
@@ -103,8 +153,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     setUploadState(key, true);
     try {
       const uploaded = await uploadWebsiteMediaFiles(files, `projects/${item.id}/events/${galleryEvent.id}`);
-      updateGalleryEvent(item.id, galleryEvent.id, "media", [...(galleryEvent.media || []), ...uploaded.map((asset) => ({ url: asset.url, type: asset.type, title: asset.name }))]);
-      setMessage(`${uploaded.length} photo/video event میں upload ہوگئی۔ آخر میں Save & Publish Projects دبائیں۔`);
+      const additions = uploaded.map((asset) => ({ url: asset.url, type: asset.type, title: asset.name }));
+      const nextItems = items.map((entry) => entry.id === item.id ? {
+        ...entry,
+        galleryEvents: (entry.galleryEvents || []).map((eventEntry) => eventEntry.id === galleryEvent.id
+          ? { ...eventEntry, media: [...(eventEntry.media || []), ...additions] }
+          : eventEntry),
+      } : entry);
+      await persistItems(nextItems, `${uploaded.length} photo/video upload اور Publish ہوگئی۔`);
     } catch (error) {
       setMessage(`گیلری اپلوڈ نہیں ہوسکی: ${error.message}`);
     } finally {
@@ -261,7 +317,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
 
                 <div className="project-editor__wide project-media-control project-event-manager">
                   <div className="project-media-control__heading"><span>Project Event Albums</span><small>ہر event کے اندر الگ photos اور videos رکھیں</small></div>
-                  <button className="project-event-add" type="button" onClick={() => addGalleryEvent(item)}>+ نیا Event Album</button>
+                  <button className="project-event-add" type="button" disabled={saving} onClick={() => addGalleryEvent(item)}>+ نیا Event Album</button>
                   <div className="project-event-list">
                     {(item.galleryEvents || []).map((galleryEvent, eventIndex) => {
                       const uploadKey = `${item.id}-${galleryEvent.id}-gallery`;
@@ -273,6 +329,11 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                           <label><span>Event date</span><input type="date" value={galleryEvent.date || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "date", event.target.value)} /></label>
                           <label><span>Short description</span><input value={galleryEvent.description || ""} onChange={(event) => updateGalleryEvent(item.id, galleryEvent.id, "description", event.target.value)} /></label>
                         </div>
+                        <button type="button" className="project-event-add" disabled={saving} onClick={async () => {
+                          setMessage("");
+                          try { await persistItems(items, "Event کی تفصیل محفوظ اور Publish ہوگئی۔"); }
+                          catch (error) { setMessage(`Event محفوظ نہیں ہوسکا: ${error.message}`); }
+                        }}>Save Event Details</button>
                         <label className={`project-media-upload ${uploading[uploadKey] ? "is-uploading" : ""}`}>
                           <input type="file" accept="image/*,video/*" multiple disabled={uploading[uploadKey]} onChange={(event) => { uploadGallery(item, galleryEvent, event.target.files); event.target.value = ""; }} />
                           <span>{uploading[uploadKey] ? "Uploading media..." : "+ Add photos / videos"}</span>
