@@ -199,6 +199,8 @@ export default function WebsiteSettings({ settings, onSave, saving }) {
         <VillageMapSettings
           locations={draft.mapLocations || []}
           onChange={(mapLocations) => update("mapLocations", mapLocations)}
+          onSaveLocations={(mapLocations) => onSave({ ...draft, mapLocations })}
+          saving={saving}
         />
         <div className="settings-text-grid">
           <label className="settings-field"><span>Intro title</span><input dir="rtl" value={draft.introTitle} onChange={(e) => update("introTitle", e.target.value)} /></label>
