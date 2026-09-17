@@ -33,7 +33,7 @@ function cleanLocations(locations = []) {
 }
 
 function averageCenter(locations) {
-  if (!locations.length) return [32.262341, 75.166168];
+  if (!locations.length) return [0, 0];
   return [
     locations.reduce((sum, location) => sum + Number(location.lat), 0) / locations.length,
     locations.reduce((sum, location) => sum + Number(location.lng), 0) / locations.length,
@@ -82,6 +82,10 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
   ), [filter, publicLocations]);
   const selected = filtered.find((location) => location.id === selectedId) || null;
   const center = averageCenter(publicLocations);
+  const satelliteLocation = selected || filtered[0] || publicLocations[0];
+  const satelliteUrl = satelliteLocation
+    ? `https://www.google.com/maps/@?api=1&map_action=map&center=${Number(satelliteLocation.lat)},${Number(satelliteLocation.lng)}&zoom=18&basemap=satellite`
+    : "";
   const categories = ["all", ...Object.keys(CATEGORY_META).filter((category) => publicLocations.some((location) => location.category === category))];
 
   return (
@@ -107,9 +111,13 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
           </div>
         )}
 
+        {satelliteUrl && <a className="village-map-satellite-link" href={satelliteUrl} target="_blank" rel="noopener noreferrer">
+          🛰️ {ur ? "Google Maps پر سیٹلائٹ نقشہ کھولیں" : "Open satellite view in Google Maps"} ↗
+        </a>}
+
         <div className="village-map-layout">
           <div className="village-map-canvas" aria-label={ur ? "سنگراں کا نقشہ" : "Map of Sangran"}>
-            <MapContainer center={center} zoom={publicLocations.length ? 15 : 11} scrollWheelZoom={false} className="village-leaflet-map">
+            {publicLocations.length > 0 && <MapContainer center={center} zoom={15} scrollWheelZoom={false} className="village-leaflet-map">
               <LayersControl position="topright" collapsed>
                 <LayersControl.BaseLayer checked name={ur ? "سیٹلائٹ" : "Satellite"}>
                   <TileLayer
@@ -155,7 +163,7 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
                   </CircleMarker>
                 );
               })}
-            </MapContainer>
+            </MapContainer>}
             {!publicLocations.length && (
               <div className="village-map-empty">
                 <span>📍</span>
