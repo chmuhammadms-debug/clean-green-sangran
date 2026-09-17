@@ -20,6 +20,7 @@ const STATUS_LABELS = {
 };
 
 function validCoordinate(value, min, max) {
+  if (value === null || value === undefined || String(value).trim() === "") return false;
   const numeric = Number(value);
   return Number.isFinite(numeric) && numeric >= min && numeric <= max;
 }
