@@ -61,6 +61,10 @@
 .map-admin-empty span { font-size: 2rem; }
 .map-admin-empty p { margin: 0; font-size: .82rem; }
 .map-admin-message { margin: 12px 0 0; border-radius: 10px; padding: 10px 12px; background: #e9f5e8; color: #22613a; font-weight: 800; }
+.map-admin-hint { margin: 12px 0; color: #9c4221; font-size: .85rem; font-weight: 700; line-height: 1.5; }
+.map-admin-picker { margin-top: 12px; }
+.map-admin-picker p { margin: 0 0 8px; font-size: .85rem; font-weight: 700; }
+.map-admin-picker__map { width: 100%; height: 300px; border-radius: 12px; }
 
 @media (max-width: 900px) {
   .village-map-section { padding: 64px 0; }
