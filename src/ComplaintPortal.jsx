@@ -150,6 +150,7 @@ export default function ComplaintPortal({ language = "en" }) {
               <button type="button" onClick={close} aria-label="Close">×</button>
             </header>
 
+            <p style={{ padding: "0 20px" }}><a href="/report-safety.html">{ur ? "بچوں کی حفاظت کا مسئلہ؟ یہاں اطلاع دیں" : "Child safety concern? Report it here"}</a></p>
             <div className="complaint-tabs">
               <button type="button" className={tab === "submit" ? "active" : ""} onClick={() => { setTab("submit"); setTracked(null); }}>{ur ? "نئی شکایت" : "New Complaint"}</button>
               <button type="button" className={tab === "track" ? "active" : ""} onClick={() => setTab("track")}>{ur ? "شکایت ٹریک کریں" : "Track Complaint"}</button>

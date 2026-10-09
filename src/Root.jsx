@@ -236,6 +236,11 @@ function Root() {
     return (
       <>
         <PublicDashboard onAdminLogin={openAdmin} siteSettings={siteSettings} onSettingsChanged={loadSettings} />
+        <nav aria-label="Safety and privacy" style={{ padding: "24px 16px 100px", background: "#f3f8f4", display: "flex", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
+          <a href="/privacy-policy.html">Privacy Policy / رازداری</a>
+          <a href="/child-safety.html">Child Safety / بچوں کی حفاظت</a>
+          <a href="/report-safety.html">Report a safety concern / اطلاع دیں</a>
+        </nav>
         {publicPreviewMode && adminAuthenticated && (
           <button
             type="button"
