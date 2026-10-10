@@ -15,6 +15,7 @@ export async function fetchAdminNotifications() {
   const { data, error } = await supabase
     .from("admin_notifications")
     .select("id, event_type, title, message, source_table, source_id, is_read, created_at")
+    .not("event_type", "in", "(blood_request,blood_donor)")
     .order("created_at", { ascending: false })
     .limit(100);
   if (error) throw error;

@@ -7,7 +7,7 @@ import ProjectIcon, {
   ensureSingleBloodBankSystem,
   isBloodBankProject,
 } from "./ProjectIcon";
-import BloodBankAdmin from "./BloodBankAdmin";
+
 import AdminNotificationCenter from "./AdminNotificationCenter";
 import MembershipAdmin from "./MembershipAdmin";
 import ComplaintAdmin from "./ComplaintAdmin";
@@ -35,7 +35,7 @@ import {
   isWelfareParent,
   welfareChildSystems,
 } from "./welfareManagement";
-import { isCurrentUserAdmin } from "./bloodBankService";
+import { isCurrentUserAdmin } from "./adminAccess";
 import { supabase } from "./supabase";
 import { deleteDatabaseProject, deleteDatabaseTransaction, fetchDatabaseData, syncDatabaseData } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
@@ -99,10 +99,7 @@ function normalizeSystems(systems = []) {
     : [...safeSystems, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      ensureSingleBloodBankSystem(
-        withServiceDirectory,
-        defaultSystems.find((system) => isBloodBankProject(system))
-      )
+      withServiceDirectory.filter((system) => !isBloodBankProject(system))
     )
   );
 }
@@ -1785,8 +1782,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               <ServiceDirectoryAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
             ) : selectedIsDemography ? (
               <DemographyAdmin />
-            ) : selectedIsBloodBank ? (
-              <BloodBankAdmin settings={siteSettings} onSaveSettings={onSaveSiteSettings} savingSettings={savingSiteSettings} />
+
             ) : selectedIsMosqueParent ? (
               <MosqueManagementHub
                 systems={systems}

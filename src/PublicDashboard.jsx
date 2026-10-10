@@ -7,10 +7,10 @@ import ProjectIcon, {
   ensureSingleBloodBankSystem,
   isBloodBankProject,
 } from "./ProjectIcon";
-import BloodBankPublic from "./BloodBankPublic";
+
 import SuggestionBox from "./SuggestionBox";
 import ComplaintPortal from "./ComplaintPortal";
-import PublicNotificationCenter from "./PublicNotificationCenter";
+
 import MosqueManagementHub from "./MosqueManagementHub";
 import WorkItemsHub from "./WorkItemsHub";
 import WelfareManagementHub from "./WelfareManagementHub";
@@ -108,7 +108,7 @@ function ensurePublicSystems(systems = []) {
     : [...withCentralFund, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      ensureSingleBloodBankSystem(withServiceDirectory, defaultBloodBankSystem)
+      withServiceDirectory.filter((system) => !isBloodBankProject(system))
     )
   );
 }
@@ -1273,9 +1273,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 </>
               ) : (
                 <>
-                  {isBloodBankProject(selectedSystem) ? (
-                    <BloodBankPublic language={language} managementPhone={settings.bloodBankManagementPhone} />
-                  ) : isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
+                  {isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
                     <>
                       <MoneyCards totals={selectedTotals} language={language} />
                       {isCentralFund(selectedSystem) && projectLedger}
@@ -1440,7 +1438,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
               : (ur ? "عوامی صفحے پر واپس جائیں ↑" : "Back to Public Home ↑")}
           </button>
         </footer>
-        <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+
         <ComplaintPortal language={language} />
         <SuggestionBox language={language} />
       </div>
@@ -1766,7 +1764,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
         <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
-      <PublicNotificationCenter language={language} onOpenBloodRequest={openBloodRequestUpdate} />
+
       <ComplaintPortal language={language} />
       <SuggestionBox language={language} />
     </div>
