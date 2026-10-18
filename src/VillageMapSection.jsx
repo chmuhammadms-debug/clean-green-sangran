@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CircleMarker, LayersControl, MapContainer, Popup, TileLayer, useMap } from "react-leaflet";
+import { CircleMarker, LayersControl, MapContainer, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./VillageMap.css";
 
@@ -73,6 +73,7 @@ function locationDetails(location, ur) {
 
 export default function VillageMapSection({ locations = [], language = "en" }) {
   const ur = language === "ur";
+  const [showPlaceLabels, setShowPlaceLabels] = useState(true);
   const [filter, setFilter] = useState("all");
   const [selectedId, setSelectedId] = useState("");
   const publicLocations = useMemo(() => cleanLocations(locations), [locations]);
@@ -134,13 +135,14 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
                 </LayersControl.BaseLayer>
                 <LayersControl.Overlay checked name={ur ? "جگہوں کے نام" : "Place labels"}>
                   <TileLayer
+                    eventHandlers={{ add: () => setShowPlaceLabels(true), remove: () => setShowPlaceLabels(false) }}
                     attribution="Labels &copy; Esri"
                     url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                   />
                 </LayersControl.Overlay>
               </LayersControl>
               <MapViewport locations={filtered} location={selected} />
-              {filtered.map((location) => {
+              {filtered.map((location, index) => {
                 const meta = CATEGORY_META[location.category] || CATEGORY_META.other;
                 const status = STATUS_LABELS[location.status] || STATUS_LABELS.active;
                 return (
@@ -151,6 +153,15 @@ export default function VillageMapSection({ locations = [], language = "en" }) {
                     key={location.id}
                     eventHandlers={{ click: () => setSelectedId(location.id) }}
                   >
+                    {showPlaceLabels && <Tooltip
+                      permanent
+                      direction={index % 2 === 0 ? "top" : "bottom"}
+                      offset={[0, index % 2 === 0 ? -14 : 14]}
+                      opacity={1}
+                      className="village-place-label"
+                    >
+                      <span dir={ur ? "rtl" : "ltr"}>{locationName(location, ur)}</span>
+                    </Tooltip>}
                     <Popup minWidth={230}>
                       <article className="village-map-popup" dir={ur ? "rtl" : "ltr"}>
                         {location.imageUrl && <img src={location.imageUrl} alt={locationName(location, ur)} />}
