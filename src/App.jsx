@@ -1,3 +1,4 @@
+import VisitorAnalytics from "./VisitorAnalytics";
 import { Component, useEffect, useState } from "react";
 import "./App.css";
 import CentralTools from "./CentralTools";
@@ -1720,6 +1721,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       </header>
 
       <main className="container">
+        {!selectedSystem && <VisitorAnalytics />}
         {selectedSystem ? (
           <AdminProjectBoundary
             key={String(selectedSystem.id || "")}
