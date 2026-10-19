@@ -1,3 +1,4 @@
+import { useVisitorAnalytics } from "./visitorAnalytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./PublicDashboard.css";
 import { fetchPublicDatabaseData } from "./dataService";
@@ -948,6 +949,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
   const totals = useMemo(() => totalsFor(centralFundRecords(transactions)), [transactions]);
   const selectedSystem = systems.find((system) => system.id === selectedSystemId);
+  useVisitorAnalytics(showMembership ? "membership" : showPublicRecords ? "records" : showDonationDetails ? "donation" : selectedEventId ? "event" : selectedSystemId ? "project" : "home");
   const projectProfiles = settings.projectProfilesByProject || {};
   const selectedWorkParentId = workParentId(selectedSystem, projectProfiles);
   const relatedChildIdsFor = (systemOrId) => (
