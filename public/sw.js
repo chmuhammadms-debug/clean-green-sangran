@@ -1,4 +1,4 @@
-const CACHE = "clean-green-sangran-v4";
+const CACHE = "clean-green-sangran-v5";
 self.addEventListener("install", (event) => {
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(["/", "/manifest.webmanifest"])));
@@ -12,6 +12,8 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
+  // Never cache authenticated API/database responses in the shared app cache.
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
   const isAppCode = event.request.mode === "navigate"
     || url.pathname.endsWith(".html")
     || url.pathname.endsWith(".js")
