@@ -1,3 +1,4 @@
+import { readBillDetails, writeBillDetails } from "./billDetails";
 import VisitorAnalytics from "./VisitorAnalytics";
 import { Component, useEffect, useState } from "react";
 import "./App.css";
@@ -126,6 +127,7 @@ function getCurrentMonth() {
 function emptyForm() {
   return {
     person: "",
+    billNumber: "",
     amount: "",
     date: getToday(),
     method: "Cash",
@@ -383,7 +385,7 @@ function RecordsTable({
       <table>
         <thead>
           <tr>
-            <th>Receipt No.</th>
+            <th>Bill / Receipt No.</th>
             <th>Date</th>
             <th>Type</th>
             <th>Name / Purpose</th>
@@ -399,7 +401,7 @@ function RecordsTable({
           {records.map((record) => (
             <tr key={record.id}>
               <td>
-                <strong>{receiptNumber(record)}</strong>
+                <strong>{record.type === "expense" ? readBillDetails(record.details).billNumber || receiptNumber(record) : receiptNumber(record)}</strong>
               </td>
 
               <td>{record.date}</td>
@@ -740,7 +742,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
     : 0;
 
-  const financeSections = isCentralFund(selectedSystem)
+  const financeSections = selectedIsWorkItem
+    ? [["expense", "+ نیا خرچ / بل شامل کریں"], ["ledger", "تمام بل اور اخراجات"], ["daily", "روزانہ خرچ"], ["monthly", "ماہانہ خرچ"]]
+    : isCentralFund(selectedSystem)
     ? [["income", "Add Donation"], ["ledger", "Central Ledger / Report"]]
     : !isMosqueAccountId(selectedSystemId)
       ? [["expense", "Add Expense"], ["daily", "Daily Expenses"], ["monthly", "Monthly Expenses"]]
@@ -1088,7 +1092,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       amount: record.amount,
       date: record.date,
       method: record.method,
-      details: record.details || "",
+      ...(record.type === "expense" ? readBillDetails(record.details) : { details: record.details || "", billNumber: "" }),
       slipName: record.slipName || "",
       slipData: record.slipData || "",
       donorPhoto: record.donorPhoto || "",
@@ -1134,7 +1138,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       amount,
       date: entryForm.date,
       method: entryForm.method,
-      details: entryForm.details.trim(),
+      details: activeSection === "expense" ? writeBillDetails(entryForm.billNumber, entryForm.details) : entryForm.details.trim(),
       slipName: entryForm.slipName,
       slipData: entryForm.slipData,
       donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
@@ -1181,6 +1185,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       console.error(error);
       setDatabaseMessage(`Database save failed: ${error.message}`);
       alert(`Database save failed: ${error.message}`);
+      return;
     }
 
     resetForm();
@@ -1817,15 +1822,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               />
             )}
 
-            {selectedIsWorkItem && <ProjectManager
-              key={selectedSystem.id}
-              scopeId={selectedSystem.id}
-              systems={systems}
-              setSystems={(next) => setSystems(normalizeSystems(next))}
-              settings={siteSettings}
-              onSaveSettings={onSaveSiteSettings}
-              saving={savingSiteSettings}
-            />}
+
 
             <section
               id="project-finance-admin"
@@ -1942,8 +1939,14 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                       ? "Edit Record"
                       : activeSection === "income"
                         ? "Add New Donation"
-                        : "Add New Expense"}
+                        : selectedIsWorkItem ? "نیا خرچ / بل شامل کریں" : "Add New Expense"}
                   </h3>
+
+                  {selectedIsWorkItem && activeSection === "expense" && <p>یہ بل صرف <strong>{selectedSystem.name}</strong> میں شامل ہوگا۔ ہر بل الگ محفوظ کریں۔</p>}
+                  {activeSection === "expense" && <div className="form-field">
+                    <label htmlFor="expense-bill-number">بل نمبر / Bill number (اگر موجود ہو)</label>
+                    <input id="expense-bill-number" value={entryForm.billNumber || ""} onChange={(event) => setEntryForm((current) => ({ ...current, billNumber: event.target.value }))} placeholder="مثلاً 1، 2 یا دکان کے بل کا نمبر" />
+                  </div>}
 
                   {editingRecordId && (
                     <p
@@ -1963,7 +1966,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                     <label>
                       {activeSection === "income"
                         ? "Donor Name"
-                        : "Expense Purpose / Recipient"}
+                        : "دکاندار / وصول کرنے والے کا نام"}
                     </label>
 
                     <input
@@ -2067,7 +2070,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   </div>
 
                   <div className="form-field">
-                    <label>Details</label>
+                    <label>{activeSection === "expense" ? "کس چیز کا خرچ ہے؟ / Expense details" : "Details"}</label>
 
                     <input
                       type="text"
@@ -2079,13 +2082,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                             event.target.value,
                         })
                       }
-                      placeholder="Optional details"
+                      placeholder={activeSection === "expense" ? "مثلاً جالی، سیمنٹ، مزدوری" : "Optional details"}
                     />
                   </div>
 
                   <div className="form-field">
                     <label>
-                      Receipt image or PDF
+                      بل کی تصویر یا PDF / Receipt
                     </label>
 
                     <input
@@ -2137,7 +2140,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                       ? "Update Record"
                       : activeSection === "income"
                         ? "Save Donation"
-                        : "Save Expense"}
+                        : selectedIsWorkItem ? "بل / خرچ محفوظ کریں" : "Save Expense"}
                   </button>
 
                   {editingRecordId && (
@@ -2165,7 +2168,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                     <h3>
                       {activeSection === "income"
                         ? "Complete Donation Record"
-                        : "Complete Expense Record"}
+                        : selectedIsWorkItem ? "اس کام کے تمام بل اور اخراجات" : "Complete Expense Record"}
                     </h3>
                     <button
                       className="primary-button"
@@ -2261,7 +2264,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   style={{ marginTop: "22px" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <h3>{activeSection === "ledger" ? "Complete Work Ledger" : "Report Details"}</h3>
+                    <h3>{activeSection === "ledger" ? "تمام بل اور اخراجات / Complete Work Ledger" : "Report Details"}</h3>
                     <button
                       className="primary-button"
                       type="button"
@@ -2285,6 +2288,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 </section>
               </>
             )}
+
+            {selectedIsWorkItem && <details className="panel" style={{ marginTop: 22 }}><summary style={{ cursor: "pointer", fontWeight: 700 }}>کام کا تعارف، تصاویر اور تکمیل تبدیل کریں</summary><ProjectManager
+              key={selectedSystem.id}
+              scopeId={selectedSystem.id}
+              systems={systems}
+              setSystems={(next) => setSystems(normalizeSystems(next))}
+              settings={siteSettings}
+              onSaveSettings={onSaveSiteSettings}
+              saving={savingSiteSettings}
+            /></details>}
 
             <OptionalProjectPanelBoundary key={selectedSystem.id}>
               {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
