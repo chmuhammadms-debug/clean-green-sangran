@@ -528,6 +528,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   const [password, setPassword] = useState("");
 
   const [systems, setSystems] = useState(loadSystems);
+  const [showGeneralExpenses, setShowGeneralExpenses] = useState(false);
   const [transactions, setTransactions] =
     useState(loadTransactions);
   const [databaseReady, setDatabaseReady] = useState(false);
@@ -693,6 +694,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     (project) => isWorkItem(project, projectProfiles),
     selectedSystem
   );
+  const selectedHasWorkHub = Boolean(selectedSystem) && !selectedIsWorkItem
+    && !isCentralFund(selectedSystem) && !selectedIsMosqueParent
+    && !selectedIsDemography && !selectedIsServiceDirectory && !selectedIsBloodBank;
   const relatedChildIdsFor = (systemOrId) => (
     typeof isMosqueParent === "function" && isMosqueParent(systemOrId)
       ? mosqueChildSystems(safeSystems).map((system) => system.id)
@@ -865,6 +869,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     const normalizedId = String(systemId ?? "").trim();
     if (!normalizedId) return;
 
+    setShowGeneralExpenses(false);
     setSelectedSystemId(normalizedId);
     setActiveSection(isCentralFund(normalizedId) || isMosqueAccountId(normalizedId) ? "income" : "expense");
     setDonorSearch("");
@@ -1083,6 +1088,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   }
 
   function startEditing(record) {
+    setShowGeneralExpenses(true);
     setSelectedSystemId(record.systemId);
     setActiveSection(record.type);
     setEditingRecordId(record.id);
@@ -1824,6 +1830,29 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
 
 
+            {selectedHasWorkHub && <>
+              <WorkItemsHub
+                key={selectedSystem.id}
+                project={selectedSystem}
+                systems={systems}
+                transactions={transactions}
+                profiles={projectProfiles}
+                onOpenSystem={openSystem}
+                onCreateWork={createWork}
+                onDeleteWork={deleteSystemPermanently}
+                language="ur"
+                adminMode
+              />
+              <button type="button" className="secondary-button" onClick={() => setShowGeneralExpenses((current) => !current)}>
+                {showGeneralExpenses ? "عمومی حساب بند کریں" : "پرانا / عمومی حساب دیکھیں"}
+              </button>
+              {showGeneralExpenses && <p>یہ مرکزی منصوبے کا عمومی حساب ہے۔ کسی مخصوص کام کا بل شامل کرنے کے لیے اوپر اسی کام کا کارڈ کھولیں۔</p>}
+            </>}
+            {selectedIsWorkItem && <div className="panel" style={{ marginTop: 18, border: "2px solid #15803d" }}>
+              <h2>{selectedSystem.name} — بل، مزدوری اور اخراجات</h2>
+              <p>نیچے شامل کیا گیا ہر بل اور خرچ صرف اسی کام میں محفوظ ہوگا۔</p>
+            </div>}
+            {(!selectedHasWorkHub || showGeneralExpenses) && <>
             <section
               id="project-finance-admin"
               className="panel"
@@ -2299,6 +2328,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               saving={savingSiteSettings}
             /></details>}
 
+            </>}
+
             <OptionalProjectPanelBoundary key={selectedSystem.id}>
               {selectedSystem.id === "plantation" && <PlantationSurveyAdmin />}
               {(selectedSystem.id === "welfare-filtration" || selectedSystem.id === "welfare-sports") && (
@@ -2332,18 +2363,6 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                       : project.galleryUrls;
                     return Array.isArray(gallery) ? gallery.length : 0;
                   }}
-                  adminMode
-                />
-              )}
-              {!selectedIsWorkItem && (
-                <WorkItemsHub
-                  project={selectedSystem}
-                  systems={systems}
-                  transactions={transactions}
-                  profiles={projectProfiles}
-                  onOpenSystem={openSystem}
-                  onCreateWork={createWork}
-                  onDeleteWork={deleteSystemPermanently}
                   adminMode
                 />
               )}

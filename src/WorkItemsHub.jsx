@@ -109,7 +109,7 @@ export default function WorkItemsHub({
             <input
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              placeholder="مثلاً: ٹائلز کا کام"
+              placeholder="مثلاً: جالی کا کام یا جنازہ گاہ کی مرمت"
               required
             />
           </label>
@@ -119,7 +119,7 @@ export default function WorkItemsHub({
               rows="4"
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-              placeholder="اس کام کی مکمل تفصیل لکھیں"
+              placeholder="صرف کام کا مختصر تعارف؛ بل اور مزدوری اگلے صفحے پر الگ شامل کریں"
             />
           </label>
           <label>
@@ -134,7 +134,7 @@ export default function WorkItemsHub({
             />
           </label>
           <button type="submit" disabled={saving}>
-            {saving ? "Saving..." : "Save New Work"}
+            {saving ? "محفوظ ہو رہا ہے…" : "کام بنائیں اور اس کے بل شامل کریں"}
           </button>
         </form>
       )}
@@ -165,7 +165,7 @@ export default function WorkItemsHub({
               <div className="work-item-card__actions">
                 <button type="button" onClick={() => onOpenSystem(work.id)}>
                   {adminMode
-                    ? (ur ? "کام کا حساب کھولیں" : "Open work ledger")
+                    ? (ur ? "یہ کام کھولیں — بل، مزدوری اور تصاویر" : "Open this work — bills, labour and photos")
                     : (ur ? "کام کا ریکارڈ دیکھیں" : "View work record")}
                 </button>
                 {adminMode && onDeleteWork && (
