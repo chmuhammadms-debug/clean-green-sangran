@@ -1228,11 +1228,28 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <span className="section-kicker">{isDemographyProject(selectedSystem) ? (ur ? "سانگراں مردم شماری" : "SANGRAN POPULATION CENSUS") : isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
             <h1>{systemName(selectedSystem)}</h1>
             <p>{systemDescription(selectedSystem)}</p>
+            {isWorkItem(selectedSystem, projectProfiles) && profileFor(selectedSystem).status === "completed" && <p>✓ {ur ? "مکمل" : "Completed"}</p>}
           </div>
         </section>
 
         <main>
           <section className="content-section project-finance">
+              {!isBloodBankProject(selectedSystem)
+                && !isWelfareChild(selectedSystem)
+                && !isMosqueParent(selectedSystem)
+                && !isWorkItem(selectedSystem, projectProfiles) && (
+                <WorkItemsHub
+                  project={selectedSystem}
+                  systems={systems}
+                  transactions={transactions}
+                  profiles={projectProfiles}
+                  onOpenSystem={setSelectedSystemId}
+                  language={language}
+                  getName={systemName}
+                  getDescription={systemDescription}
+                />
+              )}
+
             <ProjectPhotoReel
               photos={activeGallery}
               projectName={systemName(selectedSystem)}
@@ -1344,21 +1361,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                   </div>
                   {selectedSystem.id === "plantation" && <PlantationSurveyPublic language={language} />}
                 </>
-              )}
-              {!isBloodBankProject(selectedSystem)
-                && !isWelfareChild(selectedSystem)
-                && !isMosqueParent(selectedSystem)
-                && !isWorkItem(selectedSystem, projectProfiles) && (
-                <WorkItemsHub
-                  project={selectedSystem}
-                  systems={systems}
-                  transactions={transactions}
-                  profiles={projectProfiles}
-                  onOpenSystem={setSelectedSystemId}
-                  language={language}
-                  getName={systemName}
-                  getDescription={systemDescription}
-                />
               )}
               {!isBloodBankProject(selectedSystem) && !isWelfareChild(selectedSystem) && !isCentralFund(selectedSystem) && selectedSystem.id !== "cemetery" && (
                 <div className="ledger-card reveal">

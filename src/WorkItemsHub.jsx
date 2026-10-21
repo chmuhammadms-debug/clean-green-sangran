@@ -151,7 +151,10 @@ export default function WorkItemsHub({
                 <span>0{index + 1}</span>
                 <ProjectIcon project={work} size={34} />
               </div>
-              <h3>{getName(work)}</h3>
+              <button type="button" className="work-item-card__open" onClick={() => onOpenSystem(work.id)}>
+                {profiles[work.id]?.coverImage && <img className="work-item-card__cover" src={profiles[work.id].coverImage} alt="" loading="lazy" />}
+                <h3>{getName(work)}</h3>
+              </button>
               <p>{getDescription(work) || (ur ? "اس کام کی تفصیل ابھی شامل نہیں کی گئی۔" : "No work details added yet.")}</p>
               <div className="work-item-card__stats">
                 <span><small>{ur ? "بجٹ" : "Budget"}</small><b>Rs. {budget.toLocaleString()}</b></span>
@@ -178,6 +181,7 @@ export default function WorkItemsHub({
                   </button>
                 )}
               </div>
+              {profiles[work.id]?.status === "completed" && <p className="work-item-card__completed">✓ {ur ? "مکمل" : "Completed"}</p>}
             </article>
           );
         })}

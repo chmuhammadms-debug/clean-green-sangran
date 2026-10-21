@@ -6,9 +6,9 @@ import { isMosqueChild } from "./mosqueManagement";
 import { isWelfareChild } from "./welfareManagement";
 import { isWorkItem } from "./workItems";
 
-function buildItems(systems = [], settings = {}) {
+function buildItems(systems = [], settings = {}, scopeId = null) {
   const profiles = settings.projectProfilesByProject || {};
-  return systems.filter((system) => !isWorkItem(system, profiles)).map((system) => {
+  return systems.filter((system) => scopeId ? system.id === scopeId : !isWorkItem(system, profiles)).map((system) => {
     const profile = profiles[system.id] || {};
     const legacyUrls = Array.isArray(profile.galleryUrls) && profile.galleryUrls.length
       ? profile.galleryUrls
@@ -45,14 +45,14 @@ function buildItems(systems = [], settings = {}) {
   });
 }
 
-export default function ProjectManager({ systems, setSystems, settings, onSaveSettings, saving }) {
-  const [items, setItems] = useState(() => buildItems(systems, settings));
+export default function ProjectManager({ systems, setSystems, settings, onSaveSettings, saving, scopeId = null }) {
+  const [items, setItems] = useState(() => buildItems(systems, settings, scopeId));
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState({});
 
   useEffect(() => {
-    setItems(buildItems(systems, settings));
-  }, [systems, settings]);
+    setItems(buildItems(systems, settings, scopeId));
+  }, [systems, settings, scopeId]);
 
   const updateItem = (id, key, value) => setItems((current) => current.map((item) => (
     item.id === id ? { ...item, [key]: value } : item
@@ -216,8 +216,9 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     event.preventDefault();
     setMessage("");
     const cleanItems = items.filter((item) => item.nameEn.trim());
-    const workSystems = systems.filter((system) => isWorkItem(system, settings.projectProfilesByProject || {}));
+    const workSystems = systems.filter((system) => scopeId ? system.id !== scopeId : isWorkItem(system, settings.projectProfilesByProject || {}));
     const nextSystems = [...cleanItems.map((item) => ({
+      ...systems.find((system) => system.id === item.id),
       id: item.id,
       name: item.nameEn.trim(),
       description: item.descriptionEn.trim() || "Community management system",
@@ -227,6 +228,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     const projectProfilesByProject = cleanItems.reduce((profiles, item) => ({
       ...profiles,
       [item.id]: {
+        ...(profiles[item.id] || {}),
         nameEn: item.nameEn.trim(),
         nameUr: item.nameUr.trim(),
         descriptionEn: item.descriptionEn.trim(),
@@ -252,8 +254,8 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
     }), { ...(settings.projectProfilesByProject || {}) });
 
     try {
-      setSystems(nextSystems);
       await onSaveSettings({ ...settings, projectProfilesByProject });
+      setSystems(nextSystems);
       setMessage("تمام منصوبوں کی تبدیلیاں محفوظ اور Publish ہوگئی ہیں۔");
     } catch (error) {
       setMessage(`محفوظ نہیں ہوسکا: ${error.message}`);
@@ -263,10 +265,10 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
   return (
     <section className="project-manager panel" id="project-manager">
       <div className="project-manager__heading">
-        <div><span>ADMIN PROJECT CONTROL</span><h2>Project Manager</h2></div>
-        <button type="button" onClick={addProject}>+ نیا منصوبہ</button>
+        <div><span>ADMIN PROJECT CONTROL</span><h2>{scopeId ? "کام کی تفصیلات، تصاویر اور تکمیل" : "Project Manager"}</h2></div>
+        {!scopeId && <button type="button" onClick={addProject}>+ نیا منصوبہ</button>}
       </div>
-      <p className="project-manager__intro">یہاں بڑے منصوبوں کی تفصیل تبدیل کریں۔ کسی منصوبے کے اندر نیا کام بنانے اور اس کا الگ حساب رکھنے کے لیے وہ منصوبہ کھول کر “+ نیا کام” استعمال کریں۔</p>
+      {!scopeId && <p className="project-manager__intro">یہاں بڑے منصوبوں کی تفصیل تبدیل کریں۔ کسی منصوبے کے اندر نیا کام بنانے اور اس کا الگ حساب رکھنے کے لیے وہ منصوبہ کھول کر “+ نیا کام” استعمال کریں۔</p>}
 
       <form onSubmit={saveProjects}>
         <div className="project-manager__list">
@@ -286,6 +288,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 <label><span>اردو تعارف</span><textarea dir="rtl" rows="3" value={item.descriptionUr} onChange={(event) => updateItem(item.id, "descriptionUr", event.target.value)} /></label>
 
                 <div className="project-editor__wide project-progress-editor">
+                  {scopeId ? <label><input type="checkbox" checked={item.status === "completed"} onChange={(event) => updateItem(item.id, "status", event.target.checked ? "completed" : "in-progress")} /> کام مکمل ہوگیا / Completed</label> : <>
                   <div className="project-progress-editor__heading">
                     <div><span>PROJECT PROGRESS & MASTER PLAN</span><strong>منصوبے کی پیش رفت اور ماسٹر پلان</strong></div>
                     <b>{Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%</b>
@@ -300,6 +303,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                     <label className="project-progress-editor__wide"><span>Master Plan / Future Goal (English)</span><textarea rows="3" value={item.planEn} onChange={(event) => updateItem(item.id, "planEn", event.target.value)} placeholder="What will this project achieve next?" /></label>
                     <label className="project-progress-editor__wide"><span>ماسٹر پلان / مستقبل کا ہدف (اردو)</span><textarea dir="rtl" rows="3" value={item.planUr} onChange={(event) => updateItem(item.id, "planUr", event.target.value)} placeholder="اس منصوبے کا اگلا ہدف کیا ہے؟" /></label>
                   </div>
+                  </>}
                 </div>
 
                 <div className="project-editor__wide project-media-control">

@@ -1817,6 +1817,16 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               />
             )}
 
+            {selectedIsWorkItem && <ProjectManager
+              key={selectedSystem.id}
+              scopeId={selectedSystem.id}
+              systems={systems}
+              setSystems={(next) => setSystems(normalizeSystems(next))}
+              settings={siteSettings}
+              onSaveSettings={onSaveSiteSettings}
+              saving={savingSiteSettings}
+            />}
+
             <section
               id="project-finance-admin"
               className="panel"
