@@ -1,3 +1,4 @@
+import { receiptAttachments } from "./receiptAttachments";
 import { useVisitorAnalytics } from "./visitorAnalytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./PublicDashboard.css";
@@ -652,13 +653,11 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
               <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
               <td>{record.method}</td>
               <td>
-                {record.slipData ? (
-                  <button type="button" className="public-slip-button" onClick={() => setOpenSlip(record)}>
-                    {language === "ur" ? "رسید دیکھیں" : "View Slip"}
+                {receiptAttachments(record).length ? receiptAttachments(record).map((file) => (
+                  <button key={file.kind} type="button" className="public-slip-button" style={{ display: "block", marginBottom: 5 }} onClick={() => setOpenSlip({ ...record, slipData: file.url, slipName: file.name, attachmentKind: file.kind })}>
+                    {file.kind === "payment" ? (language === "ur" ? "ادائیگی کی سلپ" : "Payment proof") : (language === "ur" ? "بل / رسید دیکھیں" : "View bill / receipt")}
                   </button>
-                ) : (
-                  <span className="public-slip-empty">—</span>
-                )}
+                )) : <span className="public-slip-empty">—</span>}
               </td>
             </tr>
             );
@@ -671,7 +670,7 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
         <button type="button" className="slip-viewer__backdrop" onClick={() => setOpenSlip(null)} aria-label="Close slip" />
         <div className="slip-viewer__panel">
           <div className="slip-viewer__header">
-            <div><strong>{language === "ur" ? "عطیہ کی رسید" : "Donation Slip"}</strong><small>{openSlip.slipName || openSlip.person}</small></div>
+            <div><strong>{openSlip.attachmentKind === "payment" ? (language === "ur" ? "ادائیگی کی سلپ" : "Payment proof") : (language === "ur" ? "بل / رسید" : "Bill / Receipt")}</strong><small>{openSlip.slipName || openSlip.person}</small></div>
             <button type="button" onClick={() => setOpenSlip(null)} aria-label="Close">×</button>
           </div>
           <div className="slip-viewer__content">

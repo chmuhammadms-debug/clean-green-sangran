@@ -1,3 +1,4 @@
+import { receiptAttachments, receiptForm, packReceiptForm } from "./receiptAttachments";
 import { readBillDetails, writeBillDetails } from "./billDetails";
 import VisitorAnalytics from "./VisitorAnalytics";
 import { Component, useEffect, useState } from "react";
@@ -134,6 +135,8 @@ function emptyForm() {
     details: "",
     slipName: "",
     slipData: "",
+    paymentSlipName: "",
+    paymentSlipData: "",
     donorPhoto: "",
     donorPhotoName: "",
   };
@@ -444,26 +447,12 @@ function RecordsTable({
               <td>{record.details || "—"}</td>
 
               <td>
-                {record.slipData ? (
-                  <a
-                    href={record.slipData}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-block",
-                      padding: "7px 10px",
-                      color: "white",
-                      background: "#2563eb",
-                      borderRadius: "6px",
-                      textDecoration: "none",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    View File
+                {receiptAttachments(record).length ? receiptAttachments(record).map((file) => (
+                  <a key={file.kind} href={file.url} target="_blank" rel="noreferrer" download={file.name}
+                    style={{ display: "block", padding: "8px", margin: "4px 0", background: "#2563eb", color: "white", borderRadius: 6 }}>
+                    {file.kind === "payment" ? "ادائیگی کی سلپ" : "اصل بل / رسید"}
                   </a>
-                ) : (
-                  "—"
-                )}
+                )) : "—"}
               </td>
 
               <td>
@@ -547,6 +536,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
   const [fileInputKey, setFileInputKey] = useState(0);
   const [donorPhotoInputKey, setDonorPhotoInputKey] = useState(0);
   const [uploadingDonorPhoto, setUploadingDonorPhoto] = useState(false);
+  const [readingReceipts, setReadingReceipts] = useState(0);
   const [donorSearch, setDonorSearch] = useState("");
   const [dailyDate, setDailyDate] = useState(getToday());
   const [monthlyDate, setMonthlyDate] =
@@ -1008,7 +998,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     ]));
   }
 
-  function handleFileChange(event) {
+  function handleFileChange(event, kind = "bill") {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -1024,13 +1014,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       return;
     }
 
+    setReadingReceipts((count) => count + 1);
     const reader = new FileReader();
+    reader.onloadend = () => setReadingReceipts((count) => Math.max(0, count - 1));
 
     reader.onload = () => {
       setEntryForm((currentForm) => ({
         ...currentForm,
-        slipName: file.name,
-        slipData: reader.result,
+        [kind === "payment" ? "paymentSlipName" : "slipName"]: file.name,
+        [kind === "payment" ? "paymentSlipData" : "slipData"]: reader.result,
       }));
     };
 
@@ -1099,8 +1091,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       date: record.date,
       method: record.method,
       ...(record.type === "expense" ? readBillDetails(record.details) : { details: record.details || "", billNumber: "" }),
-      slipName: record.slipName || "",
-      slipData: record.slipData || "",
+      ...receiptForm(record),
       donorPhoto: record.donorPhoto || "",
       donorPhotoName: record.donorPhotoName || "",
     });
@@ -1124,6 +1115,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
   async function saveRecord(event) {
     event.preventDefault();
+    if (readingReceipts) return;
 
     const amount = Number(entryForm.amount);
 
@@ -1145,8 +1137,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       date: entryForm.date,
       method: entryForm.method,
       details: activeSection === "expense" ? writeBillDetails(entryForm.billNumber, entryForm.details) : entryForm.details.trim(),
-      slipName: entryForm.slipName,
-      slipData: entryForm.slipData,
+      ...packReceiptForm(entryForm),
       donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
       donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
     };
@@ -1254,13 +1245,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
         ? "Received From"
         : "Paid To / Purpose";
 
-    const attachmentSource = String(record.slipData || "");
-    const attachmentName = String(record.slipName || "");
-    const attachmentIsImage = Boolean(attachmentSource) && (
-      /^data:image\//i.test(attachmentSource) ||
-      /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(attachmentSource) ||
-      /\.(?:avif|gif|jpe?g|png|webp)$/i.test(attachmentName)
-    );
+    const attachments = receiptAttachments(record);
 
     printWindow.document.write(`
       <!doctype html>
@@ -1508,12 +1493,12 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               </div>
             </div>
 
-            ${attachmentIsImage ? `
-              <div class="attachment-proof">
-                <h3>Attached Original Receipt / اصل رسید</h3>
-                <img src="${escapeHtml(attachmentSource)}" alt="${escapeHtml(attachmentName || "Attached receipt")}" />
-              </div>
-            ` : ""}
+            ${attachments.map((file) => {
+              const title = file.kind === "payment" ? "Payment proof / ادائیگی کی سلپ" : "Original bill / اصل بل";
+              const isImage = /^data:image\//i.test(file.url) || /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(file.url) || /\.(?:avif|gif|jpe?g|png|webp)$/i.test(file.name);
+              return `<div class="attachment-proof"><h3>${title}</h3><p>${escapeHtml(file.name)}</p>${isImage ? `<img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name)}" />` : `<a href="${escapeHtml(file.url)}" download="${escapeHtml(file.name)}">Open attached PDF</a>`}</div>`;
+            }).join("")}
+
 
             <div class="signatures">
               <div class="signature">
@@ -2158,12 +2143,25 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                     )}
                   </div>
 
+                  {activeSection === "expense" && <div className="form-field">
+                    <label htmlFor="payment-proof">ادائیگی کی سلپ — بینک / ایزی پیسہ / جاز کیش (اختیاری)</label>
+                    <input id="payment-proof" key={`payment-${fileInputKey}`} type="file" accept="image/*,.pdf" onChange={(event) => handleFileChange(event, "payment")} />
+                    <small>اصل بل کے ساتھ ادائیگی کا ثبوت بھی اسی اندراج میں محفوظ ہوگا۔ تصویر یا PDF، ہر فائل زیادہ سے زیادہ 1.5 MB۔</small>
+                    {entryForm.paymentSlipData && <div style={{ marginTop: 8 }}>
+                      <a href={entryForm.paymentSlipData} download={entryForm.paymentSlipName} target="_blank" rel="noreferrer">{entryForm.paymentSlipName}</a>
+                      <button type="button" onClick={() => {
+                        setEntryForm((current) => ({ ...current, paymentSlipName: "", paymentSlipData: "" }));
+                        setFileInputKey((current) => current + 1);
+                      }}>ادائیگی کی سلپ ہٹائیں</button>
+                    </div>}
+                  </div>}
+
                   <button
                     className="primary-button"
                     type="submit"
-                    disabled={uploadingDonorPhoto}
+                    disabled={uploadingDonorPhoto || readingReceipts > 0}
                   >
-                    {uploadingDonorPhoto
+                    {readingReceipts ? "فائل تیار ہو رہی ہے…" : uploadingDonorPhoto
                       ? "Uploading Donor Photo..."
                       : editingRecordId
                       ? "Update Record"

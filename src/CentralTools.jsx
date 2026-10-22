@@ -1,3 +1,4 @@
+import { receiptAttachments } from "./receiptAttachments";
 import { useRef, useState } from "react";
 import ProjectIcon from "./ProjectIcon";
 
@@ -313,30 +314,7 @@ function CentralTools({
                           <td>{record.method}</td>
 
                           <td>
-                            {record.slipData ? (
-                              <a
-                                href={record.slipData}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                  display:
-                                    "inline-block",
-                                  padding:
-                                    "7px 10px",
-                                  color: "white",
-                                  background:
-                                    "#2563eb",
-                                  borderRadius:
-                                    "6px",
-                                  textDecoration:
-                                    "none",
-                                }}
-                              >
-                                View
-                              </a>
-                            ) : (
-                              "—"
-                            )}
+                            {receiptAttachments(record).length ? receiptAttachments(record).map((file) => <a key={file.kind} href={file.url} download={file.name} target="_blank" rel="noreferrer" style={{ display: "block", padding: 8 }}>{file.kind === "payment" ? "Payment proof" : "Bill / Receipt"}</a>) : "—"}
                           </td>
 
                           <td>
