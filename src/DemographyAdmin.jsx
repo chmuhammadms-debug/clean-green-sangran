@@ -11,7 +11,7 @@ const blank = {
   household_no: "", household_head: "", father_name: "", phone: "", mohalla: "",
   address: "", adult_men: 0, adult_women: 0, boys: 0, girls: 0,
   senior_citizens: 0, persons_with_disabilities: 0, registered_voters: 0,
-  overseas_residents: 0, notes: "", is_verified: true,
+  overseas_residents: 0, notes: "", is_verified: false,
 };
 const numeric = new Set([
   "adult_men", "adult_women", "boys", "girls", "senior_citizens",
@@ -99,9 +99,9 @@ export default function DemographyAdmin() {
     <section className="census-admin">
       <div className="census-admin-title">
         <div>
-          <span>PROJECT 6 · PRIVATE ADMIN</span>
+          <span>CENSUS · PRIVATE ADMIN</span>
           <h2>👥 Sangran Population Census</h2>
-          <p>Add one record per household. Names and phone numbers remain private; the public page receives totals only.</p>
+          <p>Add one record per household. Names, phone numbers, house numbers and addresses remain private; the public page receives totals only.</p>
         </div>
         <div className="census-admin-live">
           <b>{num(summary?.households)}</b><small>Households</small>
@@ -112,14 +112,17 @@ export default function DemographyAdmin() {
       <form className="census-form" onSubmit={submit}>
         <h3>{form.id ? "Edit Household" : "Add Household"}</h3>
         <div className="census-form-grid">
-          <label>Household No.<input name="household_no" value={form.household_no || ""} onChange={change} placeholder="SGR-001" /></label>
+          <label>Household No. / Ghar number<input name="household_no" value={form.household_no || ""} onChange={change} placeholder="CGS-W-2-15" /></label>
           <label>Head of Household *<input required name="household_head" value={form.household_head} onChange={change} /></label>
           <label>Father Name<input name="father_name" value={form.father_name || ""} onChange={change} /></label>
           <label>Phone<input name="phone" value={form.phone || ""} onChange={change} inputMode="tel" /></label>
           <label>Mohalla / Area *<input required name="mohalla" value={form.mohalla} onChange={change} placeholder="Mohalla name" /></label>
           <label className="census-wide">Address<input name="address" value={form.address || ""} onChange={change} /></label>
         </div>
-        <h4>Family Members</h4>
+        <h4>Family Members / گھر کے افراد</h4>
+        <p>کل آبادی = بالغ مرد + بالغ خواتین + بچے۔ بزرگ، ووٹرز اور بیرونِ ملک افراد کو انہی افراد میں شمار کریں؛ دوبارہ جمع نہ کریں۔</p>
+        <p>Total population = adult men + adult women + boys + girls. Seniors, voters and overseas residents are subsets of these people, not additional members.</p>
+        <p><strong>Household population: {num(totalPeople(form))}</strong></p>
         <div className="census-number-grid">
           <label>Adult Men<input type="number" min="0" name="adult_men" value={form.adult_men} onChange={change} /></label>
           <label>Adult Women<input type="number" min="0" name="adult_women" value={form.adult_women} onChange={change} /></label>

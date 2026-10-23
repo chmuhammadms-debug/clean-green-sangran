@@ -36,7 +36,7 @@ const EMPTY_SUMMARY = {
 export async function fetchPublicCensusSummary() {
   const { data, error } = await supabase
     .from("census_public_summary")
-    .select("*")
+    .select("id,households,total_population,adult_men,adult_women,children,senior_citizens,registered_voters,overseas_residents,updated_at")
     .eq("id", "sangran")
     .maybeSingle();
   if (error) throw error;

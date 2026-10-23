@@ -31,14 +31,13 @@ export default function DemographyPublic({ language = "en" }) {
     ["🌍", ur ? "بیرونِ ملک افراد" : "Overseas Residents", summary.overseas_residents],
   ];
 
-  const areas = Array.isArray(summary.mohalla_breakdown) ? summary.mohalla_breakdown : [];
   const empty = Number(summary.households || 0) === 0;
 
   return (
     <section className="census-public" dir={ur ? "rtl" : "ltr"}>
       <div className="census-heading">
         <div>
-          <span className="census-kicker">{ur ? "سانگراں مردم شماری" : "SANGRAN POPULATION CENSUS"}</span>
+          <span className="census-kicker">{ur ? "سنگراں مردم شماری" : "SANGRAN POPULATION CENSUS"}</span>
           <h2>{ur ? "آبادی اور گھرانوں کا خلاصہ" : "Population & Household Overview"}</h2>
           <p>{ur ? "تصدیق شدہ گھرانوں سے خودکار طور پر تیار کردہ مجموعی اعداد۔" : "Live aggregate statistics generated from verified household records."}</p>
         </div>
@@ -59,24 +58,11 @@ export default function DemographyPublic({ language = "en" }) {
         <div className="census-empty">
           <span>📋</span>
           <h3>{ur ? "مردم شماری کا نظام تیار ہے" : "Population census system is ready"}</h3>
-          <p>{ur ? "ایڈمن پینل سے گھرانوں کا ریکارڈ شامل کریں؛ یہاں صرف مجموعی تعداد نظر آئے گی۔" : "Add household records from the admin panel. Only aggregate totals will appear here."}</p>
+          <p>{ur ? "کمیٹی کی مردم شماری اور تصدیق کے بعد یہاں گھرانوں کی مجموعی تعداد نظر آئے گی۔" : "Verified household totals will appear here after the committee completes the census."}</p>
         </div>
       ) : null}
 
-      {areas.length > 0 ? (
-        <div className="census-area-block">
-          <h3>{ur ? "محلہ وار خلاصہ" : "Area-wise Summary"}</h3>
-          <div className="census-area-grid">
-            {areas.map((area) => (
-              <div className="census-area-card" key={area.mohalla}>
-                <strong>{area.mohalla || (ur ? "دیگر" : "Other")}</strong>
-                <span>{n(area.households)} {ur ? "گھرانے" : "households"}</span>
-                <b>{n(area.population)} {ur ? "افراد" : "people"}</b>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+
     </section>
   );
 }
