@@ -1,3 +1,4 @@
+import { isCemeterySalary } from "./cemeterySalary";
 import { useState } from "react";
 import { recordsForProject, workItemsFor } from "./workItems";
 import "./WorkItemsHub.css";
@@ -20,7 +21,7 @@ export default function WorkItemsHub({
   onCreateWork,
   onDeleteWork,
   language = "en",
-  getName = (system) => system.name,
+  getName = (system) => language === "ur" ? system.nameUr || system.name : system.name,
   getDescription = (system) => system.description,
   adminMode = false,
 }) {
@@ -136,7 +137,7 @@ export default function WorkItemsHub({
                 <span className="work-item-compact__amount">{ur ? "کل خرچ" : "Total expenses"}: Rs. {totals.expenses.toLocaleString()}</span>
                 <span aria-hidden="true">{ur ? "←" : "→"}</span>
               </button>
-                {adminMode && onDeleteWork && (
+                {adminMode && onDeleteWork && !isCemeterySalary(work) && (
                   <button
                     type="button"
                     className="work-item-compact__delete"

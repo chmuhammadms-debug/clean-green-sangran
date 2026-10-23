@@ -1,3 +1,4 @@
+import { ensureCemeterySalary } from "./cemeterySalary";
 import { receiptAttachments } from "./receiptAttachments";
 import { useVisitorAnalytics } from "./visitorAnalytics";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -110,7 +111,7 @@ function ensurePublicSystems(systems = []) {
     : [...withCentralFund, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      withServiceDirectory.filter((system) => !isBloodBankProject(system))
+      ensureCemeterySalary(withServiceDirectory.filter((system) => !isBloodBankProject(system)))
     )
   );
 }

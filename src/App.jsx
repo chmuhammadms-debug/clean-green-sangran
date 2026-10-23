@@ -1,3 +1,4 @@
+import { ensureCemeterySalary, isCemeterySalary, readSalaryDetails, writeSalaryDetails } from "./cemeterySalary";
 import { receiptAttachments, receiptForm, packReceiptForm } from "./receiptAttachments";
 import { readBillDetails, writeBillDetails } from "./billDetails";
 import VisitorAnalytics from "./VisitorAnalytics";
@@ -102,7 +103,7 @@ function normalizeSystems(systems = []) {
     : [...safeSystems, serviceDirectorySystem];
   return ensureWelfareSystems(
     ensureMosqueSystems(
-      withServiceDirectory.filter((system) => !isBloodBankProject(system))
+      ensureCemeterySalary(withServiceDirectory.filter((system) => !isBloodBankProject(system)))
     )
   );
 }
@@ -129,6 +130,7 @@ function emptyForm() {
   return {
     person: "",
     billNumber: "",
+    salaryMonth: getCurrentMonth(),
     amount: "",
     date: getToday(),
     method: "Cash",
@@ -407,7 +409,7 @@ function RecordsTable({
                 <strong>{record.type === "expense" ? readBillDetails(record.details).billNumber || receiptNumber(record) : receiptNumber(record)}</strong>
               </td>
 
-              <td>{record.date}</td>
+              <td>{record.date}{isCemeterySalary(record.systemId) && <small style={{ display: "block" }}>تنخواہ کا مہینہ: {readSalaryDetails(record.details).salaryMonth || "—"}</small>}</td>
 
               <td>
                 <strong
@@ -736,7 +738,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     ? Math.max(0, Number(projectProfiles[selectedSystemId]?.budget) || 0)
     : 0;
 
-  const financeSections = selectedIsWorkItem
+  const selectedIsSalary = isCemeterySalary(selectedSystem);
+  const financeSections = selectedIsSalary
+    ? [["expense", "+ ماہانہ تنخواہ شامل کریں"], ["ledger", "تنخواہ کا مکمل ریکارڈ"]]
+    : selectedIsWorkItem
     ? [["expense", "+ نیا خرچ / بل شامل کریں"], ["ledger", "تمام بل اور اخراجات"], ["daily", "روزانہ خرچ"], ["monthly", "ماہانہ خرچ"]]
     : isCentralFund(selectedSystem)
     ? [["income", "Add Donation"], ["ledger", "Central Ledger / Report"]]
@@ -1091,6 +1096,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       date: record.date,
       method: record.method,
       ...(record.type === "expense" ? readBillDetails(record.details) : { details: record.details || "", billNumber: "" }),
+      ...(isCemeterySalary(record.systemId) ? readSalaryDetails(record.details) : { salaryMonth: getCurrentMonth() }),
       ...receiptForm(record),
       donorPhoto: record.donorPhoto || "",
       donorPhotoName: record.donorPhotoName || "",
@@ -1127,6 +1133,21 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       return;
     }
 
+    if (selectedIsSalary) {
+      if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(entryForm.salaryMonth || "")) {
+        alert("تنخواہ کا مہینہ منتخب کریں۔");
+        return;
+      }
+      const duplicate = transactions.find((record) => record.id !== editingRecordId
+        && record.systemId === selectedSystemId && record.type === "expense"
+        && String(record.person || "").trim().toLowerCase() === entryForm.person.trim().toLowerCase()
+        && readSalaryDetails(record.details).salaryMonth === entryForm.salaryMonth);
+      if (duplicate) {
+        alert("اس ملازم کی اس مہینے کی تنخواہ پہلے سے درج ہے۔ اسی اندراج کو Edit کرکے درست کریں۔");
+        return;
+      }
+    }
+
     const recordData = {
       systemId: activeSection === "income" && !isMosqueAccountId(selectedSystemId)
         ? CENTRAL_FUND_ID
@@ -1136,7 +1157,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       amount,
       date: entryForm.date,
       method: entryForm.method,
-      details: activeSection === "expense" ? writeBillDetails(entryForm.billNumber, entryForm.details) : entryForm.details.trim(),
+      details: selectedIsSalary ? writeSalaryDetails(entryForm.salaryMonth, entryForm.details) : activeSection === "expense" ? writeBillDetails(entryForm.billNumber, entryForm.details) : entryForm.details.trim(),
       ...packReceiptForm(entryForm),
       donorPhoto: activeSection === "income" ? entryForm.donorPhoto : "",
       donorPhotoName: activeSection === "income" ? entryForm.donorPhotoName : "",
@@ -1834,8 +1855,8 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               {showGeneralExpenses && <p>یہ مرکزی منصوبے کا عمومی حساب ہے۔ کسی مخصوص کام کا بل شامل کرنے کے لیے اوپر اسی کام کا کارڈ کھولیں۔</p>}
             </>}
             {selectedIsWorkItem && <div className="panel" style={{ marginTop: 18, border: "2px solid #15803d" }}>
-              <h2>{selectedSystem.name} — بل، مزدوری اور اخراجات</h2>
-              <p>نیچے شامل کیا گیا ہر بل اور خرچ صرف اسی کام میں محفوظ ہوگا۔</p>
+              <h2>{selectedIsSalary ? "ملازم کی تنخواہ — ماہانہ ریکارڈ" : `${selectedSystem.name} — بل، مزدوری اور اخراجات`}</h2>
+              <p>{selectedIsSalary ? "ہر مہینے کی تنخواہ الگ درج کریں۔ تنخواہ کا مہینہ اور ادائیگی کی تاریخ دونوں محفوظ ہوں گے۔" : "نیچے شامل کیا گیا ہر بل اور خرچ صرف اسی کام میں محفوظ ہوگا۔"}</p>
             </div>}
             {(!selectedHasWorkHub || showGeneralExpenses) && <>
             <section
@@ -1953,11 +1974,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                       ? "Edit Record"
                       : activeSection === "income"
                         ? "Add New Donation"
-                        : selectedIsWorkItem ? "نیا خرچ / بل شامل کریں" : "Add New Expense"}
+                        : selectedIsSalary ? "ماہانہ تنخواہ شامل کریں" : selectedIsWorkItem ? "نیا خرچ / بل شامل کریں" : "Add New Expense"}
                   </h3>
 
-                  {selectedIsWorkItem && activeSection === "expense" && <p>یہ بل صرف <strong>{selectedSystem.name}</strong> میں شامل ہوگا۔ ہر بل الگ محفوظ کریں۔</p>}
-                  {activeSection === "expense" && <div className="form-field">
+                  {selectedIsWorkItem && !selectedIsSalary && activeSection === "expense" && <p>یہ بل صرف <strong>{selectedSystem.name}</strong> میں شامل ہوگا۔ ہر بل الگ محفوظ کریں۔</p>}
+                  {selectedIsSalary && <div className="form-field">
+                    <label htmlFor="salary-month">کس مہینے کی تنخواہ؟</label>
+                    <input id="salary-month" type="month" value={entryForm.salaryMonth || ""} onChange={(event) => setEntryForm((current) => ({ ...current, salaryMonth: event.target.value }))} required />
+                  </div>}
+                  {activeSection === "expense" && !selectedIsSalary && <div className="form-field">
                     <label htmlFor="expense-bill-number">بل نمبر / Bill number (اگر موجود ہو)</label>
                     <input id="expense-bill-number" value={entryForm.billNumber || ""} onChange={(event) => setEntryForm((current) => ({ ...current, billNumber: event.target.value }))} placeholder="مثلاً 1، 2 یا دکان کے بل کا نمبر" />
                   </div>}
@@ -1980,7 +2005,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                     <label>
                       {activeSection === "income"
                         ? "Donor Name"
-                        : "دکاندار / وصول کرنے والے کا نام"}
+                        : selectedIsSalary ? "ملازم کا نام" : "دکاندار / وصول کرنے والے کا نام"}
                     </label>
 
                     <input
@@ -2029,7 +2054,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   )}
 
                   <div className="form-field">
-                    <label>Amount</label>
+                    <label>{selectedIsSalary ? "ادا کی گئی تنخواہ (روپے)" : "Amount"}</label>
 
                     <input
                       type="number"
@@ -2047,7 +2072,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   </div>
 
                   <div className="form-field">
-                    <label>Date</label>
+                    <label>{selectedIsSalary ? "ادائیگی کی تاریخ" : "Date"}</label>
 
                     <input
                       type="date"
@@ -2084,7 +2109,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   </div>
 
                   <div className="form-field">
-                    <label>{activeSection === "expense" ? "کس چیز کا خرچ ہے؟ / Expense details" : "Details"}</label>
+                    <label>{selectedIsSalary ? "اضافی تفصیل (اختیاری)" : activeSection === "expense" ? "کس چیز کا خرچ ہے؟ / Expense details" : "Details"}</label>
 
                     <input
                       type="text"
@@ -2096,13 +2121,13 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                             event.target.value,
                         })
                       }
-                      placeholder={activeSection === "expense" ? "مثلاً جالی، سیمنٹ، مزدوری" : "Optional details"}
+                      placeholder={selectedIsSalary ? "مثلاً صفائی اور دیکھ بھال کی ماہانہ تنخواہ" : activeSection === "expense" ? "مثلاً جالی، سیمنٹ، مزدوری" : "Optional details"}
                     />
                   </div>
 
                   <div className="form-field">
                     <label>
-                      بل کی تصویر یا PDF / Receipt
+                      {selectedIsSalary ? "تنخواہ کی رسید / دستخط شدہ وصولی (اختیاری)" : "بل کی تصویر یا PDF / Receipt"}
                     </label>
 
                     <input
@@ -2167,7 +2192,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                       ? "Update Record"
                       : activeSection === "income"
                         ? "Save Donation"
-                        : selectedIsWorkItem ? "بل / خرچ محفوظ کریں" : "Save Expense"}
+                        : selectedIsSalary ? "تنخواہ محفوظ کریں" : selectedIsWorkItem ? "بل / خرچ محفوظ کریں" : "Save Expense"}
                   </button>
 
                   {editingRecordId && (
@@ -2195,7 +2220,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                     <h3>
                       {activeSection === "income"
                         ? "Complete Donation Record"
-                        : selectedIsWorkItem ? "اس کام کے تمام بل اور اخراجات" : "Complete Expense Record"}
+                        : selectedIsSalary ? "ملازم کی تنخواہ کا مکمل ریکارڈ" : selectedIsWorkItem ? "اس کام کے تمام بل اور اخراجات" : "Complete Expense Record"}
                     </h3>
                     <button
                       className="primary-button"
@@ -2316,7 +2341,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               </>
             )}
 
-            {selectedIsWorkItem && <details className="panel" style={{ marginTop: 22 }}><summary style={{ cursor: "pointer", fontWeight: 700 }}>کام کا تعارف، تصاویر اور تکمیل تبدیل کریں</summary><ProjectManager
+            {selectedIsWorkItem && !selectedIsSalary && <details className="panel" style={{ marginTop: 22 }}><summary style={{ cursor: "pointer", fontWeight: 700 }}>کام کا تعارف، تصاویر اور تکمیل تبدیل کریں</summary><ProjectManager
               key={selectedSystem.id}
               scopeId={selectedSystem.id}
               systems={systems}
