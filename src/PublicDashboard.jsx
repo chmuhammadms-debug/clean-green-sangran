@@ -1,3 +1,4 @@
+import { readPublicRoute, writePublicRoute } from "./publicRoutes";
 import SalaryAccountButton from "./SalaryAccountButton";
 import { ensureCemeterySalary, isCemeterySalary, readSalaryDetails } from "./cemeterySalary";
 import { receiptAttachments } from "./receiptAttachments";
@@ -360,7 +361,7 @@ function totalsFor(records) {
 function LogoMark({ compact = false }) {
   return (
     <span className={`brand-mark brand-mark--image ${compact ? "brand-mark--compact" : ""}`} aria-hidden="true">
-      <img src="/logo-2026.png" alt="" />
+      <img src="/logo-2026.png" alt="Clean & Green Sangran" />
     </span>
   );
 }
@@ -494,7 +495,7 @@ function ProjectPhotoReel({ photos = [], projectName, language = "en", onOpen })
           <span className="section-kicker">{ur ? "منصوبے کی تصویری جھلکیاں" : "PROJECT IN MOTION"}</span>
           <h2>{projectName} {ur ? "تصویری ریل" : "Photo Reel"}</h2>
         </div>
-        <small>{photos.length} {ur ? "تصاویر" : "project photos"}</small>
+        <small>{photos.length} {ur ? (photos.length === 1 ? "تصویر" : "تصاویر") : (photos.length === 1 ? "project photo" : "project photos")}</small>
       </div>
       <div className="project-photo-reel__viewport">
         <div className="project-photo-reel__track">
@@ -510,7 +511,7 @@ function ProjectPhotoReel({ photos = [], projectName, language = "en", onOpen })
               >
                 <img
                   src={photo.image}
-                  alt={photo.title}
+                  alt={photo.title || "Clean & Green Sangran project photo"}
                   loading={index < 4 ? "eager" : "lazy"}
                   fetchPriority={index < 2 ? "high" : "auto"}
                   decoding="async"
@@ -851,15 +852,15 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   };
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
   const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
-  const [showIntro, setShowIntro] = useState(() => sessionStorage.getItem("cgs-intro-seen") !== "yes");
+  const [showIntro, setShowIntro] = useState(() => localStorage.getItem("cgs-welcome-seen") !== "1");
   const [showWelcome, setShowWelcome] = useState(false);
   const [showFullMission, setShowFullMission] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedSystemId, setSelectedSystemId] = useState(() => new URLSearchParams(window.location.search).get("project"));
+  const [selectedSystemId, setSelectedSystemIdState] = useState(() => readPublicRoute().project);
   const [recordType, setRecordType] = useState("all");
   const [search, setSearch] = useState("");
-  const [showPublicRecords, setShowPublicRecords] = useState(false);
+  const [showPublicRecords, setShowPublicRecordsState] = useState(() => readPublicRoute().records);
   const [publicRecordsSearch, setPublicRecordsSearch] = useState("");
   const [showDonationDetails, setShowDonationDetails] = useState(false);
   const [showMembership, setShowMembership] = useState(false);
@@ -874,6 +875,42 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
     localStorage.setItem("cgs-language", next);
     return next;
   });
+  const setSelectedSystemId = (id) => {
+    setSelectedSystemIdState(id);
+    setShowPublicRecordsState(false);
+    setSelectedEventId(null);
+    writePublicRoute({ project: id });
+  };
+  const setShowPublicRecords = (visible) => {
+    setShowPublicRecordsState(visible);
+    if (visible) setSelectedSystemIdState(null);
+    writePublicRoute({ project: visible ? null : selectedSystemId, records: visible });
+  };
+  useEffect(() => {
+    const syncRoute = () => {
+      if (window.location.hash === "#admin" || window.location.hash === "#public-preview") return;
+      const route = readPublicRoute();
+      setSelectedSystemIdState(route.project);
+      setShowPublicRecordsState(route.records);
+      setShowDonationDetails(false);
+      setShowMembership(false);
+      setSelectedEventId(new URLSearchParams(window.location.search).get("event"));
+    };
+    window.addEventListener("popstate", syncRoute);
+    window.addEventListener("hashchange", syncRoute);
+    return () => {
+      window.removeEventListener("popstate", syncRoute);
+      window.removeEventListener("hashchange", syncRoute);
+    };
+  }, []);
+  useEffect(() => {
+    if (!showDonationDetails) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setShowDonationDetails(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [showDonationDetails]);
   const openMembership = () => {
     setMenuOpen(false);
     setShowWelcome(false);
@@ -923,7 +960,9 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   }, [showIntro]);
 
   const enterWebsite = () => {
+    localStorage.setItem("cgs-welcome-seen", "1");
     sessionStorage.setItem("cgs-intro-seen", "yes");
+    setShowIntro(false);
     setShowWelcome(false);
     setShowFullMission(false);
   };
@@ -1046,6 +1085,12 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         : "Household census, population statistics and verified village demographics.";
     }
     const profile = profileFor(system);
+    if (isMosqueAccountId(system)) {
+      const description = ur ? (profile.descriptionUr || system.descriptionUr) : (profile.descriptionEn || system.description);
+      if (!description || /Project Manager|admin can change|ایڈمن/.test(description)) {
+        return ur ? `${systemName(system)} کا الگ حساب: عطیات، اخراجات اور رپورٹس۔` : `Donations, expenses, receipts and public reports for ${systemName(system)}.`;
+      }
+    }
     return ur
       ? (profile.descriptionUr || system.descriptionUr || projectUrdu[system.id]?.description || system.description)
       : (profile.descriptionEn || system.description || system.englishName || "Transparent community project records.");
@@ -1192,6 +1237,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
   if (selectedSystem) {
     return (
       <div className="public-site project-page" style={themeStyle}>
+        <SplashIntro visible={showIntro} />
+        <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
         <header className="site-nav site-nav--solid">
           <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
             {isCemeterySalary(selectedSystem) ? (ur ? "← قبرستان مینجمنٹ" : "← Cemetery Management") : selectedWorkParentId
@@ -1342,7 +1389,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                           const cover = galleryEvent.media.find((asset) => asset.type === "image") || galleryEvent.media[0];
                           return <article className="project-event-card" key={galleryEvent.id}>
                             <button className="project-event-card__open" type="button" onClick={() => setSelectedEventId(galleryEvent.id)}>
-                              <div className="project-event-card__cover">{cover?.type === "video" ? <video src={cover.image} muted playsInline preload="metadata" /> : <img src={cover?.image} alt="" loading="lazy" />}</div>
+                              <div className="project-event-card__cover">{cover?.type === "video" ? <video src={cover.image} muted playsInline preload="metadata" /> : <img src={cover?.image} alt={galleryEvent.title || systemName(selectedSystem)} loading="lazy" />}</div>
                               <div><small>{galleryEvent.date || (ur ? "کمیونٹی ایونٹ" : "COMMUNITY EVENT")}</small><h3>{galleryEvent.title}</h3><p>{galleryEvent.description || `${galleryEvent.media.length} ${ur ? "تصاویر / ویڈیوز" : "photos / videos"}`}</p></div>
                             </button>
                             <button className="project-event-card__share" type="button" onClick={() => shareGalleryEvent(galleryEvent)}>{ur ? "شیئر کریں" : "Share"}</button>
@@ -1362,7 +1409,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                               if (event.key === "Enter" || event.key === " ") setGalleryIndex(index);
                             }}
                           >
-                            {photo.type === "video" ? <video src={photo.image} muted playsInline preload="metadata" /> : <img src={photo.image} alt={photo.title} loading={index < 6 ? "eager" : "lazy"} fetchPriority={index < 3 ? "high" : "auto"} decoding="async" />}
+                            {photo.type === "video" ? <video src={photo.image} muted playsInline preload="metadata" /> : <img src={photo.image} alt={photo.title || "Clean & Green Sangran project photo"} loading={index < 6 ? "eager" : "lazy"} fetchPriority={index < 3 ? "high" : "auto"} decoding="async" />}
                             <figcaption><span>{photo.type === "video" ? "VIDEO" : "PHOTO"} {String(index + 1).padStart(2, "0")}</span><b>{photo.title}</b></figcaption>
                             <span className="project-gallery__zoom" aria-hidden="true">＋</span>
                           </figure>
@@ -1427,7 +1474,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                     onClick={() => setGalleryIndex(index)}
                     aria-label={`${ur ? "تصویر" : "Photo"} ${index + 1}`}
                   >
-                    {photo.type === "video" ? <video src={photo.image} muted playsInline /> : <img src={photo.image} alt="" />}
+                    {photo.type === "video" ? <video src={photo.image} muted playsInline /> : <img src={photo.image} alt={photo.title || systemName(selectedSystem)} />}
                   </button>
                 ))}
               </div>
@@ -1487,7 +1534,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
 
       <section className="hero" id="home">
         {slides.map((slide, index) => (
-          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }}><img className="hero-slide__fit" src={slide.image} alt="" aria-hidden="true" /></div>
+          <div className={`hero-slide ${index === slideIndex ? "hero-slide--active" : ""}`} key={slide.id} style={{ backgroundImage: `url(${slide.image})` }}><img className="hero-slide__fit" src={slide.image} alt={(ur ? slide.titleUr : slide.title) || "Clean & Green Sangran"} /></div>
         ))}
         <div className="hero-shade" />
         <div className={`hero-content ${ur ? "hero-content--urdu" : ""}`}>
@@ -1509,7 +1556,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <div className="hero-progress">
           {slides.map((slide, index) => <button aria-label={`Show ${slide.eyebrow}`} className={index === slideIndex ? "active" : ""} key={slide.id} onClick={() => setSlideIndex(index)}><span /></button>)}
         </div>
-        <div className="hero-scroll"><span>SCROLL TO DISCOVER</span><i /></div>
+        <div className="hero-scroll"><span>{ur ? "نیچے دیکھیں" : "SCROLL TO DISCOVER"}</span><i /></div>
       </section>
 
       <div className={`impact-ticker ${ur ? "impact-ticker--urdu" : "impact-ticker--english"}`} aria-hidden="true">
@@ -1549,6 +1596,8 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                       <div><b>{ur ? "بیلنس" : "Balance"}</b><strong>Rs. {projectTotals.balance.toLocaleString()}</strong></div>
                     ) : !isBloodBankProject(system) && isCentralFund(system) ? (
                       <div><b>{ur ? "موجودہ بیلنس" : "Current Balance"}</b><strong>Rs. {totals.balance.toLocaleString()}</strong></div>
+                    ) : system.id === "plantation" && projectTotals.expenses === 0 ? (
+                      <div><b>{ur ? "اخراجات" : "Expenses"}</b><strong>{ur ? "اخراجات سنٹرل فنڈ میں ہیں" : "Recorded in Central Fund"}</strong></div>
                     ) : !isBloodBankProject(system) ? (
                       <div><b>{ur ? "اخراجات" : "Expenses"}</b><strong>Rs. {projectTotals.expenses.toLocaleString()}</strong></div>
                     ) : null}

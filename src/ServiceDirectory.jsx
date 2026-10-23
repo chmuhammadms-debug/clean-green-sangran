@@ -88,7 +88,7 @@ export function ServiceDirectoryPublic({ entries = [], language = "en" }) {
             </div>
           </article>;
         })}
-      </div> : <div className="service-directory__empty">{ur ? "اس کیٹیگری میں ابھی کوئی رابطہ شامل نہیں ہے۔" : "No contact has been added in this category yet."}</div>}
+      </div> : <div className="service-directory__empty">{ur ? "تصدیق شدہ نمبر کمیٹی کے شامل کرنے کے بعد یہاں آئیں گے۔" : "Verified contacts will appear here after the committee adds them."}</div>}
     </section>
   );
 }
