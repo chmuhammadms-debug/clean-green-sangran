@@ -1,3 +1,4 @@
+import SalaryAccountButton from "./SalaryAccountButton";
 import { ensureCemeterySalary, isCemeterySalary, readSalaryDetails, writeSalaryDetails } from "./cemeterySalary";
 import { receiptAttachments, receiptForm, packReceiptForm } from "./receiptAttachments";
 import { readBillDetails, writeBillDetails } from "./billDetails";
@@ -1778,7 +1779,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                 background: "#166534",
               }}
             >
-              {selectedWorkParentId
+              {selectedIsSalary ? "← قبرستان مینجمنٹ" : selectedWorkParentId
                 ? "← Project Works"
                 : selectedIsMosqueChild
                   ? "← Mosque Management"
@@ -1789,7 +1790,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
             <h1 className="page-heading">
               <ProjectIcon project={selectedSystem} size={42} />{" "}
-              {selectedSystem.name}
+              {selectedIsSalary ? "ملازم کی تنخواہ" : selectedSystem.name}
             </h1>
 
             <p>
@@ -1813,7 +1814,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             ) : <>
             {!isMosqueAccountId(selectedSystemId) && !isCentralFund(selectedSystem) ? (
               <div className="summary-grid">
-                <div className="summary-card"><p>Project Expenses</p><h2>Rs. {selectedTotals.expenses.toLocaleString()}</h2></div>
+                <div className="summary-card"><p>{selectedIsSalary ? "کل ادا شدہ تنخواہ" : "Project Expenses"}</p><h2>Rs. {selectedTotals.expenses.toLocaleString()}</h2></div>
                 <div className="summary-card"><p>Funding Source</p><h2>Central Fund</h2></div>
               </div>
             ) : selectedWorkParentId ? (
@@ -1836,6 +1837,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
 
 
 
+            {selectedSystem.id === "cemetery" && <SalaryAccountButton onOpen={openSystem} />}
             {selectedHasWorkHub && <>
               <WorkItemsHub
                 key={selectedSystem.id}
@@ -2316,7 +2318,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
                   style={{ marginTop: "22px" }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <h3>{activeSection === "ledger" ? "تمام بل اور اخراجات / Complete Work Ledger" : "Report Details"}</h3>
+                    <h3>{selectedIsSalary ? "تنخواہ کا مکمل ماہانہ ریکارڈ" : activeSection === "ledger" ? "تمام بل اور اخراجات / Complete Work Ledger" : "Report Details"}</h3>
                     <button
                       className="primary-button"
                       type="button"

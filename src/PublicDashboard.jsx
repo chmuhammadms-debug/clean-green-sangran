@@ -1,4 +1,5 @@
-import { ensureCemeterySalary } from "./cemeterySalary";
+import SalaryAccountButton from "./SalaryAccountButton";
+import { ensureCemeterySalary, isCemeterySalary, readSalaryDetails } from "./cemeterySalary";
 import { receiptAttachments } from "./receiptAttachments";
 import { useVisitorAnalytics } from "./visitorAnalytics";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -590,7 +591,7 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
   );
 }
 
-function RecordsTable({ records, systems, limit, language = "en", scrollable = false, donorStatusRecords = records }) {
+function RecordsTable({ records, systems, limit, language = "en", scrollable = false, donorStatusRecords = records, salaryView = false }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
   const currentMonth = currentDonationMonthKey();
@@ -618,7 +619,7 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
     <div className={`public-table-wrap${scrollable ? " public-table-wrap--scrollable" : ""}`}>
       <table className="public-table">
         <thead>
-          <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{language === "ur" ? "قسم" : "Type"}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th><th>{language === "ur" ? "منصوبہ" : "Project"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
+          <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{salaryView ? (language === "ur" ? "تنخواہ کا مہینہ" : "Salary month") : (language === "ur" ? "قسم" : "Type")}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th>{!salaryView && <th>{language === "ur" ? "منصوبہ" : "Project"}</th>}<th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
         </thead>
         <tbody>
           {rows.map((record) => {
@@ -630,7 +631,7 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
             return (
             <tr key={record.id}>
               <td>{record.date}</td>
-              <td><span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? (language === "ur" ? "عطیہ" : "Donation") : (language === "ur" ? "خرچ" : "Expense")}</span></td>
+              <td>{salaryView ? readSalaryDetails(record.details).salaryMonth || "—" : <span className={`record-pill record-pill--${record.type}`}>{record.type === "income" ? (language === "ur" ? "عطیہ" : "Donation") : (language === "ur" ? "خرچ" : "Expense")}</span>}</td>
               <td>
                 <div className={`public-record-person${donorStatus ? ` public-record-person--${donorStatus}` : ""}`}>
                   {record.type === "income" && (
@@ -650,7 +651,7 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
                   </span>
                 </div>
               </td>
-              <td>{projectName(record.systemId)}</td>
+              {!salaryView && <td>{projectName(record.systemId)}</td>}
               <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
               <td>{record.method}</td>
               <td>
@@ -1193,7 +1194,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
       <div className="public-site project-page" style={themeStyle}>
         <header className="site-nav site-nav--solid">
           <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
-            {selectedWorkParentId
+            {isCemeterySalary(selectedSystem) ? (ur ? "← قبرستان مینجمنٹ" : "← Cemetery Management") : selectedWorkParentId
               ? (ur ? "← منصوبے کے کام" : "← Project Works")
               : isMosqueChild(selectedSystem)
               ? (ur ? "← مسجد مینجمنٹ" : "← Mosque Management")
@@ -1223,6 +1224,10 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             />
           )}
 
+        {isCemeterySalary(selectedSystem) ? <section className="content-section" style={{ paddingTop: 100, paddingBottom: 12 }}>
+          <h1>{ur ? "ملازم کی تنخواہ" : "Worker salary"}</h1>
+          <p>{ur ? "قبرستان کے ملازم کی ماہانہ تنخواہ اور ادائیگیوں کا ریکارڈ" : "Monthly salary and payment history for the cemetery worker"}</p>
+        </section> : <>
         <section className="project-hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(3,24,13,.88), rgba(3,24,13,.25)), url(${imageFor(selectedSystem)})` }}>
           <div className="project-hero__content reveal is-visible">
             <span className="section-kicker">{isDemographyProject(selectedSystem) ? (ur ? "سانگراں مردم شماری" : "SANGRAN POPULATION CENSUS") : isBloodBankProject(selectedSystem) ? (ur ? "محفوظ بلڈ ڈونر نیٹ ورک" : "SECURE BLOOD DONOR NETWORK") : "PUBLIC PROJECT LEDGER"}</span>
@@ -1231,9 +1236,11 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             {isWorkItem(selectedSystem, projectProfiles) && profileFor(selectedSystem).status === "completed" && <p>✓ {ur ? "مکمل" : "Completed"}</p>}
           </div>
         </section>
+        </>}
 
         <main>
           <section className="content-section project-finance">
+            {selectedSystem.id === "cemetery" && <SalaryAccountButton onOpen={setSelectedSystemId} language={language} />}
               {!isBloodBankProject(selectedSystem)
                 && !isWelfareChild(selectedSystem)
                 && !isMosqueParent(selectedSystem)
@@ -1250,13 +1257,17 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 />
               )}
 
-            <ProjectPhotoReel
+            {!isCemeterySalary(selectedSystem) && <ProjectPhotoReel
               photos={activeGallery}
               projectName={systemName(selectedSystem)}
               language={language}
               onOpen={setGalleryIndex}
-            />
-            {isServiceDirectory(selectedSystem) ? (
+            />}
+            {isCemeterySalary(selectedSystem) ? <section className="ledger-card">
+              <h2>{ur ? "تنخواہ کا مکمل ریکارڈ" : "Salary payment history"}</h2>
+              <p>{ur ? "کل ادا شدہ تنخواہ" : "Total salary paid"}: Rs. {selectedAllRecords.filter((record) => record.type === "expense").reduce((sum, record) => sum + Number(record.amount || 0), 0).toLocaleString()}</p>
+              <RecordsTable records={selectedAllRecords.filter((record) => record.type === "expense")} systems={systems} language={language} salaryView />
+            </section> : isServiceDirectory(selectedSystem) ? (
               <ServiceDirectoryPublic entries={settings.serviceDirectoryEntries} language={language} />
             ) : isDemographyProject(selectedSystem) ? (
               <DemographyPublic language={language} />

@@ -26,7 +26,7 @@ export default function WorkItemsHub({
   adminMode = false,
 }) {
   const ur = language === "ur";
-  const works = workItemsFor(systems, project.id, profiles);
+  const works = workItemsFor(systems, project.id, profiles).filter((work) => !isCemeterySalary(work));
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyWork);
   const [saving, setSaving] = useState(false);
