@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { fetchSiteSettings } from "./dataService";
 import { uploadWebsiteImage } from "./mediaUpload";
 import serviceDirectoryCover from "./assets/projects/service-directory-cover.webp";
 import "./ServiceDirectory.css";
@@ -79,6 +80,7 @@ export function ServiceDirectoryPublic({ entries = [], language = "en" }) {
               {entry.verified !== false && <b className="service-card__verified">✓ {ur ? "تصدیق شدہ" : "Verified"}</b>}
             </div>
             <dl>
+              <div><dt>{ur ? "فون" : "Phone"}</dt><dd dir="ltr">{entry.phone}</dd></div>
               {entry.address && <div><dt>{ur ? "پتہ" : "Address"}</dt><dd>{entry.address}</dd></div>}
               {entry.availability && <div><dt>{ur ? "دستیابی" : "Available"}</dt><dd>{entry.availability}</dd></div>}
             </dl>
@@ -88,7 +90,7 @@ export function ServiceDirectoryPublic({ entries = [], language = "en" }) {
             </div>
           </article>;
         })}
-      </div> : <div className="service-directory__empty">{ur ? "تصدیق شدہ نمبر کمیٹی کے شامل کرنے کے بعد یہاں آئیں گے۔" : "Verified contacts will appear here after the committee adds them."}</div>}
+      </div> : <div className="service-directory__empty">Abhi koi number nahi. Committee add kare.</div>}
     </section>
   );
 }
@@ -102,8 +104,10 @@ export function ServiceDirectoryAdmin({ settings, onSaveSettings, savingSettings
   const [message, setMessage] = useState("");
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  const saveEntries = async (nextEntries, successMessage) => {
-    await onSaveSettings({ ...settings, serviceDirectoryEntries: nextEntries });
+  const saveEntries = async (changeEntries, successMessage) => {
+    const latestSettings = await fetchSiteSettings();
+    const latestEntries = Array.isArray(latestSettings.serviceDirectoryEntries) ? latestSettings.serviceDirectoryEntries : [];
+    await onSaveSettings({ ...latestSettings, serviceDirectoryEntries: changeEntries(latestEntries) });
     setMessage(successMessage);
   };
 
@@ -111,9 +115,11 @@ export function ServiceDirectoryAdmin({ settings, onSaveSettings, savingSettings
     event.preventDefault();
     if (!form.name.trim() || !form.phone.trim()) return setMessage("Name and phone number are required.");
     const entry = { ...form, id: form.id || `service-${Date.now()}`, name: form.name.trim(), phone: form.phone.trim() };
-    const next = form.id ? entries.map((item) => item.id === form.id ? entry : item) : [entry, ...entries];
-    await saveEntries(next, form.id ? "Service updated successfully." : "Service added successfully.");
-    setForm(emptyEntry());
+    const next = (current) => form.id ? current.map((item) => item.id === form.id ? entry : item) : [entry, ...current];
+    try {
+      await saveEntries(next, form.id ? "Service updated successfully." : "Service added successfully.");
+      setForm(emptyEntry());
+    } catch (error) { setMessage(`Could not save contact: ${error.message}`); }
   };
 
   const uploadPhoto = async (file) => {
@@ -128,21 +134,23 @@ export function ServiceDirectoryAdmin({ settings, onSaveSettings, savingSettings
   const edit = (entry) => { setForm({ ...emptyEntry(), ...entry }); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const remove = async (entry) => {
     if (!window.confirm(`Permanently remove ${entry.name}?`)) return;
-    await saveEntries(entries.filter((item) => item.id !== entry.id), "Service removed.");
-    if (form.id === entry.id) setForm(emptyEntry());
+    try {
+      await saveEntries((current) => current.filter((item) => item.id !== entry.id), "Service removed.");
+      if (form.id === entry.id) setForm(emptyEntry());
+    } catch (error) { setMessage(`Could not remove contact: ${error.message}`); }
   };
 
   return <section className="service-admin">
     <div className="service-admin__heading"><div><span>SERVICE DIRECTORY</span><h2>Add Local Contact</h2></div><p>Public website par doctor, plumber, electrician aur doosri services add karein.</p></div>
     <form className="service-admin__form" onSubmit={submit}>
       <label><span>Category</span><select value={form.category} onChange={(e) => update("category", e.target.value)}>{CATEGORIES.map(([id, en]) => <option value={id} key={id}>{en}</option>)}</select></label>
-      <label><span>Name *</span><input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Service provider name" /></label>
+      <label><span>Name *</span><input required value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Service provider name" /></label>
       <label><span>Service / Speciality</span><input value={form.service} onChange={(e) => update("service", e.target.value)} placeholder="e.g. Child specialist / House wiring" /></label>
-      <label><span>Phone *</span><input inputMode="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="03XX XXXXXXX" /></label>
+      <label><span>Phone *</span><input required type="tel" inputMode="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} placeholder="03XX XXXXXXX" /></label>
       <label><span>WhatsApp</span><input inputMode="tel" value={form.whatsapp} onChange={(e) => update("whatsapp", e.target.value)} placeholder="Leave blank to use phone" /></label>
       <label><span>Availability</span><input value={form.availability} onChange={(e) => update("availability", e.target.value)} placeholder="9 AM – 9 PM / 24 Hours" /></label>
-      <label className="service-admin__wide"><span>Address</span><textarea rows="2" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Shop, clinic or area address" /></label>
-      <label className="service-admin__photo"><span>Photo</span><input type="file" accept="image/*" disabled={uploading} onChange={(e) => { uploadPhoto(e.target.files?.[0]); e.target.value = ""; }} />{form.photo && <img src={form.photo} alt="Preview" />}</label>
+      <label className="service-admin__wide"><span>Address / Ghar number</span><textarea rows="2" value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="CGS-W-2-15" /></label>
+      <label className="service-admin__photo"><span>Photo (optional)</span><input type="file" accept="image/*" disabled={uploading} onChange={(e) => { uploadPhoto(e.target.files?.[0]); e.target.value = ""; }} />{form.photo && <img src={form.photo} alt={form.name ? `${form.name} photo preview` : "Contact photo preview"} />}</label>
       <div className="service-admin__checks">
         <label><input type="checkbox" checked={form.verified} onChange={(e) => update("verified", e.target.checked)} /> Verified contact</label>
         <label><input type="checkbox" checked={form.emergency} onChange={(e) => update("emergency", e.target.checked)} /> Emergency service</label>
@@ -152,7 +160,7 @@ export function ServiceDirectoryAdmin({ settings, onSaveSettings, savingSettings
     </form>
     {message && <p className="service-admin__message">{message}</p>}
     <div className="service-admin__list">
-      {entries.map((entry) => { const [, en, , icon] = categoryFor(entry.category); return <article key={entry.id}>{entry.photo ? <img src={entry.photo} alt="" /> : <span>{icon}</span>}<div><b>{entry.name}</b><small>{en} · {entry.phone}</small></div><button type="button" onClick={() => edit(entry)}>Edit</button><button className="danger" type="button" onClick={() => remove(entry)}>Delete</button></article>; })}
+      {entries.map((entry) => { const [, en, , icon] = categoryFor(entry.category); return <article key={entry.id}>{entry.photo ? <img src={entry.photo} alt={entry.name} /> : <span>{icon}</span>}<div><b>{entry.name}</b><small>{en} · {entry.phone}</small></div><button type="button" onClick={() => edit(entry)}>Edit</button><button className="danger" type="button" onClick={() => remove(entry)}>Delete</button></article>; })}
       {!entries.length && <p>No services added yet.</p>}
     </div>
   </section>;
