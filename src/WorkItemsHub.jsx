@@ -1,5 +1,4 @@
 import { useState } from "react";
-import ProjectIcon from "./ProjectIcon";
 import { recordsForProject, workItemsFor } from "./workItems";
 import "./WorkItemsHub.css";
 
@@ -128,32 +127,19 @@ export default function WorkItemsHub({
       {message && <p className="work-items__message">{message}</p>}
 
       <div className="work-items__grid">
-        {works.map((work, index) => {
+        {works.map((work) => {
           const totals = totalsFor(recordsForProject(transactions, systems, work.id, profiles));
           return (
-            <article className="work-item-card" key={work.id}>
-              <div className="work-item-card__top">
-                <span>0{index + 1}</span>
-                <ProjectIcon project={work} size={34} />
-              </div>
-              <button type="button" className="work-item-card__open" onClick={() => onOpenSystem(work.id)}>
-                {profiles[work.id]?.coverImage && <img className="work-item-card__cover" src={profiles[work.id].coverImage} alt="" loading="lazy" />}
-                <h3>{getName(work)}</h3>
+            <article className="work-item-compact" key={work.id}>
+              <button type="button" className="work-item-compact__open" onClick={() => onOpenSystem(work.id)} aria-label={`${getName(work)} — ${ur ? "مکمل ریکارڈ کھولیں" : "Open complete record"}`}>
+                <strong>{getName(work)}</strong>
+                <span className="work-item-compact__amount">{ur ? "کل خرچ" : "Total expenses"}: Rs. {totals.expenses.toLocaleString()}</span>
+                <span aria-hidden="true">{ur ? "←" : "→"}</span>
               </button>
-              <p>{getDescription(work) || (ur ? "اس کام کی تفصیل ابھی شامل نہیں کی گئی۔" : "No work details added yet.")}</p>
-              <div className="work-item-card__stats">
-                <span><small>{ur ? "کل خرچ" : "Total expenses"}</small><b>Rs. {totals.expenses.toLocaleString()}</b></span>
-              </div>
-              <div className="work-item-card__actions">
-                <button type="button" onClick={() => onOpenSystem(work.id)}>
-                  {adminMode
-                    ? (ur ? "یہ کام کھولیں — بل، مزدوری اور تصاویر" : "Open this work — bills, labour and photos")
-                    : (ur ? "کام کا ریکارڈ دیکھیں" : "View work record")}
-                </button>
                 {adminMode && onDeleteWork && (
                   <button
                     type="button"
-                    className="work-item-card__delete"
+                    className="work-item-compact__delete"
                     disabled={deletingId === String(work.id)}
                     onClick={() => removeWork(work)}
                   >
@@ -162,8 +148,7 @@ export default function WorkItemsHub({
                       : (ur ? "کام حذف کریں" : "Delete Work")}
                   </button>
                 )}
-              </div>
-              {profiles[work.id]?.status === "completed" && <p className="work-item-card__completed">✓ {ur ? "مکمل" : "Completed"}</p>}
+              {profiles[work.id]?.status === "completed" && <p className="work-item-compact__completed">✓ {ur ? "مکمل" : "Completed"}</p>}
             </article>
           );
         })}
