@@ -2344,6 +2344,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             )}
 
             {selectedIsWorkItem && !selectedIsSalary && <details className="panel" style={{ marginTop: 22 }}><summary style={{ cursor: "pointer", fontWeight: 700 }}>کام کا تعارف، تصاویر اور تکمیل تبدیل کریں</summary><ProjectManager
+              transactions={transactions}
               key={selectedSystem.id}
               scopeId={selectedSystem.id}
               systems={systems}
@@ -2540,6 +2541,7 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
             <MembershipAdmin />
 
             <ProjectManager
+              transactions={transactions}
               systems={systems}
               setSystems={(updater) => setSystems((currentSystems) =>
                 normalizeSystems(
