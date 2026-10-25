@@ -1272,7 +1272,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 />
               )}
 
-            {!isCentralFund(selectedSystem) && !isCemeterySalary(selectedSystem) && <ProjectBudget profile={projectProfiles[selectedSystem.id] || {}} spent={selectedTotals.expenses} language={language} />}
+            {!isCentralFund(selectedSystem) && !isCemeterySalary(selectedSystem) && !isServiceDirectory(selectedSystem) && !isDemographyProject(selectedSystem) && <ProjectBudget profile={projectProfiles[selectedSystem.id] || {}} spent={selectedTotals.expenses} language={language} />}
             {!isCemeterySalary(selectedSystem) && <ProjectPhotoReel
               photos={activeGallery}
               projectName={systemName(selectedSystem)}
