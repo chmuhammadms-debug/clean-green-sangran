@@ -1,3 +1,5 @@
+import ProjectBudget from "./ProjectBudget";
+import { recordsForProject } from "./workItems";
 import { useEffect, useState } from "react";
 import "./ProjectManager.css";
 import ProjectIcon from "./ProjectIcon";
@@ -34,6 +36,8 @@ function buildItems(systems = [], settings = {}, scopeId = null) {
       isActive: system.isActive !== false,
       status: profile.status || "proposed",
       budget: profile.budget ?? "",
+      budgetMin: profile.budgetMin ?? profile.budget ?? "",
+      budgetMax: profile.budgetMax ?? profile.budget ?? "",
       completionPercent: Number.isFinite(Number(profile.completionPercent))
         ? Math.max(0, Math.min(100, Number(profile.completionPercent)))
         : 0,
@@ -45,7 +49,7 @@ function buildItems(systems = [], settings = {}, scopeId = null) {
   });
 }
 
-export default function ProjectManager({ systems, setSystems, settings, onSaveSettings, saving, scopeId = null }) {
+export default function ProjectManager({ systems, setSystems, settings, onSaveSettings, saving, scopeId = null, transactions = [] }) {
   const [items, setItems] = useState(() => buildItems(systems, settings, scopeId));
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState({});
@@ -105,7 +109,9 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
         })),
       })),
       status: item.status || "proposed",
-      budget: Math.max(0, Number(item.budget) || 0),
+      budget: Math.max(0, Number(item.budgetMax) || 0, Number(item.budgetMin) || 0),
+      budgetMin: Math.min(Number(item.budgetMin) || Number(item.budgetMax) || 0, Number(item.budgetMax) || Number(item.budgetMin) || 0),
+      budgetMax: Math.max(0, Number(item.budgetMax) || 0, Number(item.budgetMin) || 0),
       completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
       startDate: item.startDate || "",
       expectedCompletionDate: item.expectedCompletionDate || "",
@@ -244,7 +250,9 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
           media: (entry.media || []).filter((asset) => asset?.url).map((asset) => ({ url: asset.url, type: asset.type === "video" ? "video" : "image", title: asset.title || "" })),
         })),
         status: item.status || "proposed",
-        budget: Math.max(0, Number(item.budget) || 0),
+        budget: Math.max(0, Number(item.budgetMax) || 0, Number(item.budgetMin) || 0),
+      budgetMin: Math.min(Number(item.budgetMin) || Number(item.budgetMax) || 0, Number(item.budgetMax) || Number(item.budgetMin) || 0),
+      budgetMax: Math.max(0, Number(item.budgetMax) || 0, Number(item.budgetMin) || 0),
         completionPercent: Math.max(0, Math.min(100, Number(item.completionPercent) || 0)),
         startDate: item.startDate || "",
         expectedCompletionDate: item.expectedCompletionDate || "",
@@ -288,22 +296,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 <label><span>اردو تعارف</span><textarea dir="rtl" rows="3" value={item.descriptionUr} onChange={(event) => updateItem(item.id, "descriptionUr", event.target.value)} /></label>
 
                 <div className="project-editor__wide project-progress-editor">
-                  {scopeId ? <label><input type="checkbox" checked={item.status === "completed"} onChange={(event) => updateItem(item.id, "status", event.target.checked ? "completed" : "in-progress")} /> کام مکمل ہوگیا / Completed</label> : <>
-                  <div className="project-progress-editor__heading">
-                    <div><span>PROJECT PROGRESS & MASTER PLAN</span><strong>منصوبے کی پیش رفت اور ماسٹر پلان</strong></div>
-                    <b>{Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%</b>
-                  </div>
-                  <div className="project-progress-editor__bar"><span style={{ width: `${Math.max(0, Math.min(100, Number(item.completionPercent) || 0))}%` }} /></div>
+                  <div className="project-progress-editor__heading"><strong>منصوبے کا سادہ تخمینہ / Project estimate</strong></div>
                   <div className="project-progress-editor__grid">
-                    <label><span>Status / حالت</span><select value={item.status} onChange={(event) => updateItem(item.id, "status", event.target.value)}><option value="proposed">Proposed</option><option value="in-progress">In Progress</option><option value="completed">Completed</option></select></label>
-                    <label><span>Total Budget (Rs.) / بجٹ</span><input type="number" min="0" step="1" value={item.budget} onChange={(event) => updateItem(item.id, "budget", event.target.value)} placeholder="0" /></label>
-                    <label><span>Completion % / تکمیل</span><input type="number" min="0" max="100" step="1" value={item.completionPercent} onChange={(event) => updateItem(item.id, "completionPercent", event.target.value)} /></label>
-                    <label><span>Start Date / آغاز</span><input type="date" value={item.startDate} onChange={(event) => updateItem(item.id, "startDate", event.target.value)} /></label>
-                    <label><span>Expected Completion / متوقع تکمیل</span><input type="date" value={item.expectedCompletionDate} onChange={(event) => updateItem(item.id, "expectedCompletionDate", event.target.value)} /></label>
-                    <label className="project-progress-editor__wide"><span>Master Plan / Future Goal (English)</span><textarea rows="3" value={item.planEn} onChange={(event) => updateItem(item.id, "planEn", event.target.value)} placeholder="What will this project achieve next?" /></label>
-                    <label className="project-progress-editor__wide"><span>ماسٹر پلان / مستقبل کا ہدف (اردو)</span><textarea dir="rtl" rows="3" value={item.planUr} onChange={(event) => updateItem(item.id, "planUr", event.target.value)} placeholder="اس منصوبے کا اگلا ہدف کیا ہے؟" /></label>
+                    <label><span>کم از کم تخمینہ (روپے)</span><input type="number" min="0" step="0.01" value={item.budgetMin ?? ""} onChange={event=>updateItem(item.id,"budgetMin",event.target.value)} placeholder="4500000" /></label>
+                    <label><span>زیادہ سے زیادہ تخمینہ (روپے)</span><input type="number" min="0" step="0.01" value={item.budgetMax ?? ""} onChange={event=>updateItem(item.id,"budgetMax",event.target.value)} placeholder="5000000" /></label>
                   </div>
-                  </>}
+                  <p>ایک مقررہ تخمینہ ہو تو دونوں خانوں میں ایک ہی رقم لکھیں۔ اخراجات سے مالی فیصد خود تبدیل ہوگا۔</p>
+                  <ProjectBudget profile={item} spent={recordsForProject(transactions,systems,item.id,settings.projectProfilesByProject || {}).filter(r=>r.type==='expense' && (!r.paymentStatus || r.paymentStatus==='verified')).reduce((sum,r)=>sum+Number(r.amount || 0),0)} />
+                  <label><input type="checkbox" checked={item.status === "completed"} onChange={event=>updateItem(item.id,"status",event.target.checked?"completed":"in-progress")} /> اصل کام مکمل ہوگیا / Work completed</label>
                 </div>
 
                 <div className="project-editor__wide project-media-control">
