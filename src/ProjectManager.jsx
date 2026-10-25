@@ -1,3 +1,5 @@
+import { isServiceDirectory } from "./ServiceDirectory";
+import { isDemographyProject } from "./demographyService";
 import ProjectBudget from "./ProjectBudget";
 import { recordsForProject } from "./workItems";
 import { useEffect, useState } from "react";
@@ -295,7 +297,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 <label><span>English description</span><textarea rows="3" value={item.descriptionEn} onChange={(event) => updateItem(item.id, "descriptionEn", event.target.value)} /></label>
                 <label><span>اردو تعارف</span><textarea dir="rtl" rows="3" value={item.descriptionUr} onChange={(event) => updateItem(item.id, "descriptionUr", event.target.value)} /></label>
 
-                <div className="project-editor__wide project-progress-editor">
+                {!isServiceDirectory(item.id) && !isDemographyProject(item.id) && <div className="project-editor__wide project-progress-editor">
                   <div className="project-progress-editor__heading"><strong>منصوبے کا سادہ تخمینہ / Project estimate</strong></div>
                   <div className="project-progress-editor__grid">
                     <label><span>کم از کم تخمینہ (روپے)</span><input type="number" min="0" step="0.01" value={item.budgetMin ?? ""} onChange={event=>updateItem(item.id,"budgetMin",event.target.value)} placeholder="4500000" /></label>
@@ -304,7 +306,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                   <p>ایک مقررہ تخمینہ ہو تو دونوں خانوں میں ایک ہی رقم لکھیں۔ اخراجات سے مالی فیصد خود تبدیل ہوگا۔</p>
                   <ProjectBudget profile={item} spent={recordsForProject(transactions,systems,item.id,settings.projectProfilesByProject || {}).filter(r=>r.type==='expense' && (!r.paymentStatus || r.paymentStatus==='verified')).reduce((sum,r)=>sum+Number(r.amount || 0),0)} />
                   <label><input type="checkbox" checked={item.status === "completed"} onChange={event=>updateItem(item.id,"status",event.target.checked?"completed":"in-progress")} /> اصل کام مکمل ہوگیا / Work completed</label>
-                </div>
+                </div>}
 
                 <div className="project-editor__wide project-media-control">
                   <div className="project-media-control__heading"><span>Project cover image</span><small>موبائل یا کمپیوٹر گیلری سے تصویر منتخب کریں</small></div>
