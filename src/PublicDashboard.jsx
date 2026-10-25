@@ -1,3 +1,4 @@
+import ProjectBudget from "./ProjectBudget";
 import { readPublicRoute, writePublicRoute } from "./publicRoutes";
 import SalaryAccountButton from "./SalaryAccountButton";
 import { ensureCemeterySalary, isCemeterySalary, readSalaryDetails } from "./cemeterySalary";
@@ -446,39 +447,6 @@ function projectStatusLabel(status, ur) {
   return ur ? "تجویز کردہ" : "Proposed";
 }
 
-function ProjectProgressOverview({ profile = {}, language = "en", showBudget = true }) {
-  const ur = language === "ur";
-  const status = projectProgressStatus(profile);
-  const completion = projectCompletion(profile);
-  const budget = Math.max(0, Number(profile.budget) || 0);
-  const plan = ur
-    ? (profile.planUr || profile.planEn || "")
-    : (profile.planEn || profile.planUr || "");
-
-  return (
-    <section className="project-progress-overview reveal" dir={ur ? "rtl" : "ltr"}>
-      <div className="project-progress-overview__header">
-        <div>
-          <span className="section-kicker">{ur ? "منصوبے کی پیش رفت" : "PROJECT PROGRESS"}</span>
-          <h2>{ur ? "منصوبے کی موجودہ حالت" : "Current project status"}</h2>
-        </div>
-        <span className={"project-progress-badge project-progress-badge--" + status}>
-          {projectStatusLabel(status, ur)}
-        </span>
-      </div>
-      <div className="project-progress-overview__bar">
-        <span style={{ width: completion + "%" }} />
-      </div>
-      <div className="project-progress-overview__meta">
-        <div><small>{ur ? "تکمیل" : "Completion"}</small><strong>{completion}%</strong></div>
-        {showBudget && <div><small>{ur ? "کل بجٹ" : "Total Budget"}</small><strong>{budget ? `Rs. ${budget.toLocaleString()}` : (ur ? "ابھی درج نہیں" : "Not set")}</strong></div>}
-        <div><small>{ur ? "آغاز" : "Start Date"}</small><strong>{profile.startDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
-        <div><small>{ur ? "متوقع تکمیل" : "Expected Completion"}</small><strong>{profile.expectedCompletionDate || (ur ? "درج نہیں" : "Not set")}</strong></div>
-      </div>
-      {plan && <div className="project-progress-overview__plan"><b>{ur ? "ماسٹر پلان / اگلا ہدف" : "Master Plan / Next Goal"}</b><p>{plan}</p></div>}
-    </section>
-  );
-}
 
 function ProjectPhotoReel({ photos = [], projectName, language = "en", onOpen }) {
   if (!photos.length) return null;
@@ -1304,6 +1272,7 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
                 />
               )}
 
+            {!isCentralFund(selectedSystem) && !isCemeterySalary(selectedSystem) && <ProjectBudget profile={projectProfiles[selectedSystem.id] || {}} spent={selectedTotals.expenses} language={language} />}
             {!isCemeterySalary(selectedSystem) && <ProjectPhotoReel
               photos={activeGallery}
               projectName={systemName(selectedSystem)}
