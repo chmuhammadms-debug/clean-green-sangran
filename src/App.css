@@ -607,3 +607,21 @@ tbody tr:last-child td {
 @media (max-width: 650px) { .membership-admin__head { align-items: flex-start; flex-direction: column; } .membership-admin { padding: 15px; } .membership-manage-overlay { padding: 0; } .membership-manage-card { width: 100%; height: 100%; max-height: none; border-radius: 0; } .membership-manage-fields { grid-template-columns: 1fr; padding: 13px; } .membership-manage-wide { grid-column: 1; } .membership-manage-card > footer { display: grid; grid-template-columns: 1fr 1fr; padding: 11px 13px; } }
 .membership-manage-card--id { width: min(760px, calc(100vw - 28px)); }
 .membership-action-card { color: #fff; background: #0f6c93; }
+
+/* Compact administrator categories keep existing forms mounted when closed. */
+.admin-category { margin: 12px 0; border: 1px solid #cde4d5; border-radius: 16px; background: #fff; overflow: hidden; }
+.admin-category > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 20px; cursor: pointer; list-style: none; direction: rtl; color: #14532d; background: #f2f8f3; }
+.admin-category > summary::-webkit-details-marker { display: none; }
+.admin-category > summary strong { display: block; font-size: 1.08rem; }
+.admin-category > summary small { display: block; color: #52665a; margin-top: 5px; line-height: 1.7; }
+.admin-category > summary:focus-visible { outline: 3px solid #65a30d; outline-offset: -4px; }
+.admin-category__indicator { font-size: 1.5rem; flex-shrink: 0; }
+.admin-category[open] > summary .admin-category__indicator { transform: rotate(45deg); }
+.admin-category__body { padding: 18px; min-width: 0; }
+.admin-category__body > h2:first-child { margin-top: 0 !important; }
+.admin-category-help { color: #52665a; margin: 20px 0 12px; }
+@media (max-width: 600px) {
+  .admin-category > summary { padding: 14px; }
+  .admin-category__body { padding: 10px; }
+  .admin-category__body .summary-grid { grid-template-columns: 1fr; }
+}

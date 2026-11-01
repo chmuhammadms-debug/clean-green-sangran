@@ -341,6 +341,18 @@ class OptionalProjectPanelBoundary extends Component {
   }
 }
 
+function AdminCategory({ id, title, description, children }) {
+  return (
+    <details id={id} className="admin-category">
+      <summary>
+        <span><strong>{title}</strong><small>{description}</small></span>
+        <span className="admin-category__indicator" aria-hidden="true">＋</span>
+      </summary>
+      <div className="admin-category__body">{children}</div>
+    </details>
+  );
+}
+
 class AdminProjectBoundary extends Component {
   constructor(props) {
     super(props);
@@ -966,7 +978,11 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
     const notificationType = `${item?.event_type || ""} ${item?.source_table || ""}`.toLowerCase();
     if (notificationType.includes("complaint")) {
       setSelectedSystemId(null);
-      window.setTimeout(() => document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      window.setTimeout(() => {
+        const category = document.getElementById("admin-complaints");
+        if (category) category.open = true;
+        document.getElementById("complaint-admin")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
       return;
     }
     if (notificationType.includes("blood")) {
@@ -1739,7 +1755,6 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
       </header>
 
       <main className="container">
-        {!selectedSystem && <VisitorAnalytics />}
         {selectedSystem ? (
           <AdminProjectBoundary
             key={String(selectedSystem.id || "")}
@@ -2413,6 +2428,98 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               ]}
             />
 
+            <p className="admin-category-help" dir="rtl">کام منتخب کریں — متعلقہ حصہ کھولیں، کام کے بعد دوبارہ بند کر دیں۔</p>
+            <AdminCategory id="admin-systems" title="منصوبے اور روزانہ اندراج" description="عطیات، اخراجات، قبرستان، مساجد اور دیگر منصوبے">
+            <h2
+              style={{
+                marginTop: "32px",
+                color: "#166534",
+              }}
+            >
+              Select a Management System
+            </h2>
+
+            <div className="summary-grid">
+              {topLevelSystems(systems).map((system) => {
+                const systemTotals = totalsFor(recordsForProject(
+                  transactions,
+                  systems,
+                  system.id,
+                  projectProfiles,
+                  relatedChildIdsFor(system)
+                ));
+
+                return (
+                  <button
+                    key={system.id}
+                    type="button"
+                    className="summary-card"
+                    onClick={() =>
+                      openSystem(system.id)
+                    }
+                    style={{
+                      border:
+                        "1px solid #dcfce7",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <div
+                      style={{ fontSize: "35px" }}
+                    >
+                      <ProjectIcon project={system} size={35} />
+                    </div>
+
+                    <h2
+                      style={{ marginTop: "10px" }}
+                    >
+                      {system.name}
+                    </h2>
+
+                    <p>
+                      {system.description ||
+                        system.englishName}
+                    </p>
+
+                    {isDemographyProject(system) ? (
+                      <strong>Population Census</strong>
+                    ) : !isBloodBankProject(system) && isMosqueAccountId(system.id) ? (
+                      <strong>
+                        Balance: Rs.{" "}
+                        {systemTotals.balance.toLocaleString()}
+                      </strong>
+                    ) : !isBloodBankProject(system) && isCentralFund(system) ? (
+                      <strong>Balance: Rs. {allTotals.balance.toLocaleString()}</strong>
+                    ) : !isBloodBankProject(system) ? (
+                      <strong>Expenses: Rs. {systemTotals.expenses.toLocaleString()}</strong>
+                    ) : null}
+                  </button>
+                );
+              })}
+
+              <button
+                type="button"
+                className="summary-card"
+                onClick={addNewSystem}
+                style={{
+                  border:
+                    "2px dashed #16a34a",
+                  cursor: "pointer",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "35px" }}>
+                  ＋
+                </div>
+
+                <h2>Add New System</h2>
+                <p>
+                  Create another community project
+                </p>
+              </button>
+            </div>
+            </AdminCategory>
+            <AdminCategory id="admin-reports" title="عطیات کی رپورٹس" description="روزانہ، ماہانہ، سالانہ حساب اور PDF">
             <section className="panel" style={{ marginTop: "22px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "14px", flexWrap: "wrap" }}>
                 <div>
@@ -2537,8 +2644,15 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               </div>
             </section>
 
-            <ComplaintAdmin />
-            <MembershipAdmin />
+            </AdminCategory>
+            <AdminCategory id="admin-complaints" title="شکایات" description="موصول ہونے والی شکایات اور ان پر کارروائی">
+              <ComplaintAdmin />
+            </AdminCategory>
+            <AdminCategory id="admin-membership" title="ممبرشپ" description="درخواستیں، منظوری اور ممبران کا ریکارڈ">
+              <MembershipAdmin />
+            </AdminCategory>
+            <AdminCategory id="admin-project-settings" title="منصوبوں کی ترتیب اور تخمینے" description="منصوبے کی تفصیل، ذیلی کام اور بجٹ">
+
 
             <ProjectManager
               transactions={transactions}
@@ -2553,8 +2667,12 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               saving={savingSiteSettings}
             />
 
+            </AdminCategory>
+            <AdminCategory id="admin-website" title="ویب سائٹ کی سیٹنگز" description="صفحے، تصاویر اور ویب سائٹ کا مواد">
             <WebsiteSettings settings={siteSettings} onSave={onSaveSiteSettings} saving={savingSiteSettings} />
 
+            </AdminCategory>
+            <AdminCategory id="admin-tools" title="مرکزی انتظامی ٹولز" description="منصوبوں اور ریکارڈ کے انتظام کے اضافی اختیارات">
             <CentralTools
               systems={systems}
               transactions={transactions}
@@ -2563,95 +2681,10 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               onOpenSystem={openSystem}
               onDeleteSystem={deleteSystemPermanently}
             />
+            </AdminCategory>
+            <VisitorAnalytics />
 
-            <h2
-              style={{
-                marginTop: "32px",
-                color: "#166534",
-              }}
-            >
-              Select a Management System
-            </h2>
 
-            <div className="summary-grid">
-              {topLevelSystems(systems).map((system) => {
-                const systemTotals = totalsFor(recordsForProject(
-                  transactions,
-                  systems,
-                  system.id,
-                  projectProfiles,
-                  relatedChildIdsFor(system)
-                ));
-
-                return (
-                  <button
-                    key={system.id}
-                    type="button"
-                    className="summary-card"
-                    onClick={() =>
-                      openSystem(system.id)
-                    }
-                    style={{
-                      border:
-                        "1px solid #dcfce7",
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
-                  >
-                    <div
-                      style={{ fontSize: "35px" }}
-                    >
-                      <ProjectIcon project={system} size={35} />
-                    </div>
-
-                    <h2
-                      style={{ marginTop: "10px" }}
-                    >
-                      {system.name}
-                    </h2>
-
-                    <p>
-                      {system.description ||
-                        system.englishName}
-                    </p>
-
-                    {isDemographyProject(system) ? (
-                      <strong>Population Census</strong>
-                    ) : !isBloodBankProject(system) && isMosqueAccountId(system.id) ? (
-                      <strong>
-                        Balance: Rs.{" "}
-                        {systemTotals.balance.toLocaleString()}
-                      </strong>
-                    ) : !isBloodBankProject(system) && isCentralFund(system) ? (
-                      <strong>Balance: Rs. {allTotals.balance.toLocaleString()}</strong>
-                    ) : !isBloodBankProject(system) ? (
-                      <strong>Expenses: Rs. {systemTotals.expenses.toLocaleString()}</strong>
-                    ) : null}
-                  </button>
-                );
-              })}
-
-              <button
-                type="button"
-                className="summary-card"
-                onClick={addNewSystem}
-                style={{
-                  border:
-                    "2px dashed #16a34a",
-                  cursor: "pointer",
-                  textAlign: "center",
-                }}
-              >
-                <div style={{ fontSize: "35px" }}>
-                  ＋
-                </div>
-
-                <h2>Add New System</h2>
-                <p>
-                  Create another community project
-                </p>
-              </button>
-            </div>
           </>
         )}
       </main>
