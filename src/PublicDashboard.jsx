@@ -792,7 +792,7 @@ function publicImageVariant(value) {
   return publicMediaUrl(value);
 }
 
-function PublicDashboard({ onAdminLogin, siteSettings }) {
+function PublicDashboard({ siteSettings }) {
   const settings = mergeSiteSettings(siteSettings);
   const slides = useMemo(() => {
     const configured = (settings.homeHeroSlides || [])
@@ -1223,7 +1223,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <div className="nav-actions project-nav-actions">
             <SocialMediaLinks links={settings.socialLinks} variant="header" />
             <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
-            <button className="admin-button project-admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
           </div>
         </header>
 
@@ -1497,7 +1496,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
           <button onClick={() => scrollTo("about")}>{ur ? "تعارف" : "About"}</button>
           <SocialMediaLinks links={settings.socialLinks} variant="header" />
           <button className="language-toggle" onClick={changeLanguage}>{ur ? "English" : "اردو"}</button>
-          <button className="admin-button" onClick={onAdminLogin}>{ur ? "ایڈمن لاگ اِن" : "Admin Login"}</button>
         </nav>
       </header>
 
@@ -1724,7 +1722,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
             <p>{ur
               ? "کلین اینڈ گرین سنگراں محض ایک ویب سائٹ یا حساب کی کتاب نہیں، بلکہ اپنے گاؤں سے محبت کا ایک زندہ عہد ہے۔ یہاں ہر عطیہ اعتماد بنتا ہے، ہر منصوبہ مشترکہ کوشش کی گواہی دیتا ہے، اور ہر چھوٹا قدم آنے والی نسلوں کے لیے ایک بہتر، سرسبز اور خود کفیل سنگراں کی بنیاد رکھتا ہے۔"
               : "Clean & Green Sangran is more than a website or a ledger; it is a living promise to our village. Here, every donation becomes trust, every project reflects collective effort, and every small action helps build a greener, stronger and self-reliant Sangran for generations to come."}</p>
-            <button className="button-primary" onClick={onAdminLogin}>{ur ? "کمیٹی ایڈمن داخلہ" : "Committee admin access"} <span>{ur ? "←" : "→"}</span></button>
           </div>
         </section>
       </main>
@@ -1780,7 +1777,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <nav>
           <button onClick={() => scrollTo("projects")}>{ur ? "منصوبے" : "Projects"}</button>
           <button onClick={() => setShowPublicRecords(true)}>{ur ? "عوامی ریکارڈ" : "Public Records"}</button>
-          <button onClick={onAdminLogin}>{ur ? "ایڈمن" : "Admin"}</button>
         </nav>
         <nav className="footer-policy-links">
           <a href="/privacy-policy.html">{ur ? "رازداری کی پالیسی" : "Privacy Policy"}</a>
@@ -1795,7 +1791,6 @@ function PublicDashboard({ onAdminLogin, siteSettings }) {
         <button onClick={() => setShowDonationDetails(true)}><b>Rs</b><span>{ur ? "عطیہ" : "Donate"}</span></button>
         <button onClick={openMembership}><b>✓</b><span>{ur ? "ممبر" : "Join"}</span></button>
         <button onClick={changeLanguage}><b>文</b><span>{ur ? "English" : "اردو"}</span></button>
-        <button onClick={onAdminLogin}><b>♙</b><span>{ur ? "ایڈمن" : "Admin"}</span></button>
       </nav>
 
       <ComplaintPortal language={language} />
