@@ -2,7 +2,7 @@ import { isServiceDirectory } from "./ServiceDirectory";
 import { isDemographyProject } from "./demographyService";
 import ProjectBudget from "./ProjectBudget";
 import { recordsForProject } from "./workItems";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./ProjectManager.css";
 import ProjectIcon from "./ProjectIcon";
 import { uploadWebsiteImage, uploadWebsiteMediaFiles } from "./mediaUpload";
@@ -52,6 +52,13 @@ function buildItems(systems = [], settings = {}, scopeId = null) {
 }
 
 export default function ProjectManager({ systems, setSystems, settings, onSaveSettings, saving, scopeId = null, transactions = [] }) {
+  const sectionRef = useRef(null);
+  useEffect(() => {
+    if (scopeId) {
+      const container = sectionRef.current?.closest("details");
+      if (container) container.open = true;
+    }
+  }, [scopeId]);
   const [items, setItems] = useState(() => buildItems(systems, settings, scopeId));
   const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState({});
@@ -164,7 +171,8 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
       const additions = uploaded.map((asset) => ({ url: asset.url, type: asset.type, title: asset.name }));
       const nextItems = items.map((entry) => entry.id === item.id ? {
         ...entry,
-        galleryEvents: (entry.galleryEvents || []).map((eventEntry) => eventEntry.id === galleryEvent.id
+        galleryEvents: ((entry.galleryEvents || []).some((album) => album.id === galleryEvent.id)
+          ? entry.galleryEvents : [...(entry.galleryEvents || []), galleryEvent]).map((eventEntry) => eventEntry.id === galleryEvent.id
           ? { ...eventEntry, media: [...(eventEntry.media || []), ...additions] }
           : eventEntry),
       } : entry);
@@ -273,13 +281,14 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
   };
 
   return (
-    <section className="project-manager panel" id="project-manager">
+    <section ref={sectionRef} className="project-manager panel" id="project-manager">
       <div className="project-manager__heading">
-        <div><span>ADMIN PROJECT CONTROL</span><h2>{scopeId ? "کام کی تفصیلات، تصاویر اور تکمیل" : "Project Manager"}</h2></div>
+        <div><span>ADMIN PROJECT CONTROL</span><h2>{scopeId ? "پروجیکٹ کی تفصیل اور تصاویر" : "Project Manager"}</h2></div>
         {!scopeId && <button type="button" onClick={addProject}>+ نیا منصوبہ</button>}
       </div>
       {!scopeId && <p className="project-manager__intro">یہاں بڑے منصوبوں کی تفصیل تبدیل کریں۔ کسی منصوبے کے اندر نیا کام بنانے اور اس کا الگ حساب رکھنے کے لیے وہ منصوبہ کھول کر “+ نیا کام” استعمال کریں۔</p>}
 
+      {scopeId && <p className="project-manager__intro" dir="rtl">یہاں پروجیکٹ کا تعارف لکھیں، کارڈ کی تصویر لگائیں اور مزید تصاویر اپلوڈ کریں۔ تعارف اور کور تصویر بدلنے کے بعد نیچے محفوظ کریں کا بٹن دبائیں۔</p>}
       <form onSubmit={saveProjects}>
         <div className="project-manager__list">
           {items.map((item, index) => (
@@ -309,7 +318,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 </div>}
 
                 <div className="project-editor__wide project-media-control">
-                  <div className="project-media-control__heading"><span>Project cover image</span><small>موبائل یا کمپیوٹر گیلری سے تصویر منتخب کریں</small></div>
+                  <div className="project-media-control__heading"><span>کارڈ کی تصویر / Project cover image</span><small>موبائل یا کمپیوٹر گیلری سے تصویر منتخب کریں</small></div>
                   <div className="project-media-control__actions">
                     <label className={`project-media-upload ${uploading[`${item.id}-cover`] ? "is-uploading" : ""}`}>
                       <input type="file" accept="image/*" disabled={uploading[`${item.id}-cover`]} onChange={(event) => { uploadCover(item, event.target.files?.[0]); event.target.value = ""; }} />
@@ -322,7 +331,17 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                 </div>
 
                 <div className="project-editor__wide project-media-control project-event-manager">
-                  <div className="project-media-control__heading"><span>Project Event Albums</span><small>ہر event کے اندر الگ photos اور videos رکھیں</small></div>
+                  <div className="project-media-control__heading"><span>یہاں پروجیکٹ کی تصاویر شامل کریں / Project photos</span><small>ہر event کے اندر الگ photos اور videos رکھیں</small></div>
+                  <label className="project-media-upload">
+                    <input type="file" accept="image/*" multiple disabled={saving || Object.values(uploading).some(Boolean)} onChange={(event) => {
+                      const album = (item.galleryEvents || []).find((entry) => entry.id === `project-photos-${item.id}`)
+                        || { id: `project-photos-${item.id}`, titleEn: "Project photos", titleUr: "پروجیکٹ کی تصاویر", date: "", description: "", media: [] };
+                      uploadGallery(item, album, event.target.files);
+                      event.target.value = "";
+                    }} />
+                    <span>{Object.values(uploading).some(Boolean) ? "تصاویر اپلوڈ ہو رہی ہیں…" : "+ یہاں تصاویر اپلوڈ کریں"}</span>
+                  </label>
+                  <p dir="rtl">ایک یا زیادہ تصاویر منتخب کریں؛ اپلوڈ مکمل ہونے پر یہ خودکار طور پر محفوظ ہو جائیں گی۔ الگ ایونٹ کی تصاویر کے لیے نیا البم بنائیں۔</p>
                   <button className="project-event-add" type="button" disabled={saving} onClick={() => addGalleryEvent(item)}>+ نیا Event Album</button>
                   <div className="project-event-list">
                     {(item.galleryEvents || []).map((galleryEvent, eventIndex) => {
@@ -355,7 +374,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
                         </div>
                       </article>;
                     })}
-                    {!item.galleryEvents?.length && <p className="project-event-empty">پہلے “نیا Event Album” بنائیں، پھر اس میں media upload کریں۔</p>}
+                    {!item.galleryEvents?.length && <p className="project-event-empty">اوپر “یہاں تصاویر اپلوڈ کریں” دبائیں یا الگ Event Album بنائیں۔</p>}
                   </div>
                   <details className="project-media-url"><summary>Legacy gallery URLs (پرانا ریکارڈ)</summary><textarea rows="4" value={item.galleryText} onChange={(event) => updateItem(item.id, "galleryText", event.target.value)} /></details>
                 </div>
@@ -367,7 +386,7 @@ export default function ProjectManager({ systems, setSystems, settings, onSaveSe
 
         <div className="project-manager__actions">
           <p>{message}</p>
-          <button type="submit" disabled={saving}>{saving ? "Saving..." : "Save & Publish Projects"}</button>
+          <button type="submit" disabled={saving || Object.values(uploading).some(Boolean)}>{saving ? "محفوظ ہو رہا ہے…" : "تفصیل اور تصاویر محفوظ کریں / Save & Publish"}</button>
         </div>
       </form>
     </section>
