@@ -17,6 +17,7 @@ export default function WorkItemsHub({
   systems,
   transactions,
   profiles = {},
+  getImage,
   onOpenSystem,
   onCreateWork,
   onDeleteWork,
@@ -130,12 +131,21 @@ export default function WorkItemsHub({
       <div className="work-items__grid">
         {works.map((work) => {
           const totals = totalsFor(recordsForProject(transactions, systems, work.id, profiles));
+          const profile = profiles[work.id] || {};
+          const image = profile.coverImage || work.coverImage || profile.galleryUrls?.[0] || getImage?.(work);
+          const completed = profile.status === "completed";
           return (
             <article className="work-item-compact" key={work.id}>
               <button type="button" className="work-item-compact__open" onClick={() => onOpenSystem(work.id)} aria-label={`${getName(work)} — ${ur ? "مکمل ریکارڈ کھولیں" : "Open complete record"}`}>
-                <strong>{getName(work)}</strong>
-                <span className="work-item-compact__amount">{ur ? "کل خرچ" : "Total expenses"}: Rs. {totals.expenses.toLocaleString()}</span>
-                <span aria-hidden="true">{ur ? "←" : "→"}</span>
+                {image && <img className="work-item-compact__image" src={image} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />}
+                <span className="work-item-compact__shade" aria-hidden="true" />
+                <span className="work-item-compact__status">{completed ? (ur ? "✓ مکمل" : "✓ Completed") : (ur ? "جاری منصوبہ" : "Project work")}</span>
+                <span className="work-item-compact__content">
+                  <strong>{getName(work)}</strong>
+                  <span className="work-item-compact__description">{getDescription(work)}</span>
+                  <span className="work-item-compact__amount"><span>{ur ? "کل خرچ" : "Total expenses"}</span><b>Rs. {totals.expenses.toLocaleString()}</b></span>
+                  <span className="work-item-compact__link">{ur ? "تفصیل اور بل دیکھیں ←" : "View details & bills →"}</span>
+                </span>
               </button>
                 {adminMode && onDeleteWork && !isCemeterySalary(work) && (
                   <button
@@ -149,7 +159,6 @@ export default function WorkItemsHub({
                       : (ur ? "کام حذف کریں" : "Delete Work")}
                   </button>
                 )}
-              {profiles[work.id]?.status === "completed" && <p className="work-item-compact__completed">✓ {ur ? "مکمل" : "Completed"}</p>}
             </article>
           );
         })}
