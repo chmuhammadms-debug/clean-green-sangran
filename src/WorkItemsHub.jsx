@@ -1,3 +1,4 @@
+import cemeteryImage from "./assets/projects/cemetery/main.webp";
 import { isCemeterySalary } from "./cemeterySalary";
 import { useState } from "react";
 import { recordsForProject, workItemsFor } from "./workItems";
@@ -132,7 +133,9 @@ export default function WorkItemsHub({
         {works.map((work) => {
           const totals = totalsFor(recordsForProject(transactions, systems, work.id, profiles));
           const profile = profiles[work.id] || {};
-          const image = profile.coverImage || work.coverImage || profile.galleryUrls?.[0] || getImage?.(work);
+          const image = profile.coverImage || work.coverImage || profile.galleryUrls?.[0] || getImage?.(work)
+            || profiles[project.id]?.coverImage || project.coverImage
+            || (project.id === "cemetery" ? cemeteryImage : "");
           const completed = profile.status === "completed";
           return (
             <article className="work-item-compact" key={work.id}>
