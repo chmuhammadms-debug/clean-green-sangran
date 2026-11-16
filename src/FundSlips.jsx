@@ -1,18 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import archive from './fundSlipArchive.json';
-import { receiptAttachments } from './receiptAttachments';
 import './FundSlips.css';
 
-export default function FundSlips({ records = [], language = 'en' }) {
+export default function FundSlips({ language = 'en' }) {
   const ur = language === 'ur';
   const [month, setMonth] = useState(null);
   const [opened, setOpened] = useState(null);
   const dialog = useRef(null);
-  const live = records.filter(r => r.type === 'income').flatMap(r => receiptAttachments(r).map((file, i) => ({
-    id: `live-${r.id}-${i}`, url: file.url, name: file.name, date: r.date, person: r.person, kind: 'receipts',
-  })));
   const seen = new Set();
-  const items = [...live, ...archive].filter(item => {
+  const items = archive.filter(item => item.kind === 'reports').filter(item => {
     if (seen.has(item.url)) return false;
     seen.add(item.url); return true;
   }).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || a.name.localeCompare(b.name));
@@ -23,8 +19,8 @@ export default function FundSlips({ records = [], language = 'en' }) {
     else if (!opened && dialog.current.open) dialog.current.close();
   }, [opened]);
   return <section className="fund-slips" dir={ur ? 'rtl' : 'ltr'}>
-    <h2>{ur ? 'ماہ وار سلپس اور روزانہ رپورٹس' : 'Monthly slips & daily reports'}</h2>
-    <p>{ur ? 'مہینہ منتخب کریں۔ سلپس تاریخ وار ہیں؛ تصویر کھول کر مکمل رپورٹ اور اس میں لگی رسیدیں دیکھیں۔' : 'Choose a month to see slips in date order. Open a report to view its embedded receipts.'}</p>
+    <h2>{ur ? 'روزانہ کی سلپ رپورٹس' : 'Daily slip reports'}</h2>
+    <p>{ur ? 'مہینہ منتخب کریں۔ روزانہ کی سلپ رپورٹس تاریخ وار دیکھیں۔' : 'Choose a month to see daily slip reports in date order.'}</p>
     <div className="fund-slips__months">{months.map(m => <button type="button" key={m} aria-pressed={month === m} onClick={() => setMonth(month === m ? null : m)}>{label(m)} <span>({items.filter(i => (i.date?.slice(0, 7) || 'undated') === m).length})</span></button>)}</div>
     {month && <div className="fund-slips__grid">{items.filter(i => (i.date?.slice(0, 7) || 'undated') === month).map(item => <button type="button" key={item.id} className="fund-slips__card" onClick={() => setOpened(item)}>
       <img src={item.url} alt={item.person || (ur ? 'سلپ / روزانہ رپورٹ' : 'Slip / daily report')} loading="lazy" />
