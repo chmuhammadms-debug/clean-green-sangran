@@ -1,3 +1,4 @@
+import FundSlips from "./FundSlips";
 import ProjectBudget from "./ProjectBudget";
 import { readPublicRoute, writePublicRoute } from "./publicRoutes";
 import SalaryAccountButton from "./SalaryAccountButton";
@@ -1321,7 +1322,7 @@ function PublicDashboard({ siteSettings }) {
                   {isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
                     <>
                       <MoneyCards totals={selectedTotals} language={language} />
-                      {isCentralFund(selectedSystem) && projectLedger}
+                      {isCentralFund(selectedSystem) && <><FundSlips records={selectedAllRecords} language={language} />{projectLedger}</>}
                     </>
                   ) : !isWelfareChild(selectedSystem) ? (
                     <div className="welfare-central-fund-note">
