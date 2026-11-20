@@ -53,30 +53,47 @@ button { cursor: pointer; }
 }
 
 .splash-logo-wrap { text-align: center; }
-.splash-logo-mosaic {
+.splash-logo-swash {
   position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: clamp(136px, 52vw, 260px);
   aspect-ratio: 1;
   margin-inline: auto;
-  perspective: 650px;
+  border-radius: 50%;
 }
 
-.splash-logo-mosaic img {
-  position: absolute;
-  inset: 0;
+.splash-logo-swash img {
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  clip-path: var(--tile-clip);
-  animation: splash-tile-assemble 2.4s cubic-bezier(.18,.72,.28,1) var(--tile-delay) both;
+  object-fit: cover;
+  animation: splash-swash-reveal 2.5s ease-in-out .25s both;
 }
 
-@keyframes splash-tile-assemble {
-  from {
-    opacity: 0;
-    transform: translate(var(--tile-x), var(--tile-y)) rotateY(var(--tile-turn)) scale(.72);
-  }
-  to { opacity: 1; transform: none; }
+.splash-logo-swash::after {
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 42%;
+  border-radius: 48% 76% 38% 62% / 45% 33% 67% 55%;
+  background: linear-gradient(95deg, transparent, #32ac60 42%, #bfe771 78%, #ebffc8 93%);
+  content: "";
+  pointer-events: none;
+  animation: splash-swash-flow 2.6s ease-in-out .22s both;
+}
+
+@keyframes splash-swash-reveal {
+  0% { clip-path: polygon(0 0, 0 0, 0 25%, 0 50%, 0 75%, 0 100%, 0 100%); }
+  45% { clip-path: polygon(0 0, 54% 0, 40% 25%, 49% 50%, 36% 75%, 46% 100%, 0 100%); }
+  100% { clip-path: polygon(0 0, 100% 0, 100% 25%, 100% 50%, 100% 75%, 100% 100%, 0 100%); }
+}
+
+@keyframes splash-swash-flow {
+  0% { transform: translateX(-105%) rotate(-18deg); opacity: 0; }
+  20% { opacity: 1; }
+  60% { transform: translateX(115%) rotate(16deg); }
+  92% { opacity: 1; }
+  100% { transform: translateX(270%) rotate(-12deg); opacity: 0; }
 }
 
 .splash-name {

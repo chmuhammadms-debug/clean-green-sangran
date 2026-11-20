@@ -370,18 +370,6 @@ function LogoMark({ compact = false }) {
 
 const SPLASH_DURATION_MS = 10000;
 
-const splashTiles = Array.from({ length: 25 }, (_, index) => {
-  const row = Math.floor(index / 5);
-  const column = index % 5;
-  return {
-    "--tile-clip": `inset(${row * 20}% ${(4 - column) * 20}% ${(4 - row) * 20}% ${column * 20}%)`,
-    "--tile-x": `${(column - 2) * 42}%`,
-    "--tile-y": `${(row - 2) * 42}%`,
-    "--tile-turn": `${(column - row) * 14}deg`,
-    "--tile-delay": `${(row + column) * 145}ms`,
-  };
-});
-
 const bismillahWords = ["بِسْمِ", "اللّٰهِ", "الرَّحْمَٰنِ", "الرَّحِيمِ"];
 
 function SplashIntro({ visible, onFinish }) {
@@ -422,10 +410,8 @@ function SplashIntro({ visible, onFinish }) {
   return (
     <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status">
       <div className="splash-logo-wrap">
-        <div className="splash-logo-mosaic" aria-hidden="true">
-          {splashTiles.map((style, index) => (
-            <img key={index} src="/logo-2026.png" alt="" style={style} />
-          ))}
+        <div className="splash-logo-swash" aria-hidden="true">
+          <img src="/logo-2026.png" alt="" />
         </div>
         <p className="splash-name">Clean &amp; Green Sangran</p>
       </div>
