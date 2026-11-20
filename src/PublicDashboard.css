@@ -2062,26 +2062,42 @@ body.gallery-open { overflow: hidden; }
   position: absolute;
   z-index: 4;
   inset-inline: 0;
-  bottom: 64px;
+  top: 90px;
   width: fit-content;
   max-width: calc(100% - 28px);
   margin: 0 auto;
-  padding: 4px clamp(12px, 4vw, 28px);
-  border-radius: 12px;
+  padding: 0 14px;
+  border-radius: 8px;
   color: #f2d89b;
   background: #052b18;
-  font-family: "Noto Naskh Arabic", "Noto Nastaliq Urdu", "Traditional Arabic", serif;
-  font-size: clamp(22px, 4.8vw, 34px);
-  line-height: 1.9;
+  font-family: "Noto Naskh Arabic", "Traditional Arabic", "Noto Nastaliq Urdu", serif;
+  font-size: clamp(16px, 2vw, 21px);
+  font-weight: 400;
+  line-height: 1.8;
   text-align: center;
 }
 
 @media (max-width: 600px) {
-  .hero-bismillah {
-    position: relative;
-    inset: auto;
-    max-width: 100%;
-    margin-bottom: 10px;
-    padding-block: 0;
+  .hero {
+    --bismillah-strip-height: 32px;
+    padding-top: calc(76px + var(--bismillah-strip-height) + 56.25vw + 14px);
   }
+
+  .hero-slide { top: calc(76px + var(--bismillah-strip-height)); }
+
+  .hero-bismillah {
+    top: 76px;
+    line-height: var(--bismillah-strip-height);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .public-site:not(:has(.splash-intro)) .hero-bismillah {
+    animation: bismillah-appear .65s ease-out both;
+  }
+}
+
+@keyframes bismillah-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
