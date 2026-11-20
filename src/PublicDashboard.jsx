@@ -370,45 +370,37 @@ function LogoMark({ compact = false }) {
 
 const SPLASH_DURATION_MS = 10000;
 
-const splashTiles = Array.from({ length: 13 }, (_, row) => {
-  const latitude = (row - 6) * Math.PI / 14;
-  const count = Math.round(28 * Math.cos(latitude));
-  return Array.from({ length: count }, (_, column) => {
-    const longitude = (column + (row % 2) / 2) / count * 360;
-    const radians = longitude * Math.PI / 180;
-    const logoX = Math.sin(radians) * Math.cos(latitude);
-    const logoY = -Math.sin(latitude);
-    return {
-      "--logo-x": `${50 + logoX * 54}%`,
-      "--logo-y": `${50 + logoY * 54}%`,
-      "--latitude": `${latitude * 180 / Math.PI}deg`,
-      "--longitude": `${longitude}deg`,
-      "--flip-delay": `${Math.round(longitude * 4 + row * 22.5)}ms`,
-    };
-  });
-}).flat();
+const splashTiles = Array.from({ length: 25 }, (_, index) => {
+  const row = Math.floor(index / 5);
+  const column = index % 5;
+  return {
+    "--tile-clip": `inset(${row * 20}% ${(4 - column) * 20}% ${(4 - row) * 20}% ${column * 20}%)`,
+    "--tile-x": `${(column - 2) * 42}%`,
+    "--tile-y": `${(row - 2) * 42}%`,
+    "--tile-turn": `${(column - row) * 14}deg`,
+    "--tile-delay": `${(row + column) * 145}ms`,
+  };
+});
+
+const bismillahWords = ["بِسْمِ", "اللّٰهِ", "الرَّحْمَٰنِ", "الرَّحِيمِ"];
 
 function SplashIntro({ visible }) {
   if (!visible) return null;
   return (
     <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status">
       <div className="splash-logo-wrap">
-        <div className="splash-orb" aria-hidden="true">
-          <div className="splash-orb__tiles">
-            {splashTiles.map((style, index) => (
-              <span className="splash-orb__tile" key={index} style={style}>
-                <span className="splash-orb__flap">
-                  <span className="splash-orb__face splash-orb__face--logo" />
-                  <span className="splash-orb__face splash-orb__face--green" />
-                </span>
-              </span>
-            ))}
-          </div>
-          <LogoMark />
+        <div className="splash-logo-mosaic" aria-hidden="true">
+          {splashTiles.map((style, index) => (
+            <img key={index} src="/logo-2026.png" alt="" style={style} />
+          ))}
         </div>
         <p className="splash-name">Clean &amp; Green Sangran</p>
       </div>
-      <p className="splash-bismillah" lang="ar" dir="rtl">بِسْمِ اللّٰهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
+      <p className="splash-bismillah" lang="ar" dir="rtl">
+        {bismillahWords.map((word, index) => (
+          <span key={word} style={{ "--word-delay": `${index * 420}ms`, "--word-x": `${(1.5 - index) * 38}px`, "--word-y": index % 2 ? "24px" : "-24px" }}>{word}</span>
+        ))}
+      </p>
     </div>
   );
 }

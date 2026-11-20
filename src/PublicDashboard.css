@@ -54,87 +54,36 @@ button { cursor: pointer; }
 }
 
 .splash-logo-wrap { text-align: center; }
-.splash-orb {
-  --orb-radius: clamp(84px, 29vw, 158px);
+.splash-logo-mosaic {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: calc(2.1 * var(--orb-radius));
+  width: clamp(136px, 52vw, 260px);
   aspect-ratio: 1;
-  margin: auto;
-  perspective: 1100px;
+  margin-inline: auto;
+  perspective: 650px;
 }
 
-.splash-orb__tiles {
+.splash-logo-mosaic img {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  animation: splash-orb-turn calc(var(--splash-duration) / 2) linear both;
-}
-
-.splash-orb__tile {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: calc(var(--orb-radius) * .21);
-  aspect-ratio: 1;
-  transform-style: preserve-3d;
-  transform: translate(-50%, -50%) rotateY(var(--longitude)) rotateX(var(--latitude)) translateZ(var(--orb-radius));
-}
-
-.splash-orb__flap {
-  display: block;
   width: 100%;
   height: 100%;
-  transform-style: preserve-3d;
-  animation: splash-tile-flip 2.35s ease-in-out var(--flip-delay) both;
+  border-radius: 50%;
+  clip-path: var(--tile-clip);
+  animation: splash-tile-assemble 2.4s cubic-bezier(.18,.72,.28,1) var(--tile-delay) both;
 }
 
-.splash-orb__face {
-  position: absolute;
-  inset: 0;
-  border-radius: 22% 46% 22% 46%;
-  backface-visibility: hidden;
-  box-shadow: inset 0 0 0 1px #173f2999, inset 0 1px 2px #ffffff80;
-}
-
-.splash-orb__face--logo {
-  background: #e7f4dd url("/logo-2026.png") var(--logo-x) var(--logo-y) / 970% 970%;
-}
-
-.splash-orb__face--green {
-  background: linear-gradient(145deg, #daf6aa, #5dac5c 65%, #196944);
-  transform: rotateX(180deg);
-}
-
-.splash-orb .brand-mark {
-  position: relative;
-  width: 92%;
-  height: 92%;
-  animation: splash-logo-reveal calc(var(--splash-duration) / 2) ease-out both;
+@keyframes splash-tile-assemble {
+  from {
+    opacity: 0;
+    transform: translate(var(--tile-x), var(--tile-y)) rotateY(var(--tile-turn)) scale(.72);
+  }
+  to { opacity: 1; transform: none; }
 }
 
 .splash-name {
   margin: 18px 12px;
   font-weight: 750;
   font-size: clamp(20px, 5.5vw, 34px);
-}
-
-@keyframes splash-orb-turn {
-  0% { transform: rotateX(-6deg) rotateY(-8deg); }
-  78% { transform: rotateX(-6deg) rotateY(352deg); opacity: 1; }
-  90%, 100% { transform: rotateY(360deg); opacity: 0; }
-}
-
-@keyframes splash-tile-flip {
-  0%, 7% { transform: rotateX(0); }
-  24%, 65% { transform: rotateX(180deg); }
-  83%, 100% { transform: rotateX(360deg); }
-}
-
-@keyframes splash-logo-reveal {
-  0%, 78% { opacity: 0; transform: scale(.93); }
-  90%, 100% { opacity: 1; transform: scale(1); }
 }
 
 .mission-welcome { display: grid; place-items: center; padding: 24px; color: var(--ink); background: linear-gradient(135deg, rgba(4,42,24,.96), rgba(18,60,45,.94)); }
@@ -2081,4 +2030,18 @@ body.gallery-open { overflow: hidden; }
 
 @keyframes splash-phase {
   to { visibility: var(--splash-phase-visibility); }
+}
+
+.splash-bismillah > span {
+  display: inline-block;
+  margin-inline: .12em;
+  animation: splash-word-assemble 1.8s ease-out calc(var(--splash-duration) / 2 + var(--word-delay)) both;
+}
+
+@keyframes splash-word-assemble {
+  from {
+    opacity: 0;
+    transform: translate(var(--word-x), var(--word-y)) scale(.78);
+  }
+  to { opacity: 1; transform: none; }
 }
