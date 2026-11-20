@@ -368,15 +368,22 @@ function LogoMark({ compact = false }) {
   );
 }
 
+const SPLASH_DURATION_MS = 10000;
+
 const splashTiles = Array.from({ length: 13 }, (_, row) => {
   const latitude = (row - 6) * Math.PI / 14;
   const count = Math.round(28 * Math.cos(latitude));
   return Array.from({ length: count }, (_, column) => {
     const longitude = (column + (row % 2) / 2) / count * 360;
+    const radians = longitude * Math.PI / 180;
+    const logoX = Math.sin(radians) * Math.cos(latitude);
+    const logoY = -Math.sin(latitude);
     return {
+      "--logo-x": `${50 + logoX * 54}%`,
+      "--logo-y": `${50 + logoY * 54}%`,
       "--latitude": `${latitude * 180 / Math.PI}deg`,
       "--longitude": `${longitude}deg`,
-      "--flip-delay": `${Math.round(longitude * 1.05 + row * 15)}ms`,
+      "--flip-delay": `${Math.round(longitude * 8 + row * 45)}ms`,
     };
   });
 }).flat();
@@ -384,12 +391,17 @@ const splashTiles = Array.from({ length: 13 }, (_, row) => {
 function SplashIntro({ visible, onSkip }) {
   if (!visible) return null;
   return (
-    <div className="splash-intro" role="dialog" aria-label="Clean & Green Sangran">
+    <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="dialog" aria-label="Clean & Green Sangran">
       <div className="splash-logo-wrap">
         <div className="splash-orb" aria-hidden="true">
           <div className="splash-orb__tiles">
             {splashTiles.map((style, index) => (
-              <span className="splash-orb__tile" key={index} style={style}><span /></span>
+              <span className="splash-orb__tile" key={index} style={style}>
+                <span className="splash-orb__flap">
+                  <span className="splash-orb__face splash-orb__face--logo" />
+                  <span className="splash-orb__face splash-orb__face--green" />
+                </span>
+              </span>
             ))}
           </div>
           <LogoMark />
@@ -843,7 +855,7 @@ function PublicDashboard({ siteSettings }) {
   const [showIntro, setShowIntro] = useState(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
     try {
-      return sessionStorage.getItem("cgs-logo-intro-v1") !== "1";
+      return sessionStorage.getItem("cgs-logo-intro-v2") !== "1";
     } catch {
       return true;
     }
@@ -951,14 +963,14 @@ function PublicDashboard({ siteSettings }) {
   useEffect(() => {
     if (!showIntro) return undefined;
     try {
-      sessionStorage.setItem("cgs-logo-intro-v1", "1");
+      sessionStorage.setItem("cgs-logo-intro-v2", "1");
     } catch {
       // The intro still dismisses when browser storage is disabled.
     }
     const timer = window.setTimeout(() => {
       setShowIntro(false);
       setShowWelcome(localStorage.getItem("cgs-welcome-seen") !== "1");
-    }, 2000);
+    }, SPLASH_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, [showIntro]);
 
