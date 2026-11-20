@@ -48,19 +48,100 @@ button { cursor: pointer; }
   z-index: 9999;
   display: grid;
   place-items: center;
-  color: white;
-  background: #052b18;
-  animation: splashExit .7s ease 2.2s forwards;
+  color: #fff;
+  background: radial-gradient(ellipse at center, #17613b, #052b18 70%);
+  animation: splashExit .22s ease 1.78s forwards;
 }
 
-.splash-glow { position: absolute; width: 500px; height: 500px; border-radius: 50%; background: rgba(99, 214, 123, .16); filter: blur(90px); animation: glowPulse 2s ease infinite; }
-.splash-logo-wrap { position: relative; text-align: center; animation: splashRise 1s cubic-bezier(.2,.8,.2,1) both; }
-.splash-logo-wrap .brand-mark { width: 112px; height: 112px; margin: auto; color: var(--lime); }
-.splash-kicker { margin: 22px 0 12px; color: #a4d7b5; font-size: 10px; font-weight: 700; letter-spacing: 3px; }
-.splash-logo-wrap h1 { margin: 0; font-size: clamp(36px, 7vw, 68px); letter-spacing: -3px; }
-.splash-logo-wrap h2 { margin: -4px 0 20px; color: var(--lime); font-size: clamp(26px, 5vw, 43px); font-weight: 500; letter-spacing: 7px; text-transform: uppercase; }
-.splash-line { width: 220px; height: 2px; margin: auto; background: rgba(255,255,255,.15); overflow: hidden; }
-.splash-line span { display: block; width: 100%; height: 100%; background: var(--lime); transform-origin: left; animation: lineLoad 2s ease both; }
+.splash-logo-wrap { text-align: center; }
+.splash-orb {
+  --orb-radius: clamp(58px, 19vw, 91px);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(2.1 * var(--orb-radius));
+  aspect-ratio: 1;
+  margin: auto;
+  perspective: 650px;
+}
+
+.splash-orb__tiles {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: splash-orb-turn 1.35s ease-in-out both;
+}
+
+.splash-orb__tile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--orb-radius) * .21);
+  aspect-ratio: 1;
+  transform-style: preserve-3d;
+  transform: translate(-50%, -50%) rotateY(var(--longitude)) rotateX(var(--latitude)) translateZ(var(--orb-radius));
+}
+
+.splash-orb__tile > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 28% 52% 28% 52%;
+  background: linear-gradient(145deg, #f4ffef, #7bbd92);
+  box-shadow: inset 0 0 0 1px #173f29;
+  transform-style: preserve-3d;
+  animation: splash-tile-flip .6s ease-in-out var(--flip-delay) both;
+}
+
+.splash-orb__tile > span::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(145deg, #a9e866, #26874a);
+  transform: rotateX(180deg);
+  backface-visibility: hidden;
+}
+
+.splash-orb .brand-mark {
+  position: relative;
+  width: 84%;
+  height: 84%;
+  animation: splash-logo-reveal .4s ease-out .92s both;
+}
+
+.splash-name {
+  margin: 18px 12px;
+  font-weight: 750;
+  font-size: clamp(20px, 5.5vw, 34px);
+}
+
+.splash-skip {
+  min-height: 44px;
+  padding: 6px 20px;
+  color: #fff;
+  font: inherit;
+  border: 1px solid #b5e4be;
+  border-radius: 999px;
+  background: #125534;
+  cursor: pointer;
+}
+
+@keyframes splash-orb-turn {
+  from { transform: rotateX(-12deg) rotateY(-35deg) scale(.9); }
+  72% { opacity: 1; }
+  to { opacity: 0; transform: rotateX(12deg) rotateY(90deg) scale(.68); }
+}
+
+@keyframes splash-tile-flip {
+  from { transform: rotateX(0); }
+  to { transform: rotateX(180deg); }
+}
+
+@keyframes splash-logo-reveal {
+  from { opacity: 0; transform: scale(.68); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 .mission-welcome { position: fixed; inset: 0; z-index: 9998; display: grid; place-items: center; padding: 24px; color: var(--ink); background: linear-gradient(135deg, rgba(4,42,24,.96), rgba(18,60,45,.94)); }
 .mission-welcome__card { width: min(760px, 100%); padding: 42px; text-align: right; border: 1px solid rgba(255,255,255,.35); border-radius: 26px; background: #fff; box-shadow: 0 35px 100px rgba(0,0,0,.28); }
@@ -897,10 +978,7 @@ body.gallery-open { overflow: hidden; }
 .record-search span { color: var(--muted); font-size: 20px; }
 .record-search input { width: 100%; padding: 11px; background: none; border: 0; outline: none; }
 
-@keyframes splashRise { from { opacity: 0; transform: translateY(25px) scale(.94); } to { opacity: 1; transform: none; } }
 @keyframes splashExit { to { opacity: 0; visibility: hidden; transform: scale(1.04); } }
-@keyframes glowPulse { 50% { transform: scale(1.18); opacity: .72; } }
-@keyframes lineLoad { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes heroText { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes slideProgress { from { width: 0; } to { width: 100%; } }
 /* Move the announcement strip from left to right while each Urdu message

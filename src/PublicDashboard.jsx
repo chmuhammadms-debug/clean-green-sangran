@@ -368,17 +368,36 @@ function LogoMark({ compact = false }) {
   );
 }
 
-function SplashIntro({ visible }) {
+const splashTiles = Array.from({ length: 13 }, (_, row) => {
+  const latitude = (row - 6) * Math.PI / 14;
+  const count = Math.round(28 * Math.cos(latitude));
+  return Array.from({ length: count }, (_, column) => {
+    const longitude = (column + (row % 2) / 2) / count * 360;
+    return {
+      "--latitude": `${latitude * 180 / Math.PI}deg`,
+      "--longitude": `${longitude}deg`,
+      "--flip-delay": `${Math.round(longitude * 1.05 + row * 15)}ms`,
+    };
+  });
+}).flat();
+
+function SplashIntro({ visible, onSkip }) {
   if (!visible) return null;
   return (
-    <div className="splash-intro" aria-label="Clean and Green Sangran loading">
-      <div className="splash-glow" />
+    <div className="splash-intro" role="dialog" aria-label="Clean & Green Sangran">
       <div className="splash-logo-wrap">
-        <LogoMark />
-        <p className="splash-kicker">COMMUNITY • TRUST • PROGRESS</p>
-        <h1>Clean &amp; Green</h1>
-        <h2>Sangran</h2>
-        <div className="splash-line"><span /></div>
+        <div className="splash-orb" aria-hidden="true">
+          <div className="splash-orb__tiles">
+            {splashTiles.map((style, index) => (
+              <span className="splash-orb__tile" key={index} style={style}><span /></span>
+            ))}
+          </div>
+          <LogoMark />
+        </div>
+        <p className="splash-name">Clean &amp; Green Sangran</p>
+        <button className="splash-skip" type="button" lang="ur" dir="rtl" onClick={onSkip}>
+          آگے جائیں
+        </button>
       </div>
     </div>
   );
@@ -821,8 +840,18 @@ function PublicDashboard({ siteSettings }) {
   };
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
   const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
-  const [showIntro, setShowIntro] = useState(() => localStorage.getItem("cgs-welcome-seen") !== "1");
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    try {
+      return sessionStorage.getItem("cgs-logo-intro-v1") !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const [showWelcome, setShowWelcome] = useState(() =>
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+    localStorage.getItem("cgs-welcome-seen") !== "1"
+  );
   const [showFullMission, setShowFullMission] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -921,10 +950,15 @@ function PublicDashboard({ siteSettings }) {
 
   useEffect(() => {
     if (!showIntro) return undefined;
+    try {
+      sessionStorage.setItem("cgs-logo-intro-v1", "1");
+    } catch {
+      // The intro still dismisses when browser storage is disabled.
+    }
     const timer = window.setTimeout(() => {
       setShowIntro(false);
-      setShowWelcome(true);
-    }, 2800);
+      setShowWelcome(localStorage.getItem("cgs-welcome-seen") !== "1");
+    }, 2000);
     return () => window.clearTimeout(timer);
   }, [showIntro]);
 
@@ -1206,7 +1240,7 @@ function PublicDashboard({ siteSettings }) {
   if (selectedSystem) {
     return (
       <div className="public-site project-page" style={themeStyle}>
-        <SplashIntro visible={showIntro} />
+        <SplashIntro visible={showIntro} onSkip={() => setShowIntro(false)} />
         <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
         <header className="site-nav site-nav--solid">
           <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
@@ -1478,7 +1512,7 @@ function PublicDashboard({ siteSettings }) {
 
   return (
     <div className="public-site" style={themeStyle}>
-      <SplashIntro visible={showIntro} />
+      <SplashIntro visible={showIntro} onSkip={() => setShowIntro(false)} />
       <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
 
       <header className="site-nav">
