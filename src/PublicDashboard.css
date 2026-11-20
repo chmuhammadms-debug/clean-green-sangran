@@ -2057,3 +2057,31 @@ body.gallery-open { overflow: hidden; }
   0%, 35% { transform: perspective(220px) rotateY(0); }
   78%, 100% { transform: perspective(220px) rotateY(360deg); }
 }
+
+.hero-bismillah {
+  position: absolute;
+  z-index: 4;
+  inset-inline: 0;
+  bottom: 64px;
+  width: fit-content;
+  max-width: calc(100% - 28px);
+  margin: 0 auto;
+  padding: 4px clamp(12px, 4vw, 28px);
+  border-radius: 12px;
+  color: #f2d89b;
+  background: #052b18;
+  font-family: "Noto Naskh Arabic", "Noto Nastaliq Urdu", "Traditional Arabic", serif;
+  font-size: clamp(22px, 4.8vw, 34px);
+  line-height: 1.9;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .hero-bismillah {
+    position: relative;
+    inset: auto;
+    max-width: 100%;
+    margin-bottom: 10px;
+    padding-block: 0;
+  }
+}

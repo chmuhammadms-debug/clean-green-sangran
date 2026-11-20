@@ -1519,6 +1519,7 @@ function PublicDashboard({ siteSettings }) {
           <p dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].copyUr : slides[slideIndex].copy}</p>
           <div className="hero-actions"><button className="button-primary" onClick={() => setShowDonationDetails(true)}>{ur ? "عطیہ دیں" : "Donate Now"} <span>→</span></button><button className="button-ghost" onClick={() => setShowPublicRecords(true)}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button></div>
         </div>
+        <p className="hero-bismillah" lang="ar" dir="rtl">بِسْمِ اللّٰهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
         <aside className="project-status-ticker" aria-label="Project status">
           <div className="project-status-ticker__item project-status-ticker__item--live">
             <span><i />{ur ? "جاری منصوبہ" : "ONGOING PROJECT"}</span>
