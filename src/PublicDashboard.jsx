@@ -373,38 +373,23 @@ const SPLASH_DURATION_MS = 10000;
 const bismillahWords = ["بِسْمِ", "اللّٰهِ", "الرَّحْمَٰنِ", "الرَّحِيمِ"];
 
 function SplashIntro({ visible, onFinish }) {
+  const audioRef = useRef(null);
+  const [requested, setRequested] = useState(false);
+
   useEffect(() => {
     if (!visible) return undefined;
 
-    const recitation = new Audio("https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3");
-    recitation.preload = "auto";
-    let playing = false;
-    let active = true;
-    const started = () => { playing = true; };
-    const ended = () => onFinish(false);
-    recitation.addEventListener("playing", started);
-    recitation.addEventListener("ended", ended);
+    const timeout = window.setTimeout(
+      () => onFinish(false),
+      requested ? 15000 : SPLASH_DURATION_MS,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [visible, requested, onFinish]);
 
-    const startTimer = window.setTimeout(() => {
-      if (active) recitation.play().catch(() => {});
-    }, SPLASH_DURATION_MS / 2);
-    const fallbackTimer = window.setTimeout(() => {
-      if (!playing || recitation.paused) onFinish(false);
-    }, SPLASH_DURATION_MS);
-    const maximumTimer = window.setTimeout(ended, SPLASH_DURATION_MS + 5000);
-
-    return () => {
-      active = false;
-      window.clearTimeout(startTimer);
-      window.clearTimeout(fallbackTimer);
-      window.clearTimeout(maximumTimer);
-      recitation.removeEventListener("playing", started);
-      recitation.removeEventListener("ended", ended);
-      recitation.pause();
-      recitation.removeAttribute("src");
-      recitation.load();
-    };
-  }, [visible, onFinish]);
+  const playRecitation = () => {
+    setRequested(true);
+    audioRef.current.play().catch(() => onFinish(false));
+  };
 
   if (!visible) return null;
   return (
@@ -422,6 +407,16 @@ function SplashIntro({ visible, onFinish }) {
           ))}
         </p>
         <p className="splash-translation" lang="ur" dir="rtl">اللہ کے نام سے شروع جو بہت مہربان رحمت والا۔</p>
+        <button className="splash-recitation-button" type="button" lang="ur" dir="rtl" disabled={requested} onClick={playRecitation}>
+          {requested ? "تلاوت جاری ہے" : "تلاوت سنیں"}
+        </button>
+        <audio
+          ref={audioRef}
+          src="https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3"
+          preload="auto"
+          onEnded={() => onFinish(false)}
+          onError={() => { if (requested) onFinish(false); }}
+        />
       </div>
     </div>
   );
