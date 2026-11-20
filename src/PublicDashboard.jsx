@@ -383,7 +383,7 @@ const splashTiles = Array.from({ length: 13 }, (_, row) => {
       "--logo-y": `${50 + logoY * 54}%`,
       "--latitude": `${latitude * 180 / Math.PI}deg`,
       "--longitude": `${longitude}deg`,
-      "--flip-delay": `${Math.round(longitude * 8 + row * 45)}ms`,
+      "--flip-delay": `${Math.round(longitude * 4 + row * 22.5)}ms`,
     };
   });
 }).flat();
@@ -391,7 +391,7 @@ const splashTiles = Array.from({ length: 13 }, (_, row) => {
 function SplashIntro({ visible }) {
   if (!visible) return null;
   return (
-    <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status" aria-label="Clean & Green Sangran">
+    <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status">
       <div className="splash-logo-wrap">
         <div className="splash-orb" aria-hidden="true">
           <div className="splash-orb__tiles">
@@ -408,6 +408,7 @@ function SplashIntro({ visible }) {
         </div>
         <p className="splash-name">Clean &amp; Green Sangran</p>
       </div>
+      <p className="splash-bismillah" lang="ar" dir="rtl">بِسْمِ اللّٰهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
     </div>
   );
 }
@@ -1519,7 +1520,6 @@ function PublicDashboard({ siteSettings }) {
           <p dir={ur ? "rtl" : "ltr"}>{ur ? slides[slideIndex].copyUr : slides[slideIndex].copy}</p>
           <div className="hero-actions"><button className="button-primary" onClick={() => setShowDonationDetails(true)}>{ur ? "عطیہ دیں" : "Donate Now"} <span>→</span></button><button className="button-ghost" onClick={() => setShowPublicRecords(true)}>{ur ? "عطیات کا ریکارڈ" : "Donation Records"}</button></div>
         </div>
-        <p className="hero-bismillah" lang="ar" dir="rtl">بِسْمِ اللّٰهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
         <aside className="project-status-ticker" aria-label="Project status">
           <div className="project-status-ticker__item project-status-ticker__item--live">
             <span><i />{ur ? "جاری منصوبہ" : "ONGOING PROJECT"}</span>
