@@ -401,15 +401,12 @@ function SplashIntro({ visible, onFinish }) {
         <p className="splash-name">Clean &amp; Green Sangran</p>
       </div>
       <div className="splash-bismillah">
-        <p lang="ar" dir="rtl">
+        <button className="splash-recitation-text" type="button" lang="ar" dir="rtl" disabled={requested} onClick={playRecitation}>
           {bismillahWords.map((word, index) => (
             <span key={word} style={{ "--word-delay": `${index * 420}ms`, "--word-x": `${(1.5 - index) * 38}px`, "--word-y": index % 2 ? "24px" : "-24px" }}>{word}</span>
           ))}
-        </p>
-        <p className="splash-translation" lang="ur" dir="rtl">اللہ کے نام سے شروع جو بہت مہربان رحمت والا۔</p>
-        <button className="splash-recitation-button" type="button" lang="ur" dir="rtl" disabled={requested} onClick={playRecitation}>
-          {requested ? "تلاوت جاری ہے" : "تلاوت سنیں"}
         </button>
+        <p className="splash-translation" lang="ur" dir="rtl">اللہ کے نام سے شروع جو بہت مہربان رحمت والا۔</p>
         <audio
           ref={audioRef}
           src="https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3"
