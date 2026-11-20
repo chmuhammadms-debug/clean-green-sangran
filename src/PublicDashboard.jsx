@@ -396,11 +396,14 @@ function SplashIntro({ visible }) {
         </div>
         <p className="splash-name">Clean &amp; Green Sangran</p>
       </div>
-      <p className="splash-bismillah" lang="ar" dir="rtl">
-        {bismillahWords.map((word, index) => (
-          <span key={word} style={{ "--word-delay": `${index * 420}ms`, "--word-x": `${(1.5 - index) * 38}px`, "--word-y": index % 2 ? "24px" : "-24px" }}>{word}</span>
-        ))}
-      </p>
+      <div className="splash-bismillah">
+        <p lang="ar" dir="rtl">
+          {bismillahWords.map((word, index) => (
+            <span key={word} style={{ "--word-delay": `${index * 420}ms`, "--word-x": `${(1.5 - index) * 38}px`, "--word-y": index % 2 ? "24px" : "-24px" }}>{word}</span>
+          ))}
+        </p>
+        <p className="splash-translation" lang="ur" dir="rtl">اللہ کے نام سے شروع جو بہت مہربان رحمت والا۔</p>
+      </div>
     </div>
   );
 }

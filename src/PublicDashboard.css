@@ -2032,7 +2032,7 @@ body.gallery-open { overflow: hidden; }
   to { visibility: var(--splash-phase-visibility); }
 }
 
-.splash-bismillah > span {
+.splash-bismillah > p[lang="ar"] > span {
   display: inline-block;
   margin-inline: .12em;
   animation: splash-word-assemble 1.8s ease-out calc(var(--splash-duration) / 2 + var(--word-delay)) both;
@@ -2044,4 +2044,20 @@ body.gallery-open { overflow: hidden; }
     transform: translate(var(--word-x), var(--word-y)) scale(.78);
   }
   to { opacity: 1; transform: none; }
+}
+
+.splash-bismillah > p { margin: 0; }
+
+.splash-bismillah > .splash-translation {
+  margin-top: .55rem;
+  color: #f5ead0;
+  font-family: "Noto Nastaliq Urdu", serif;
+  font-size: clamp(15px, 4vw, 21px);
+  line-height: 2.2;
+  animation: splash-translation-appear .35s ease-out calc(var(--splash-duration) / 2 + 3.06s) both;
+}
+
+@keyframes splash-translation-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
