@@ -120,17 +120,6 @@ button { cursor: pointer; }
   font-size: clamp(20px, 5.5vw, 34px);
 }
 
-.splash-skip {
-  min-height: 44px;
-  padding: 6px 20px;
-  color: #fff;
-  font: inherit;
-  border: 1px solid #b5e4be;
-  border-radius: 999px;
-  background: #125534;
-  cursor: pointer;
-}
-
 @keyframes splash-orb-turn {
   0% { transform: rotateX(-6deg) rotateY(-8deg); }
   78% { transform: rotateX(-6deg) rotateY(352deg); opacity: 1; }
@@ -148,26 +137,21 @@ button { cursor: pointer; }
   90%, 100% { opacity: 1; transform: scale(1); }
 }
 
-.mission-welcome { position: fixed; inset: 0; z-index: 9998; display: grid; place-items: center; padding: 24px; color: var(--ink); background: linear-gradient(135deg, rgba(4,42,24,.96), rgba(18,60,45,.94)); }
+.mission-welcome { display: grid; place-items: center; padding: 24px; color: var(--ink); background: linear-gradient(135deg, rgba(4,42,24,.96), rgba(18,60,45,.94)); }
 .mission-welcome__card { width: min(760px, 100%); padding: 42px; text-align: right; border: 1px solid rgba(255,255,255,.35); border-radius: 26px; background: #fff; box-shadow: 0 35px 100px rgba(0,0,0,.28); }
-.mission-welcome__card--full { width: min(940px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
 .mission-welcome__eyebrow { color: var(--leaf); font-family: "Noto Nastaliq Urdu", serif; font-size: 16px; font-weight: 700; }
-.mission-welcome h1 { margin: 12px 0 8px; color: var(--forest); font-family: "Noto Nastaliq Urdu", serif; font-size: clamp(38px, 6vw, 66px); line-height: 1.55; }
-.mission-welcome h2 { margin: 0 0 14px; color: #285b46; font-family: "Noto Nastaliq Urdu", serif; font-size: 23px; line-height: 1.8; }
+.mission-welcome h2 { margin: 12px 0 8px; color: var(--forest); font-family: "Noto Nastaliq Urdu", serif; font-size: clamp(38px, 6vw, 66px); line-height: 1.55; }
+.mission-welcome h3 { margin: 0 0 14px; color: #285b46; font-family: "Noto Nastaliq Urdu", serif; font-size: 23px; line-height: 1.8; }
 .mission-welcome p { margin: 0; color: #46564e; font-family: "Noto Nastaliq Urdu", serif; font-size: 17px; line-height: 2.25; }
 .mission-document { flex: 1; margin: 12px 0 20px; padding: 24px; color: #25362e; font-family: "Noto Nastaliq Urdu", serif; font-size: 16px; line-height: 2.15; text-align: right; white-space: pre-wrap; border: 1px solid #dce7e0; border-radius: 16px; background: #f7faf8; overflow-y: auto; }
-.mission-welcome__actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
-.mission-welcome__actions button { padding: 12px 20px; font-family: "Noto Nastaliq Urdu", serif; font-size: 15px; border-radius: 10px; }
-.mission-read-button { color: var(--forest); background: #edf5ef; border: 1px solid #b9d3c2; }
-.mission-enter-button { color: white; background: var(--leaf); border: 1px solid var(--leaf); }
+.mission-read-button { cursor: pointer; width: fit-content; margin-top: 16px; padding: 10px 16px; border-radius: 10px; color: var(--forest); background: #edf5ef; border: 1px solid #b9d3c2; }
 
 @media (max-width: 600px) {
   .mission-welcome { padding: 12px; }
   .mission-welcome__card { padding: 25px 20px; border-radius: 20px; }
-  .mission-welcome h1 { font-size: 38px; }
-  .mission-welcome h2 { font-size: 19px; }
+  .mission-welcome h2 { font-size: 38px; }
+  .mission-welcome h3 { font-size: 19px; }
   .mission-welcome p, .mission-document { font-size: 14px; }
-  .mission-welcome__actions { flex-direction: column; }
 }
 
 .brand-mark { display: block; color: var(--leaf); }

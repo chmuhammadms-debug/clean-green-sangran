@@ -388,10 +388,10 @@ const splashTiles = Array.from({ length: 13 }, (_, row) => {
   });
 }).flat();
 
-function SplashIntro({ visible, onSkip }) {
+function SplashIntro({ visible }) {
   if (!visible) return null;
   return (
-    <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="dialog" aria-label="Clean & Green Sangran">
+    <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status" aria-label="Clean & Green Sangran">
       <div className="splash-logo-wrap">
         <div className="splash-orb" aria-hidden="true">
           <div className="splash-orb__tiles">
@@ -407,35 +407,25 @@ function SplashIntro({ visible, onSkip }) {
           <LogoMark />
         </div>
         <p className="splash-name">Clean &amp; Green Sangran</p>
-        <button className="splash-skip" type="button" lang="ur" dir="rtl" onClick={onSkip}>
-          آگے جائیں
-        </button>
       </div>
     </div>
   );
 }
 
-function MissionWelcome({ visible, full, onFull, onEnter, settings }) {
-  if (!visible) return null;
+function MissionWelcome({ settings }) {
   return (
-    <div className="mission-welcome" dir="rtl" lang="ur">
-      <div className={`mission-welcome__card ${full ? "mission-welcome__card--full" : ""}`}>
+    <section className="mission-welcome" dir="rtl" lang="ur">
+      <div className="mission-welcome__card">
         <span className="mission-welcome__eyebrow">اپنی مدد آپ • اجتماعی تعاون • خدمتِ خلق</span>
-        <h1>{settings.introTitle}</h1>
-        {full ? (
+        <h2>{settings.introTitle}</h2>
+        <h3>{settings.introSubtitle}</h3>
+        <p>{settings.introSummary}</p>
+        <details>
+          <summary className="mission-read-button">مکمل تعارف اور منصوبہ پڑھیں</summary>
           <pre className="mission-document">{missionDocument}</pre>
-        ) : (
-          <>
-            <h2>{settings.introSubtitle}</h2>
-            <p>{settings.introSummary}</p>
-          </>
-        )}
-        <div className="mission-welcome__actions">
-          {!full && <button className="mission-read-button" onClick={onFull}>مکمل تعارف اور منصوبہ پڑھیں</button>}
-          <button className="mission-enter-button" onClick={onEnter}>ویب سائٹ پر جائیں</button>
-        </div>
+        </details>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -853,18 +843,10 @@ function PublicDashboard({ siteSettings }) {
   const [systems, setSystems] = useState(() => ensurePublicSystems(loadArray("sangrahnSystems", fallbackSystems)));
   const [transactions, setTransactions] = useState(() => withoutLegacyTransactions(loadArray("sangrahnTransactions", fallbackTransactions)));
   const [showIntro, setShowIntro] = useState(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-    try {
-      return sessionStorage.getItem("cgs-logo-intro-v2") !== "1";
-    } catch {
-      return true;
-    }
+    const route = readPublicRoute();
+    return !route.project && !route.records && !window.location.hash &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   });
-  const [showWelcome, setShowWelcome] = useState(() =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
-    localStorage.getItem("cgs-welcome-seen") !== "1"
-  );
-  const [showFullMission, setShowFullMission] = useState(false);
   const [slideIndex, setSlideIndex] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedSystemId, setSelectedSystemIdState] = useState(() => readPublicRoute().project);
@@ -923,8 +905,6 @@ function PublicDashboard({ siteSettings }) {
   }, [showDonationDetails]);
   const openMembership = () => {
     setMenuOpen(false);
-    setShowWelcome(false);
-    setShowFullMission(false);
     setShowPublicRecords(false);
     setShowDonationDetails(false);
     setShowMembership(true);
@@ -962,25 +942,9 @@ function PublicDashboard({ siteSettings }) {
 
   useEffect(() => {
     if (!showIntro) return undefined;
-    try {
-      sessionStorage.setItem("cgs-logo-intro-v2", "1");
-    } catch {
-      // The intro still dismisses when browser storage is disabled.
-    }
-    const timer = window.setTimeout(() => {
-      setShowIntro(false);
-      setShowWelcome(localStorage.getItem("cgs-welcome-seen") !== "1");
-    }, SPLASH_DURATION_MS);
+    const timer = window.setTimeout(() => setShowIntro(false), SPLASH_DURATION_MS);
     return () => window.clearTimeout(timer);
   }, [showIntro]);
-
-  const enterWebsite = () => {
-    localStorage.setItem("cgs-welcome-seen", "1");
-    sessionStorage.setItem("cgs-intro-seen", "yes");
-    setShowIntro(false);
-    setShowWelcome(false);
-    setShowFullMission(false);
-  };
 
   useEffect(() => {
     setSlideIndex(0);
@@ -1252,8 +1216,7 @@ function PublicDashboard({ siteSettings }) {
   if (selectedSystem) {
     return (
       <div className="public-site project-page" style={themeStyle}>
-        <SplashIntro visible={showIntro} onSkip={() => setShowIntro(false)} />
-        <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
+        <SplashIntro visible={showIntro} />
         <header className="site-nav site-nav--solid">
           <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
             {isCemeterySalary(selectedSystem) ? (ur ? "← قبرستان مینجمنٹ" : "← Cemetery Management") : selectedWorkParentId
@@ -1524,8 +1487,7 @@ function PublicDashboard({ siteSettings }) {
 
   return (
     <div className="public-site" style={themeStyle}>
-      <SplashIntro visible={showIntro} onSkip={() => setShowIntro(false)} />
-      <MissionWelcome visible={showWelcome} full={showFullMission} onFull={() => setShowFullMission(true)} onEnter={enterWebsite} settings={settings} />
+      <SplashIntro visible={showIntro} />
 
       <header className="site-nav">
         <button className="brand-button" onClick={() => scrollTo("home")}>
@@ -1818,6 +1780,7 @@ function PublicDashboard({ siteSettings }) {
       )}
       {showMembership && <MembershipForm language={language} onClose={() => setShowMembership(false)} />}
 
+      <MissionWelcome settings={settings} />
       <footer className="site-footer">
         <LogoMark compact />
         <div><b>Clean &amp; Green Sangran</b><p>Trust through transparency. Progress through community.</p></div>
