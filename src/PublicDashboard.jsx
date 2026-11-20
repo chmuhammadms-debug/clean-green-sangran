@@ -384,7 +384,40 @@ const splashTiles = Array.from({ length: 25 }, (_, index) => {
 
 const bismillahWords = ["بِسْمِ", "اللّٰهِ", "الرَّحْمَٰنِ", "الرَّحِيمِ"];
 
-function SplashIntro({ visible }) {
+function SplashIntro({ visible, onFinish }) {
+  useEffect(() => {
+    if (!visible) return undefined;
+
+    const recitation = new Audio("https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3");
+    recitation.preload = "auto";
+    let playing = false;
+    let active = true;
+    const started = () => { playing = true; };
+    const ended = () => onFinish(false);
+    recitation.addEventListener("playing", started);
+    recitation.addEventListener("ended", ended);
+
+    const startTimer = window.setTimeout(() => {
+      if (active) recitation.play().catch(() => {});
+    }, SPLASH_DURATION_MS / 2);
+    const fallbackTimer = window.setTimeout(() => {
+      if (!playing || recitation.paused) onFinish(false);
+    }, SPLASH_DURATION_MS);
+    const maximumTimer = window.setTimeout(ended, SPLASH_DURATION_MS + 5000);
+
+    return () => {
+      active = false;
+      window.clearTimeout(startTimer);
+      window.clearTimeout(fallbackTimer);
+      window.clearTimeout(maximumTimer);
+      recitation.removeEventListener("playing", started);
+      recitation.removeEventListener("ended", ended);
+      recitation.pause();
+      recitation.removeAttribute("src");
+      recitation.load();
+    };
+  }, [visible, onFinish]);
+
   if (!visible) return null;
   return (
     <div className="splash-intro" style={{ "--splash-duration": `${SPLASH_DURATION_MS}ms` }} role="status">
@@ -937,12 +970,6 @@ function PublicDashboard({ siteSettings }) {
   }, []);
 
   useEffect(() => {
-    if (!showIntro) return undefined;
-    const timer = window.setTimeout(() => setShowIntro(false), SPLASH_DURATION_MS);
-    return () => window.clearTimeout(timer);
-  }, [showIntro]);
-
-  useEffect(() => {
     setSlideIndex(0);
   }, [slides]);
 
@@ -1212,7 +1239,7 @@ function PublicDashboard({ siteSettings }) {
   if (selectedSystem) {
     return (
       <div className="public-site project-page" style={themeStyle}>
-        <SplashIntro visible={showIntro} />
+        <SplashIntro visible={showIntro} onFinish={setShowIntro} />
         <header className="site-nav site-nav--solid">
           <button className="project-top-back project-top-back--left" onClick={() => setSelectedSystemId(selectedParentId)}>
             {isCemeterySalary(selectedSystem) ? (ur ? "← قبرستان مینجمنٹ" : "← Cemetery Management") : selectedWorkParentId
@@ -1483,7 +1510,7 @@ function PublicDashboard({ siteSettings }) {
 
   return (
     <div className="public-site" style={themeStyle}>
-      <SplashIntro visible={showIntro} />
+      <SplashIntro visible={showIntro} onFinish={setShowIntro} />
 
       <header className="site-nav">
         <button className="brand-button" onClick={() => scrollTo("home")}>

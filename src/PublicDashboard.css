@@ -50,7 +50,6 @@ button { cursor: pointer; }
   place-items: center;
   color: #fff;
   background: radial-gradient(ellipse at center, #17613b, #052b18 70%);
-  animation: splashExit .3s ease calc(var(--splash-duration) - .3s) forwards;
 }
 
 .splash-logo-wrap { text-align: center; }
@@ -916,7 +915,6 @@ body.gallery-open { overflow: hidden; }
 .record-search span { color: var(--muted); font-size: 20px; }
 .record-search input { width: 100%; padding: 11px; background: none; border: 0; outline: none; }
 
-@keyframes splashExit { to { opacity: 0; visibility: hidden; transform: scale(1.04); } }
 @keyframes heroText { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 @keyframes slideProgress { from { width: 0; } to { width: 100%; } }
 /* Move the announcement strip from left to right while each Urdu message
