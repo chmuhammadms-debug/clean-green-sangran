@@ -388,33 +388,47 @@ function SplashIntro({ visible, onFinish }) {
   useEffect(() => {
     if (!visible) return undefined;
 
-    const recitation = new Audio("https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3");
-    recitation.preload = "auto";
-    let playing = false;
-    let active = true;
-    const started = () => { playing = true; };
-    const ended = () => onFinish(false);
-    recitation.addEventListener("playing", started);
-    recitation.addEventListener("ended", ended);
+    const speech = window.speechSynthesis;
+    let utterance;
+    let speaking = false;
+    let introElapsed = false;
+    speech?.getVoices();
+
+    const finishSpeech = () => {
+      speaking = false;
+      if (introElapsed) onFinish(false);
+    };
 
     const startTimer = window.setTimeout(() => {
-      if (active) recitation.play().catch(() => {});
+      const arabicVoice = speech?.getVoices().find((voice) => /^ar(?:[-_]|$)/i.test(voice.lang));
+      if (!arabicVoice || typeof SpeechSynthesisUtterance !== "function") return;
+
+      utterance = new SpeechSynthesisUtterance(bismillahWords.join(" "));
+      utterance.voice = arabicVoice;
+      utterance.lang = arabicVoice.lang;
+      utterance.rate = 0.85;
+      utterance.onstart = () => { speaking = true; };
+      utterance.onend = finishSpeech;
+      utterance.onerror = finishSpeech;
+      speech.speak(utterance);
     }, SPLASH_DURATION_MS / 2);
+
     const fallbackTimer = window.setTimeout(() => {
-      if (!playing || recitation.paused) onFinish(false);
+      introElapsed = true;
+      if (!speaking) onFinish(false);
     }, SPLASH_DURATION_MS);
-    const maximumTimer = window.setTimeout(ended, SPLASH_DURATION_MS + 5000);
+    const maximumTimer = window.setTimeout(() => onFinish(false), SPLASH_DURATION_MS + 5000);
 
     return () => {
-      active = false;
       window.clearTimeout(startTimer);
       window.clearTimeout(fallbackTimer);
       window.clearTimeout(maximumTimer);
-      recitation.removeEventListener("playing", started);
-      recitation.removeEventListener("ended", ended);
-      recitation.pause();
-      recitation.removeAttribute("src");
-      recitation.load();
+      if (utterance) {
+        utterance.onstart = null;
+        utterance.onend = null;
+        utterance.onerror = null;
+        speech.cancel();
+      }
     };
   }, [visible, onFinish]);
 
