@@ -589,6 +589,10 @@ function SocialMediaLinks({ links = [], variant = "footer" }) {
   );
 }
 
+function isCentralDonation(record) {
+  return record.type === "income" && isCentralFund(record.systemId);
+}
+
 function RecordsTable({ records, systems, limit, language = "en", scrollable = false, donorStatusRecords = records, salaryView = false }) {
   const [openSlip, setOpenSlip] = useState(null);
   const rows = typeof limit === "number" ? records.slice(0, limit) : records;
@@ -599,6 +603,8 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
       .map((record) => String(record.person || "").trim().toLocaleLowerCase("en"))
       .filter(Boolean),
   );
+  const centralDonations = rows.filter(isCentralDonation);
+  const otherRecords = rows.filter((record) => !isCentralDonation(record));
   const projectName = (id) => language === "ur"
     ? (projectUrdu[id]?.name || systems.find((system) => system.id === id)?.name || "عوامی منصوبہ")
     : (systems.find((system) => system.id === id)?.name || "Community Project");
@@ -614,13 +620,35 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
 
   return (
     <>
+    {centralDonations.length > 0 && (
+      <div className={`public-table-wrap${scrollable ? " public-table-wrap--scrollable" : ""}`}>
+        <table className="public-table">
+          <thead>
+            <tr><th>{language === "ur" ? "عطیہ دہندہ" : "Donor"}</th><th>{language === "ur" ? "رقم" : "Amount"}</th></tr>
+          </thead>
+          <tbody>
+            {centralDonations.map((record) => {
+              const donorNameKey = String(record.person || "").trim().toLocaleLowerCase("en");
+              const donorStatus = activeDonorNames.has(donorNameKey) ? "current" : "pending";
+              return (
+                <tr key={record.id}>
+                  <td><strong className={`public-record-person public-record-person--${donorStatus}`}>{record.person}</strong></td>
+                  <td className="record-amount">Rs. {Number(record.amount).toLocaleString()}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    )}
+    {otherRecords.length > 0 && (
     <div className={`public-table-wrap${scrollable ? " public-table-wrap--scrollable" : ""}`}>
       <table className="public-table">
         <thead>
           <tr><th>{language === "ur" ? "تاریخ" : "Date"}</th><th>{salaryView ? (language === "ur" ? "تنخواہ کا مہینہ" : "Salary month") : (language === "ur" ? "قسم" : "Type")}</th><th>{language === "ur" ? "نام / مقصد" : "Name / Purpose"}</th>{!salaryView && <th>{language === "ur" ? "منصوبہ" : "Project"}</th>}<th>{language === "ur" ? "رقم" : "Amount"}</th><th>{language === "ur" ? "طریقہ" : "Method"}</th><th>{language === "ur" ? "رسید" : "Slip"}</th></tr>
         </thead>
         <tbody>
-          {rows.map((record) => {
+          {otherRecords.map((record) => {
             const donorNameKey = String(record.person || "").trim().toLocaleLowerCase("en");
             const showsMonthlyStatus = isPersonalDonorRecord(record) && !["unknown", "anonymous"].includes(donorNameKey);
             const donorStatus = showsMonthlyStatus
@@ -665,6 +693,7 @@ function RecordsTable({ records, systems, limit, language = "en", scrollable = f
         </tbody>
       </table>
     </div>
+    )}
     {openSlip && (
       <div className="slip-viewer" role="dialog" aria-modal="true" aria-label="Donation slip">
         <button type="button" className="slip-viewer__backdrop" onClick={() => setOpenSlip(null)} aria-label="Close slip" />
@@ -1332,7 +1361,7 @@ function PublicDashboard({ siteSettings }) {
                   {isCentralFund(selectedSystem) || isMosqueAccountId(selectedSystem) ? (
                     <>
                       <MoneyCards totals={selectedTotals} language={language} />
-                      {isCentralFund(selectedSystem) && <><FundSlips records={selectedAllRecords} language={language} />{projectLedger}</>}
+                      {isCentralFund(selectedSystem) && <><FundSlips language={language} />{projectLedger}</>}
                     </>
                   ) : !isWelfareChild(selectedSystem) ? (
                     <div className="welfare-central-fund-note">
