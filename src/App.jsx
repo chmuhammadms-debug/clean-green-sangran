@@ -8,6 +8,7 @@ import "./App.css";
 import CentralTools from "./CentralTools";
 import ProjectManager from "./ProjectManager";
 import WebsiteSettings from "./WebsiteSettings";
+import FundReportsAdmin from "./FundReportsAdmin";
 import ProjectIcon, {
   ensureSingleBloodBankSystem,
   isBloodBankProject,
@@ -2667,6 +2668,9 @@ function App({ siteSettings, onSaveSiteSettings, savingSiteSettings, onAuthentic
               saving={savingSiteSettings}
             />
 
+            </AdminCategory>
+            <AdminCategory id="admin-fund-reports" title="ماہانہ سلپ رپورٹس" description="سینٹرل فنڈ کی رپورٹیں تاریخ وار لگائیں، بدلیں یا ہٹائیں">
+              <FundReportsAdmin />
             </AdminCategory>
             <AdminCategory id="admin-website" title="ویب سائٹ کی سیٹنگز" description="صفحے، تصاویر اور ویب سائٹ کا مواد">
             <WebsiteSettings settings={siteSettings} onSave={onSaveSiteSettings} saving={savingSiteSettings} />

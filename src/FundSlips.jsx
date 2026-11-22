@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import archive from './fundSlipArchive.json';
+import { useFundReports } from './fundReports';
 import './FundSlips.css';
 
 export default function FundSlips({ language = 'en' }) {
@@ -7,11 +7,7 @@ export default function FundSlips({ language = 'en' }) {
   const [month, setMonth] = useState(null);
   const [opened, setOpened] = useState(null);
   const dialog = useRef(null);
-  const seen = new Set();
-  const items = archive.filter(item => item.kind === 'reports').filter(item => {
-    if (seen.has(item.url)) return false;
-    seen.add(item.url); return true;
-  }).sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || a.name.localeCompare(b.name));
+  const { reports: items } = useFundReports();
   const months = [...new Set(items.map(i => i.date ? i.date.slice(0, 7) : 'undated'))].sort().reverse();
   const label = value => value === 'undated' ? (ur ? 'تاریخ کی تصدیق باقی' : 'Date to confirm') : new Intl.DateTimeFormat(ur ? 'ur-PK' : 'en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}-01T12:00:00Z`));
   useEffect(() => {
